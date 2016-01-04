@@ -1,0 +1,20 @@
+*.报表文件描述
+
+*.HegeZheng: 	合格证
+*.HeGeZheng_R:	合格证
+*.HuaYan32: 	32.x化验单
+*.HuaYan32_R: 	32.x检验单
+*.HuaYan42: 	42.x化验单
+*.HuaYan42_R: 	42.x检验单
+*.HuaYan42_DJ:	42.x低碱
+*.HuaYan_gsl:	硅酸盐熟料
+*.HuaYan_qz:	砌筑水泥
+*.LadingBill:	提货单
+*.Pound:	磅单
+*.ProvideMate: 	供应凭证
+*.ProYanShou:	验收单
+*.ProvideJS:	结算单
+*.SaleContract: 销售合同
+*.ShouJu:	收据
+*.ZhiKa:	销售纸卡
+*.ZhiKa_Lad	提货单打纸卡

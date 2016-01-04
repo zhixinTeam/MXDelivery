@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="gb2312"?>
+<hosts>
+    <host name="散装库(1-4)">
+    <param>
+      <id>HostA</id>
+      <ip>192.168.0.215</ip>
+      <port>6000</port>
+    </param>
+    <lines>
+      <item>
+        <tunnel>FH001</tunnel>
+        <line>0</line>
+        <card>1</card>
+      </item>
+      <item>
+        <tunnel>FH002</tunnel>
+        <line>1</line>
+        <card>2</card>
+      </item>
+      <item>
+        <tunnel>FH003</tunnel>
+        <line>2</line>
+        <card>3</card>
+      </item>
+      <item>
+        <tunnel>FH004</tunnel>
+        <line>3</line>
+        <card>4</card>
+      </item>
+    </lines>
+  </host>
+  <host name="熟料库">
+    <param>
+      <id>HostB</id>
+      <ip>192.168.0.216</ip>
+      <port>6000</port>
+    </param>
+    <lines>
+      <item>
+        <tunnel>FH005</tunnel>
+        <line>0</line>
+        <card>1</card>
+      </item>
+    </lines>
+  </host>
+</hosts>

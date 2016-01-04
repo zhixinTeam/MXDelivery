@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="gb2312"?>
+<!--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+节点: readers.reader
+*.id: 节点标识
+*.ip,port: 读卡器地址
+*.enable: N,关闭;其它开启.
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
+<HY_RFID102>
+  <readers>
+    <reader id="IN001">
+      <ip>192.168.0.201</ip>
+      <port>6201</port>
+      <enable>Y</enable>
+    </reader>
+    <reader id="OUT001">
+      <ip>192.168.0.202</ip>
+      <port>6202</port>
+      <enable>Y</enable>
+    </reader>
+    <reader id="BF001">
+      <ip>192.168.0.203</ip>
+      <port>6203</port>
+      <enable>Y</enable>
+    </reader>
+    <reader id="BF002">
+      <ip>192.168.0.204</ip>
+      <port>6204</port>
+      <enable>Y</enable>
+    </reader>
+  </readers>
+</HY_RFID102>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="gb2312"?>
+<probers>
+  <prober id="N1" name="海鑫1号磅">
+    <ip>192.168.0.243</ip>
+    <port>6000</port>
+    <enable>0</enable>
+    <signal_in on="0" off="1" />
+    <signal_out on="2" off="1" />
+    <tunnels>
+      <tunnel id="HX01" name="进出">
+        <in></in>
+        <out></out>
+      </tunnel>
+    </tunnels>
+  </prober>
+</probers>

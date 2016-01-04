@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="gb2312"?>
+<probers>
+  <prober id="N1" name="车辆检测控制器">
+    <ip>192.168.116.77</ip>
+    <port>6000</port>
+    <enable>1</enable>
+    <tunnels>
+      <tunnel id="WG0101" name="1号磅">
+        <in>1,2</in>
+        <out>1,2</out>
+      </tunnel>
+      <tunnel id="WG0102" name="2号磅">
+        <in>3,4</in>
+        <out>3,4</out>
+      </tunnel>
+    </tunnels>
+  </prober>
+</probers>

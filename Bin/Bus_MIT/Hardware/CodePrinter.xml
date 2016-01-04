@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="gb2312"?>
+<codeprinter>
+  <config>
+    <enableprinter>1</enableprinter>
+    <!--启用喷码机 1,开启;其它,关闭 -->
+    <enablejsq>1</enablejsq>
+    <!--启用计数器连锁 1,开启;其它,关闭 -->
+  </config>
+  <printers>
+    <item id="装车一道">
+      <ip>192.168.130.91</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt001</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车二道">
+      <ip>192.168.130.92</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt002</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车三道">
+      <ip>192.168.130.93</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt003</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车四道">
+      <ip>192.168.130.94</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt004</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车五道">
+      <ip>192.168.130.95</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt005</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车六道">
+      <ip>192.168.130.96</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt006</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车七道">
+      <ip>192.168.130.97</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt007</tunnel>
+      <enable>1</enable>
+    </item>
+    <item id="装车八道">
+      <ip>192.168.130.98</ip>
+      <port>8000</port>
+      <driver>zero</driver>
+      <tunnel>zt008</tunnel>
+      <enable>1</enable>
+    </item>
+  </printers>
+</codeprinter>
