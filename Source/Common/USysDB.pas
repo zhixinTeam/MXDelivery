@@ -224,9 +224,12 @@ ResourceString
   sFlag_WeiXin        = 'Bus_WeiXin';                //微信映射编号
   sFlag_HYDan         = 'Bus_HYDan';                 //化验单号
   sFlag_ForceHint     = 'Bus_HintMsg';               //强制提示
-  sFlag_Order         = 'Bus_Order';              //采购单号
+  sFlag_Order         = 'Bus_Order';                 //采购单号
   sFlag_OrderDtl      = 'Bus_OrderDtl';              //采购单号
   sFlag_OrderBase     = 'Bus_OrderBase';             //采购申请单号
+
+  sFlag_SerialAX      = 'AXFunction';                //AX编码组
+  sFlag_AXMsgNo       = 'AX_MsgNo';                  //AX消息号
 
   {*数据表*}
   sTable_Group        = 'Sys_Group';                 //用户组

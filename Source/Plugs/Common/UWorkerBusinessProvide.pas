@@ -2,7 +2,7 @@
   作者: dmzn@163.com 2013-12-04
   描述: 模块业务对象
 *******************************************************************************}
-unit UWorkerBusiness;
+unit UWorkerBusinessCommand;
 
 {$I Link.Inc}
 interface
@@ -10,102 +10,10 @@ interface
 uses
   Windows, Classes, Controls, DB, SysUtils, UBusinessWorker, UBusinessPacker,
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
-  UBusinessConst, UMgrDBConn, UMgrParam, ZnMD5, ULibFun, UFormCtrl, USysLoger,
-  USysDB, UMITConst;
+  UBusinessConst, UWorkerBusinessCommand, UMgrDBConn, UMgrParam, ZnMD5, ULibFun,
+  UFormCtrl, USysLoger, USysDB, UMITConst;
 
 type
-  TBusWorkerQueryField = class(TBusinessWorkerBase)
-  private
-    FIn: TWorkerQueryFieldData;
-    FOut: TWorkerQueryFieldData;
-  public
-    class function FunctionName: string; override;
-    function GetFlagStr(const nFlag: Integer): string; override;
-    function DoWork(var nData: string): Boolean; override;
-    //执行业务
-  end;
-
-  TMITDBWorker = class(TBusinessWorkerBase)
-  protected
-    FErrNum: Integer;
-    //错误码
-    FDBConn: PDBWorker;
-    //数据通道
-    FDataIn,FDataOut: PBWDataBase;
-    //入参出参
-    FDataOutNeedUnPack: Boolean;
-    //需要解包
-    procedure GetInOutData(var nIn,nOut: PBWDataBase); virtual; abstract;
-    //出入参数
-    function VerifyParamIn(var nData: string): Boolean; virtual;
-    //验证入参
-    function DoDBWork(var nData: string): Boolean; virtual; abstract;
-    function DoAfterDBWork(var nData: string; nResult: Boolean): Boolean; virtual;
-    //数据业务
-  public
-    function DoWork(var nData: string): Boolean; override;
-    //执行业务
-    procedure WriteLog(const nEvent: string);
-    //记录日志
-  end;
-
-  TWorkerBusinessCommander = class(TMITDBWorker)
-  private
-    FListA,FListB,FListC: TStrings;
-    //list
-    FIn: TWorkerBusinessCommand;
-    FOut: TWorkerBusinessCommand;
-  protected
-    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
-    function DoDBWork(var nData: string): Boolean; override;
-    //base funciton
-    function GetCardUsed(var nData: string): Boolean;
-    //获取卡片类型
-    function Login(var nData: string):Boolean;
-    function LogOut(var nData: string): Boolean;
-    //登录注销，用于移动终端
-    function GetServerNow(var nData: string): Boolean;
-    //获取服务器时间
-    function GetSerailID(var nData: string): Boolean;
-    //获取串号
-    function IsSystemExpired(var nData: string): Boolean;
-    //系统是否已过期
-    function GetCustomerValidMoney(var nData: string): Boolean;
-    //获取客户可用金
-    function GetZhiKaValidMoney(var nData: string): Boolean;
-    //获取纸卡可用金
-    function CustomerHasMoney(var nData: string): Boolean;
-    //验证客户是否有钱
-    function SaveTruck(var nData: string): Boolean;
-    //保存车辆到Truck表
-    function GetTruckPoundData(var nData: string): Boolean;
-    function SaveTruckPoundData(var nData: string): Boolean;
-    //存取车辆称重数据
-    {$IFDEF XAZL}
-    function SyncRemoteSaleMan(var nData: string): Boolean;
-    function SyncRemoteCustomer(var nData: string): Boolean;
-    function SyncRemoteProviders(var nData: string): Boolean;
-    function SyncRemoteMaterails(var nData: string): Boolean;
-    //同步新安中联K3系统数据
-    function SyncRemoteStockBill(var nData: string): Boolean;
-    //同步交货单到K3系统
-    function SyncRemoteStockOrder(var nData: string): Boolean;
-    //同步交货单到K3系统
-    function IsStockValid(var nData: string): Boolean;
-    //验证物料是否允许发货
-    {$ENDIF}
-  public
-    constructor Create; override;
-    destructor destroy; override;
-    //new free
-    function GetFlagStr(const nFlag: Integer): string; override;
-    class function FunctionName: string; override;
-    //base function
-    class function CallMe(const nCmd: Integer; const nData,nExt: string;
-      const nOut: PWorkerBusinessCommand): Boolean;
-    //local call
-  end;
-
   TStockMatchItem = record
     FStock: string;         //品种
     FGroup: string;         //分组
@@ -424,25 +332,9 @@ begin
    cBC_ServerNow           : Result := GetServerNow(nData);
    cBC_GetSerialNO         : Result := GetSerailID(nData);
    cBC_IsSystemExpired     : Result := IsSystemExpired(nData);
-   cBC_GetCustomerMoney    : Result := GetCustomerValidMoney(nData);
-   cBC_GetZhiKaMoney       : Result := GetZhiKaValidMoney(nData);
-   cBC_CustomerHasMoney    : Result := CustomerHasMoney(nData);
    cBC_SaveTruckInfo       : Result := SaveTruck(nData);
    cBC_GetTruckPoundData   : Result := GetTruckPoundData(nData);
    cBC_SaveTruckPoundData  : Result := SaveTruckPoundData(nData);
-   cBC_UserLogin           : Result := Login(nData);
-   cBC_UserLogOut          : Result := LogOut(nData);
-
-   {$IFDEF XAZL}
-   cBC_SyncCustomer        : Result := SyncRemoteCustomer(nData);
-   cBC_SyncSaleMan         : Result := SyncRemoteSaleMan(nData);
-   cBC_SyncProvider        : Result := SyncRemoteProviders(nData);
-   cBC_SyncMaterails       : Result := SyncRemoteMaterails(nData);
-   cBC_SyncStockBill       : Result := SyncRemoteStockBill(nData);
-   cBC_CheckStockValid     : Result := IsStockValid(nData);
-
-   cBC_SyncStockOrder      : Result := SyncRemoteStockOrder(nData);
-   {$ENDIF}
    else
     begin
       Result := False;
@@ -470,68 +362,6 @@ begin
     FOut.FData := Fields[0].AsString;
     Result := True;
   end;
-end;
-
-//------------------------------------------------------------------------------
-//Date: 2015/9/9
-//Parm: 用户名，密码；返回用户数据
-//Desc: 用户登录
-function TWorkerBusinessCommander.Login(var nData: string): Boolean;
-var nStr: string;
-begin
-  Result := False;
-
-  FListA.Clear;
-  FListA.Text := PackerDecodeStr(FIn.FData);
-  if FListA.Values['User']='' then Exit;
-  //未传递用户名
-
-  nStr := 'Select U_Password From %s Where U_Name=''%s''';
-  nStr := Format(nStr, [sTable_User, FListA.Values['User']]);
-  //card status
-
-  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
-  begin
-    if RecordCount<1 then Exit;
-
-    nStr := Fields[0].AsString;
-    if nStr<>FListA.Values['Password'] then Exit;
-    {
-    if CallMe(cBC_ServerNow, '', '', @nOut) then
-         nStr := PackerEncodeStr(nOut.FData)
-    else nStr := IntToStr(Random(999999));
-
-    nInfo := FListA.Values['User'] + nStr;
-    //xxxxx
-
-    nStr := 'Insert into $EI(I_Group, I_ItemID, I_Item, I_Info) ' +
-            'Values(''$Group'', ''$ItemID'', ''$Item'', ''$Info'')';
-    nStr := MacroValue(nStr, [MI('$EI', sTable_ExtInfo),
-            MI('$Group', sFlag_UserLogItem), MI('$ItemID', FListA.Values['User']),
-            MI('$Item', PackerEncodeStr(FListA.Values['Password'])),
-            MI('$Info', nInfo)]);
-    gDBConnManager.WorkerExec(FDBConn, nStr);  }
-
-    Result := True;
-  end;
-end;
-//------------------------------------------------------------------------------
-//Date: 2015/9/9
-//Parm: 用户名；验证数据
-//Desc: 用户注销
-function TWorkerBusinessCommander.LogOut(var nData: string): Boolean;
-//var nStr: string;
-begin
-  {nStr := 'delete From %s Where I_ItemID=''%s''';
-  nStr := Format(nStr, [sTable_ExtInfo, PackerDecodeStr(FIn.FData)]);
-  //card status
-
-  
-  if gDBConnManager.WorkerExec(FDBConn, nStr)<1 then
-       Result := False
-  else Result := True;     }
-
-  Result := True;
 end;
 
 //Date: 2014-09-05

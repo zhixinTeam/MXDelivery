@@ -25,12 +25,6 @@ const
   cBC_ServerNow               = $0002;   //服务器当前时间
   cBC_IsSystemExpired         = $0003;   //系统是否已过期
   cBC_GetCardUsed             = $0004;   //获取卡片类型
-  cBC_UserLogin               = $0005;   //用户登录
-  cBC_UserLogOut              = $0006;   //用户注销
-
-  cBC_GetCustomerMoney        = $0010;   //获取客户可用金
-  cBC_GetZhiKaMoney           = $0011;   //获取纸卡可用金
-  cBC_CustomerHasMoney        = $0012;   //客户是否有余额
 
   cBC_SaveTruckInfo           = $0013;   //保存车辆信息
   cBC_GetTruckPoundData       = $0015;   //获取车辆称重数据
@@ -42,6 +36,9 @@ const
   cBC_SaleAdjust              = $0023;   //销售调拨
   cBC_SaveBillCard            = $0024;   //绑定交货单磁卡
   cBC_LogoffCard              = $0025;   //注销磁卡
+
+  cBC_ReadAXCard              = $0026;   //读取AX卡片信息
+  cBC_VerifyAXCard            = $0027;   //校验AX卡片有效性
 
   cBC_SaveOrder               = $0040;
   cBC_DeleteOrder             = $0041;
@@ -166,10 +163,13 @@ resourcestring
   sBus_HardwareCommand        = 'Bus_HardwareCommand';  //硬件指令
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
 
+  sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
+
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
   sCLI_GetQueryField          = 'CLI_GetQueryField';    //查询的字段
 
+  sCLI_BusinessReadSale       = 'CLI_BusinessReadSale'; //读取订单
   sCLI_BusinessSaleBill       = 'CLI_BusinessSaleBill'; //交货单业务
   sCLI_BusinessCommand        = 'CLI_BusinessCommand';  //业务指令
   sCLI_HardwareCommand        = 'CLI_HardwareCommand';  //硬件指令

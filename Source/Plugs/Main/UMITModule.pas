@@ -12,7 +12,7 @@ interface
 uses
   Windows, Forms, Classes, SysUtils, ULibFun, UBusinessWorker, UBusinessPacker,
   UTaskMonitor, USysShareMem, USysLoger, UMITConst, UMITPacker,
-  UWorkerBusiness,
+  UWorkerBusinessCommand, UWorkerBusinessBill, UWorkerBusinessRemote,
   {$IFDEF HardMon}UEventHardware, UWorkerHardware,{$ENDIF}
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
   UMgrDBConn, UMgrParam, UMgrPlug, UMgrChannel, UChannelChooser, USAPConnection,
@@ -88,7 +88,7 @@ begin
 
   {$IFDEF AutoChannel}
   gChannelChoolser.AddChanels(gParamManager.URLRemote.Text);
-  gChannelChoolser.StartRefresh;
+  //gChannelChoolser.StartRefresh;
   {$ENDIF} //channel auto select
 
   {$IFDEF MicroMsg}

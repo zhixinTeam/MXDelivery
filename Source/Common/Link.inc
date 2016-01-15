@@ -36,9 +36,9 @@
 {$IFDEF COM_MIT}
   {$DEFINE DBPool}
   //启用数据库支持
-  {.$DEFINE ChannelPool}
+  {$DEFINE ChannelPool}
   //启用通道支持
-  {.$DEFINE AutoChannel}
+  {$DEFINE AutoChannel}
   //启用通道平衡
   {.$DEFINE SAP}
   //启用SAP支持
@@ -47,40 +47,8 @@
 {$ENDIF}
 
 //--------------------------------- 特定系统 -----------------------------------
-{.$DEFINE COMMON}
+{$DEFINE COMMON}
 //通用版本
 
-{$DEFINE RDHX}
+{.$DEFINE BTMX}
 //特定系统
-
-//如东海鑫
-{$IFDEF RDHX}
-  {$DEFINE COMMON}
-  {$DEFINE HYRFID201}
-  //华益读头
-{$ENDIF}
-
-//新安中联
-{$IFDEF XAZL}
-  {$DEFINE SyncRemote}
-  //远程同步
-  {$DEFINE MicroMsg}
-  //微信支持
-{$ENDIF}
-
-//济源中联
-{$IFDEF JYZL}
-  {$DEFINE XAZL}
-  //使用新安
-  {$DEFINE SyncRemote}
-  //远程同步
-  {$DEFINE HYRFID201}
-  //华益读头
-  {$DEFINE AppAtTaskBar}
-  //状态栏显示
-  {$DEFINE PrintBillMoney}
-  //打印时显金额
-  {$DEFINE HR1847}
-  //北京科瑞车检
-{$ENDIF}
-

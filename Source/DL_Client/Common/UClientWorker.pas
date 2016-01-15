@@ -63,6 +63,12 @@ type
     function GetFixedServiceURL: string; override;
   end;
 
+  TClientBusinessAXReadSale = class(TClient2MITWorker)
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+  end;
+
 implementation
 
 uses
@@ -290,18 +296,18 @@ begin
 end;
 
 //------------------------------------------------------------------------------
-class function TClientBusinessPurchaseOrder.FunctionName: string;
+class function TClientBusinessAXReadSale.FunctionName: string;
 begin
-  Result := sCLI_BusinessPurchaseOrder;
+  Result := sCLI_BusinessReadSale;
 end;
 
-function TClientBusinessPurchaseOrder.GetFlagStr(const nFlag: Integer): string;
+function TClientBusinessAXReadSale.GetFlagStr(const nFlag: Integer): string;
 begin
   Result := inherited GetFlagStr(nFlag);
 
   case nFlag of
    cWorker_GetPackerName : Result := sBus_BusinessCommand;
-   cWorker_GetMITName    : Result := sBus_BusinessPurchaseOrder;
+   cWorker_GetMITName    : Result := sAX_ReadSaleOrder;
   end;
 end;
 
@@ -326,10 +332,28 @@ begin
   Result := gSysParam.FHardMonURL;
 end;
 
+//------------------------------------------------------------------------------
+class function TClientBusinessPurchaseOrder.FunctionName: string;
+begin
+  Result := sCLI_BusinessPurchaseOrder;
+end;
+
+function TClientBusinessPurchaseOrder.GetFlagStr(const nFlag: Integer): string;
+begin
+  Result := inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+   cWorker_GetMITName    : Result := sBus_BusinessPurchaseOrder;
+  end;
+end;
+
 initialization
   gBusinessWorkerManager.RegisteWorker(TClientWorkerQueryField);
   gBusinessWorkerManager.RegisteWorker(TClientBusinessCommand);
   gBusinessWorkerManager.RegisteWorker(TClientBusinessSaleBill);
   gBusinessWorkerManager.RegisteWorker(TClientBusinessHardware);
+
+  gBusinessWorkerManager.RegisteWorker(TClientBusinessAXReadSale);
   gBusinessWorkerManager.RegisteWorker(TClientBusinessPurchaseOrder);
 end.
