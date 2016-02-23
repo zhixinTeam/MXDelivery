@@ -1,111 +1,101 @@
 inherited fFormBill: TfFormBill
-  Left = 541
-  Top = 384
-  ClientHeight = 390
-  ClientWidth = 416
+  Left = 426
+  Top = 446
+  ClientHeight = 453
+  ClientWidth = 435
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 416
-    Height = 390
+    Width = 435
+    Height = 453
     AutoControlTabOrders = False
     inherited BtnOK: TButton
-      Left = 270
-      Top = 357
+      Left = 289
+      Top = 420
       Caption = #24320#21333
-      TabOrder = 12
+      TabOrder = 11
     end
     inherited BtnExit: TButton
-      Left = 340
-      Top = 357
-      TabOrder = 14
+      Left = 359
+      Top = 420
+      TabOrder = 13
     end
     object EditValue: TcxTextEdit [2]
-      Left = 279
-      Top = 312
+      Left = 296
+      Top = 361
       ParentFont = False
-      TabOrder = 11
+      TabOrder = 10
       OnKeyPress = EditLadingKeyPress
       Width = 120
     end
-    object EditCard: TcxTextEdit [3]
+    object EditCus: TcxTextEdit [3]
       Left = 81
-      Top = 36
+      Top = 86
       ParentFont = False
-      Properties.MaxLength = 15
       Properties.ReadOnly = True
       TabOrder = 0
       OnKeyPress = EditLadingKeyPress
-      Width = 125
+      Width = 121
     end
-    object EditCus: TcxTextEdit [4]
+    object EditCName: TcxTextEdit [4]
       Left = 81
-      Top = 61
+      Top = 111
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 1
       OnKeyPress = EditLadingKeyPress
       Width = 121
     end
-    object EditCName: TcxTextEdit [5]
+    object EditJXMan: TcxTextEdit [5]
       Left = 81
-      Top = 86
+      Top = 136
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 2
       OnKeyPress = EditLadingKeyPress
       Width = 121
     end
-    object EditJXMan: TcxTextEdit [6]
+    object EditDate: TcxTextEdit [6]
       Left = 81
-      Top = 111
+      Top = 186
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 3
       OnKeyPress = EditLadingKeyPress
       Width = 121
     end
-    object EditDate: TcxTextEdit [7]
+    object EditStock: TcxTextEdit [7]
       Left = 81
-      Top = 161
+      Top = 286
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 4
       OnKeyPress = EditLadingKeyPress
       Width = 121
     end
-    object EditStock: TcxTextEdit [8]
+    object EditSName: TcxTextEdit [8]
       Left = 81
-      Top = 237
+      Top = 311
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 5
       OnKeyPress = EditLadingKeyPress
-      Width = 121
+      Width = 152
     end
-    object EditSName: TcxTextEdit [9]
-      Left = 81
-      Top = 262
+    object EditMax: TcxTextEdit [9]
+      Left = 296
+      Top = 311
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 6
       OnKeyPress = EditLadingKeyPress
-      Width = 135
-    end
-    object EditMax: TcxTextEdit [10]
-      Left = 279
-      Top = 262
-      ParentFont = False
-      Properties.ReadOnly = True
-      TabOrder = 7
-      OnKeyPress = EditLadingKeyPress
       Width = 121
     end
-    object EditTruck: TcxButtonEdit [11]
+    object EditTruck: TcxButtonEdit [10]
       Left = 81
-      Top = 312
+      Top = 361
       ParentFont = False
       Properties.Buttons = <
         item
@@ -113,13 +103,13 @@ inherited fFormBill: TfFormBill
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditTruckPropertiesButtonClick
-      TabOrder = 10
+      TabOrder = 9
       OnKeyPress = EditLadingKeyPress
-      Width = 135
+      Width = 152
     end
-    object EditType: TcxComboBox [12]
+    object EditType: TcxComboBox [11]
       Left = 81
-      Top = 287
+      Top = 336
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
       Properties.ItemHeight = 18
@@ -128,29 +118,50 @@ inherited fFormBill: TfFormBill
         'Z=Z'#12289#26632#21488
         'V=V'#12289'VIP'
         'S=S'#12289#33337#36816)
-      TabOrder = 8
+      TabOrder = 7
       OnKeyPress = EditLadingKeyPress
-      Width = 135
+      Width = 152
     end
-    object EditFQ: TcxTextEdit [13]
-      Left = 279
-      Top = 287
+    object EditFQ: TcxTextEdit [12]
+      Left = 296
+      Top = 336
       ParentFont = False
       Properties.MaxLength = 100
-      TabOrder = 9
+      TabOrder = 8
       Width = 132
     end
-    object EditMan: TcxTextEdit [14]
+    object EditMan: TcxTextEdit [13]
       Left = 81
-      Top = 136
+      Top = 161
+      ParentFont = False
+      TabOrder = 16
+      Width = 121
+    end
+    object ListStock: TcxComboBox [14]
+      Left = 81
+      Top = 36
+      Properties.DropDownListStyle = lsEditFixedList
+      Properties.ItemHeight = 20
+      Properties.ReadOnly = False
+      Properties.OnChange = ListStockPropertiesChange
       TabOrder = 17
+      Width = 121
+    end
+    object EditCard: TcxTextEdit [15]
+      Left = 81
+      Top = 61
+      Properties.ReadOnly = True
+      TabOrder = 18
       Width = 121
     end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
-        object dxLayout1Item9: TdxLayoutItem
-          AutoAligns = [aaVertical]
-          AlignHorz = ahClient
+        object dxLayout1Item4: TdxLayoutItem
+          Caption = #29289#26009#21015#34920':'
+          Control = ListStock
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item5: TdxLayoutItem
           Caption = #21345#29255#32534#21495':'
           Control = EditCard
           ControlOptions.ShowBorder = False

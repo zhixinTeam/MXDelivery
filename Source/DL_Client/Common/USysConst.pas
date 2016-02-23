@@ -67,6 +67,8 @@ const
   cFI_FrameSaleJS       = $0069;                     //销售结算
 
   cFI_FrameTrucks       = $0070;                     //车辆档案
+  cFI_FrameBatch        = $0071;                     //批次编号
+  cFI_FrameBatchQuery   = $0072;                     //批次变更
 
   cFI_FrameProvider     = $0102;                     //供应
   cFI_FrameProvideLog   = $0105;                     //供应日志
@@ -143,6 +145,7 @@ const
   cFI_FormAdjustPrice   = $1070;                     //纸卡调价
 
   cFI_FormTrucks        = $1071;                     //车辆档案
+  cFI_FormBatch         = $1072;                     //批次编号
 
   cFI_FormInvoiceWeek   = $1075;                     //结算周期
   cFI_FormSaleInvoice   = $1076;                     //发票管理
@@ -337,6 +340,8 @@ begin
   AddMenuModuleItem('MAIN_K04', cFI_FormStockHuaYan, mtForm);
   AddMenuModuleItem('MAIN_K05', cFI_FormStockHY_Each, mtForm);
   AddMenuModuleItem('MAIN_K06', cFI_FrameStockHY_Each);
+  AddMenuModuleItem('MAIN_K07', cFI_FrameBatch);
+  AddMenuModuleItem('MAIN_K08', cFI_FrameBatchQuery);
 
   AddMenuModuleItem('MAIN_L01', cFI_FrameTruckQuery);
   AddMenuModuleItem('MAIN_L02', cFI_FrameCusAccountQuery);

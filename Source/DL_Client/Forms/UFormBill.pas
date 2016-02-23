@@ -18,8 +18,6 @@ type
     dxGroup2: TdxLayoutGroup;
     EditValue: TcxTextEdit;
     dxLayout1Item8: TdxLayoutItem;
-    EditCard: TcxTextEdit;
-    dxLayout1Item9: TdxLayoutItem;
     EditCus: TcxTextEdit;
     dxlytmLayout1Item3: TdxLayoutItem;
     EditCName: TcxTextEdit;
@@ -47,15 +45,20 @@ type
     dxGroupLayout1Group3: TdxLayoutGroup;
     EditMan: TcxTextEdit;
     dxLayout1Item3: TdxLayoutItem;
+    ListStock: TcxComboBox;
+    dxLayout1Item4: TdxLayoutItem;
+    EditCard: TcxTextEdit;
+    dxLayout1Item5: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
+    procedure ListStockPropertiesChange(Sender: TObject);
   protected
     { Protected declarations }
-    FCardData: TStrings;
+    FCardData,FListA: TStrings;
     //卡片数据
     FNewBillID: string;
     //新提单号
@@ -63,6 +66,8 @@ type
     //补单标记
     procedure InitFormData;
     //初始化界面
+    procedure LoadCardInfo(const nIdx: Integer);
+    //读取卡片信息
   public
     { Public declarations }
     class function CreateForm(const nPopedom: string = '';
@@ -135,6 +140,8 @@ end;
 procedure TfFormBill.FormCreate(Sender: TObject);
 begin
   FCardData := TStringList.Create;
+  FListA := TStringList.Create;
+
   AdjustCtrlData(Self);
   LoadFormConfig(Self);
 end;
@@ -143,7 +150,9 @@ procedure TfFormBill.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   SaveFormConfig(Self);
   ReleaseCtrlData(Self);
+
   FCardData.Free;
+  FListA.Free;
 end;
 
 //Desc: 回车键
@@ -179,14 +188,44 @@ begin
   EditLadingKeyPress(EditTruck, nChar);
 end;
 
+procedure TfFormBill.ListStockPropertiesChange(Sender: TObject);
+begin
+  LoadCardInfo(ListStock.ItemIndex);
+end;
+
 //------------------------------------------------------------------------------
 procedure TfFormBill.InitFormData;
+var nIdx,nNum: Integer;
 begin
-  with FCardData do
+  with FCardData,ListStock do
+  begin
+    Properties.Items.Clear;
+    nNum := StrToInt(Values['DataNum']);
+                                            
+    for nIdx:=0 to nNum-1 do
+    begin
+      FListA.Text := PackerDecodeStr(Values['Data' + IntToStr(nIdx)]);
+      Properties.Items.Add(FListA.Values['ItemID'] + FListA.Values['ItemName']);
+    end;
+
+    if nNum > 0 then
+      ItemIndex := 0;
+    //xxxxx
+  end;
+end;
+
+//Date: 2016-01-30
+//Parm: 明细索引
+//Desc: 读取nIdx条卡片信息到窗口
+procedure TfFormBill.LoadCardInfo(const nIdx: Integer);
+begin
+  FListA.Text := PackerDecodeStr(FCardData.Values['Data' + IntToStr(nIdx)]);
+  with FListA do
   begin
     EditCard.Text   := Values['Card'];
-    EditCName.Text  := Values['CustAccount'];
-    EditJXMan.Text  := Values['DealerAccount'];
+    EditCus.Text    := Values['CustAccount'];
+    EditCName.Text  := Values['CustName'];
+    EditJXMan.Text  := Values['DealerAccount'] + '.' + Values['DealerName'];
     EditMan.Text    := gSysParam.FUserID;
     EditDate.Text   := DateTime2Str(Now);
 
@@ -214,8 +253,7 @@ begin
     if not Result then Exit;
                     
     nVal := StrToFloat(EditValue.Text);
-    Result := FloatRelation(nVal, StrToFloat(FCardData.Values['XCB_RemainNum']),
-              rtLE);
+    Result := FloatRelation(nVal, StrToFloat(FCardData.Values['Qty']), rtLE);
     nHint := '已超出可提货量';
   end;
 end;
@@ -238,17 +276,16 @@ begin
     //需打印品种
 
     //+++++: start loop
-    nTmp.Values['Type'] := FCardData.Values['XCB_CementType'];
-    nTmp.Values['StockNO'] := FCardData.Values['XCB_Cement'];
-    nTmp.Values['StockName'] := FCardData.Values['XCB_CementName'];
-    nTmp.Values['Price'] := '0.00';
+    nTmp.Values['StockNO'] := FCardData.Values['ItemID'];
+    nTmp.Values['StockName'] := FCardData.Values['ItemName'];
+    nTmp.Values['Type'] := FCardData.Values['ItemType'];
     nTmp.Values['Value'] := EditValue.Text;
 
     nList.Add(PackerEncodeStr(nTmp.Text));
     //new bill
 
     if (not nPrint) and (FBuDanFlag <> sFlag_Yes) then
-      nPrint := nStocks.IndexOf(FCardData.Values['XCB_Cement']) >= 0;
+      nPrint := nStocks.IndexOf(FCardData.Values['ItemID']) >= 0;
     //-----: end loop,此处可添加多条明细
 
     with nList do
@@ -258,7 +295,6 @@ begin
       Values['Truck'] := EditTruck.Text;
       Values['Lading'] := sFlag_TiHuo;
       Values['IsVIP'] := GetCtrlData(EditType);
-      Values['Seal'] := FCardData.Values['XCB_CementCodeID'];
       Values['HYDan'] := EditFQ.Text;
       Values['BuDan'] := FBuDanFlag;
     end;

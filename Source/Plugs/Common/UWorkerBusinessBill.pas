@@ -338,68 +338,25 @@ begin
 
   TWorkerBusinessCommander.CallMe(cBC_SaveTruckInfo, nTruck, '', @nOut);
   //保存车牌号
-{
+
   //----------------------------------------------------------------------------
-  nStr := 'Select zk.*,ht.C_Area,cus.C_Name,cus.C_PY,sm.S_Name From $ZK zk ' +
-          ' Left Join $HT ht On ht.C_ID=zk.Z_CID ' +
-          ' Left Join $Cus cus On cus.C_ID=zk.Z_Customer ' +
-          ' Left Join $SM sm On sm.S_ID=Z_SaleMan ' +
-          'Where Z_ID=''$ZID''';
-  nStr := MacroValue(nStr, [MI('$ZK', sTable_ZhiKa),
-          MI('$HT', sTable_SaleContract),
-          MI('$Cus', sTable_Customer),
-          MI('$SM', sTable_Salesman),
-          MI('$ZID', FListA.Values['ZhiKa'])]);
-  //纸卡信息
+  FListC.Text := PackerDecodeStr(FListA.Values['ZhiKa']);
+  //AX信息
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr),FListA do
   begin
-    if RecordCount < 1 then
-    begin
-      nData := Format('纸卡[ %s ]已丢失.', [Values['ZhiKa']]);
-      Exit;
-    end;
+    Values['Record'] := FListC.Values['Card'];
+    Values['ZhiKa'] := FListC.Values['Card'];
+    Values['CusID'] := '?';
+    Values['CusName'] := FListC.Values['CustAccount'];
+    Values['CusPY'] := GetPinYinOfStr(FListC.Values['CustAccount']);
 
-    if FieldByName('Z_Freeze').AsString = sFlag_Yes then
-    begin
-      nData := Format('纸卡[ %s ]已被管理员冻结.', [Values['ZhiKa']]);
-      Exit;
-    end;
-
-    if FieldByName('Z_InValid').AsString = sFlag_Yes then
-    begin
-      nData := Format('纸卡[ %s ]已被管理员作废.', [Values['ZhiKa']]);
-      Exit;
-    end;
-
-    nStr := FieldByName('Z_TJStatus').AsString;
-    if nStr  <> '' then
-    begin
-      if nStr = sFlag_TJOver then
-           nData := '纸卡[ %s ]已调价,请重新开单.'
-      else nData := '纸卡[ %s ]正在调价,请稍后.';
-
-      nData := Format(nData, [Values['ZhiKa']]);
-      Exit;
-    end;
-
-    if FieldByName('Z_ValidDays').AsDateTime <= Date() then
-    begin
-      nData := Format('纸卡[ %s ]已在[ %s ]过期.', [Values['ZhiKa'],
-               Date2Str(FieldByName('Z_ValidDays').AsDateTime)]);
-      Exit;
-    end;
-
-    Values['Project'] := FieldByName('Z_Project').AsString;
-    Values['Area'] := FieldByName('C_Area').AsString;
-    Values['CusID'] := FieldByName('Z_Customer').AsString;
-    Values['CusName'] := FieldByName('C_Name').AsString;
-    Values['CusPY'] := FieldByName('C_PY').AsString;
-    Values['SaleID'] := FieldByName('Z_SaleMan').AsString;
-    Values['SaleMan'] := FieldByName('S_Name').AsString;
-    Values['ZKMoney'] := FieldByName('Z_OnlyMoney').AsString;
+    Values['SaleID'] := '?';;
+    Values['SaleMan'] := FListC.Values['DealerAccount'];
+    Values['Price'] := FListC.Values['Price'];
+    Values['ZKMoney'] := FListC.Values['Amount'];
   end;
-}
+
   Result := True;
   //verify done
 end;
@@ -407,45 +364,17 @@ end;
 //Date: 2014-09-15
 //Desc: 保存交货单
 function TWorkerBusinessBills.SaveBills(var nData: string): Boolean;
-var nStr,nSQL,nFixMoney: string;
-    nIdx: Integer;
-    nVal,nMoney: Double;
+var nStr,nSQL: string;
+    nIdx,nInt: Integer;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
   FListA.Text := PackerDecodeStr(FIn.FData);
   if not VerifyBeforSave(nData) then Exit;
 
-  nMoney := StrToFloat(nOut.FData);
-  nFixMoney := nOut.FExtParam;
-  //zhika money
-
   FListB.Text := PackerDecodeStr(FListA.Values['Bills']);
   //unpack bill list
-  nVal := 0;
 
-  for nIdx:=0 to FListB.Count - 1 do
-  begin
-    FListC.Text := PackerDecodeStr(FListB[nIdx]);
-    //get bill info
-
-    with FListC do
-      nVal := nVal + Float2Float(StrToFloat(Values['Price']) *
-                     StrToFloat(Values['Value']), cPrecision, True);
-    //xxxx
-  end;
-
-  if FloatRelation(nVal, nMoney, rtGreater) then
-  begin
-    nData := '纸卡[ %s ]上没有足够的金额,详情如下:' + #13#10#13#10 +
-             '可用金额: %.2f' + #13#10 +
-             '开单金额: %.2f' + #13#10#13#10 +
-             '请减小提货量后再开单.';
-    nData := Format(nData, [FListA.Values['ZhiKa'], nMoney, nVal]);
-    Exit;
-  end;
-
-  //----------------------------------------------------------------------------
   FDBConn.FConn.BeginTrans;
   try
     FOut.FData := '';
@@ -469,8 +398,6 @@ begin
 
       nStr := MakeSQLByStr([SF('L_ID', nOut.FData),
               SF('L_ZhiKa', FListA.Values['ZhiKa']),
-              SF('L_Project', FListA.Values['Project']),
-              SF('L_Area', FListA.Values['Area']),
               SF('L_CusID', FListA.Values['CusID']),
               SF('L_CusName', FListA.Values['CusName']),
               SF('L_CusPY', FListA.Values['CusPY']),
@@ -481,9 +408,8 @@ begin
               SF('L_StockNo', FListC.Values['StockNO']),
               SF('L_StockName', FListC.Values['StockName']),
               SF('L_Value', FListC.Values['Value'], sfVal),
-              SF('L_Price', FListC.Values['Price'], sfVal),
+              SF('L_Price', FListA.Values['Price'], sfVal),
 
-              SF('L_ZKMoney', nFixMoney),
               SF('L_Truck', FListA.Values['Truck']),
               SF('L_Status', sFlag_BillNew),
               SF('L_Lading', FListA.Values['Lading']),
@@ -551,29 +477,42 @@ begin
 
     if FListA.Values['BuDan'] = sFlag_Yes then //补单
     begin
-      nStr := 'Update %s Set A_OutMoney=A_OutMoney+%s Where A_CID=''%s''';
-      nStr := Format(nStr, [sTable_CusAccount, FloatToStr(nVal),
-              FListA.Values['CusID']]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //freeze money from account
+      nStr := 'Update %s Set C_HasDone=C_HasDone+%.2f Where C_ID=''%s''';
+      nStr := Format(nStr, [sTable_AX_CardInfo,
+              StrToFloat(FListC.Values['Value']),
+              FListA.Values['Record']]);
+      nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
+
+      if nInt < 1 then
+      begin
+        nSQL := MakeSQLByStr([
+          SF('C_ID', FListA.Values['Record']),
+          SF('C_Card', FListA.Values['ZhiKa']),
+          SF('C_Stock', FListC.Values['StockNO']),
+          SF('C_Freeze', '0', sfVal),
+          SF('C_HasDone', FListC.Values['Value'], sfVal)
+          ], sTable_AX_CardInfo, '', True);
+        gDBConnManager.WorkerExec(FDBConn, nSQL);
+      end;
     end else
     begin
-      nStr := 'Update %s Set A_FreezeMoney=A_FreezeMoney+%s Where A_CID=''%s''';
-      nStr := Format(nStr, [sTable_CusAccount, FloatToStr(nVal),
-              FListA.Values['CusID']]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //freeze money from account
-    end;
+      nStr := 'Update %s Set C_Freeze=C_Freeze+%.2f Where C_ID=''%s''';
+      nStr := Format(nStr, [sTable_AX_CardInfo,
+              StrToFloat(FListC.Values['Value']),
+              FListA.Values['Record']]);
+      nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
 
-    if nFixMoney = sFlag_Yes then
-    begin
-      nStr := 'Update %s Set Z_FixedMoney=Z_FixedMoney-%s Where Z_ID=''%s''';
-      nStr := Format(nStr, [sTable_ZhiKa, FloatToStr(nVal),
-              FListA.Values['ZhiKa']]);
-      //xxxxx
-
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //freeze money from zhika
+      if nInt < 1 then
+      begin
+        nSQL := MakeSQLByStr([
+          SF('C_ID', FListA.Values['Record']),
+          SF('C_Card', FListA.Values['ZhiKa']),
+          SF('C_Stock', FListC.Values['StockNO']),
+          SF('C_Freeze', FListC.Values['Value'], sfVal),
+          SF('C_HasDone', '0', sfVal)
+          ], sTable_AX_CardInfo, '', True);
+        gDBConnManager.WorkerExec(FDBConn, nSQL);
+      end;
     end;
 
     nIdx := Length(FOut.FData);
@@ -587,38 +526,6 @@ begin
     FDBConn.FConn.RollbackTrans;
     raise;
   end;
-
-  {$IFDEF XAZL}
-  if FListA.Values['BuDan'] = sFlag_Yes then //补单
-  try
-    nSQL := AdjustListStrFormat(FOut.FData, '''', True, ',', False);
-    //bill list
-
-    if not TWorkerBusinessCommander.CallMe(cBC_SyncStockBill, nSQL, '', @nOut) then
-      raise Exception.Create(nOut.FData);
-    //xxxxx
-  except
-    nStr := 'Delete From %s Where L_ID In (%s)';
-    nStr := Format(nStr, [sTable_Bill, nSQL]);
-    gDBConnManager.WorkerExec(FDBConn, nStr);
-    raise;
-  end;
-  {$ENDIF}
-
-  {$IFDEF MicroMsg}
-  with FListC do
-  begin
-    Clear;
-    Values['bill'] := FOut.FData;
-    Values['company'] := gSysParam.FHintText;
-  end;
-
-  if FListA.Values['BuDan'] = sFlag_Yes then
-       nStr := cWXBus_OutFact
-  else nStr := cWXBus_MakeCard;
-
-  gWXPlatFormHelper.WXSendMsg(nStr, FListC.Text);
-  {$ENDIF}
 end;
 
 //------------------------------------------------------------------------------

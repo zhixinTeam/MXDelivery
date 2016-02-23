@@ -48,12 +48,21 @@ type
     //记录日志
   end;
 
+  TWorkerBusinessStockItem = record
+    FID    : string;     //编号
+    FName  : string;     //名称
+    FType  : string;     //类型(包,散)
+  end;
+
   TWorkerBusinessCommander = class(TMITDBWorker)
   private
     FListA,FListB,FListC: TStrings;
     //list
     FIn: TWorkerBusinessCommand;
     FOut: TWorkerBusinessCommand;
+    //data in-out
+    FStockItems: array of TWorkerBusinessStockItem;
+    //物料列表
   protected
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoDBWork(var nData: string): Boolean; override;
@@ -71,6 +80,8 @@ type
     function GetTruckPoundData(var nData: string): Boolean;
     function SaveTruckPoundData(var nData: string): Boolean;
     //存取车辆称重数据
+    function GetStockItem(var nData: string): Boolean;
+    //获取物料信息
   public
     constructor Create; override;
     destructor destroy; override;
@@ -214,10 +225,12 @@ end;
 
 constructor TWorkerBusinessCommander.Create;
 begin
+  inherited;
+  SetLength(FStockItems, 0);
+
   FListA := TStringList.Create;
   FListB := TStringList.Create;
-  FListC := TStringList.Create;
-  inherited;
+  FListC := TStringList.Create;   
 end;
 
 destructor TWorkerBusinessCommander.destroy;
@@ -299,6 +312,7 @@ begin
    cBC_SaveTruckInfo       : Result := SaveTruck(nData);
    cBC_GetTruckPoundData   : Result := GetTruckPoundData(nData);
    cBC_SaveTruckPoundData  : Result := SaveTruckPoundData(nData);
+   cBC_GetStockItemInfo    : Result := GetStockItem(nData);
    else
     begin
       Result := False;
@@ -307,6 +321,7 @@ begin
   end;
 end;
 
+//------------------------------------------------------------------------------
 //Date: 2014-09-05
 //Desc: 获取卡片类型：销售S;采购P;其他O
 function TWorkerBusinessCommander.GetCardUsed(var nData: string): Boolean;
@@ -475,7 +490,7 @@ var nStr: string;
 begin
   Result := True;
   FIn.FData := UpperCase(FIn.FData);
-  
+
   nStr := 'Select Count(*) From %s Where T_Truck=''%s''';
   nStr := Format(nStr, [sTable_Truck, FIn.FData]);
   //xxxxx
@@ -487,6 +502,62 @@ begin
     nStr := Format(nStr, [sTable_Truck, FIn.FData, GetPinYinOfStr(FIn.FData)]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
   end;
+end;
+
+//Date: 2016-01-16
+//Parm: 物料号[FIn.FData]
+//Desc: 返回指定物料的信息
+function TWorkerBusinessCommander.GetStockItem(var nData: string): Boolean;
+var nStr: string;
+    nIdx: Integer;
+begin
+  Result := False;
+  if Length(FStockItems) < 1 then
+  begin
+    nStr := 'Select D_Value,D_Memo,D_ParamB From %s Where D_Name=''%s''';
+    nStr := Format(nStr, [sTable_SysDict, sFlag_StockItem]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+    begin
+      SetLength(FStockItems, RecordCount);
+      nIdx := 0;
+      First;
+
+      while not Eof do
+      begin
+        with FStockItems[nIdx] do
+        begin
+          FID    := FieldByName('D_ParamB').AsString;
+          FName  := FieldByName('D_Value').AsString;
+          FType  := FieldByName('D_Memo').AsString;
+        end;
+
+        Inc(nIdx);
+        Next;
+      end;
+    end;
+  end;
+
+  for nIdx:=Low(FStockItems) to High(FStockItems) do
+  if CompareText(FIn.FData, FStockItems[nIdx].FID) = 0 then
+  begin
+    with FListA,FStockItems[nIdx] do
+    begin
+      Clear;
+      Values['ID'] := FID;
+      Values['Name'] := FName;
+      Values['Type'] := FType;
+    end;
+
+    FOut.FData := PackerEncodeStr(FListA.Text);
+    Result := True;
+    Break;
+  end;
+
+  if not Result then
+    nData := Format('物料编号[ %s ]未配置,或信息丢失.', [FIn.FData]);
+  //xxxxx
 end;
 
 //Date: 2014-09-25

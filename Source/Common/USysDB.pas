@@ -204,6 +204,7 @@ ResourceString
 
   sFlag_HardSrvURL    = 'HardMonURL';
   sFlag_MITSrvURL     = 'MITServiceURL';             //服务地址
+  sFlag_CompanyID     = 'SystemCompanyID';           //工厂标识
 
   sFlag_AutoIn        = 'Truck_AutoIn';              //自动进厂
   sFlag_AutoOut       = 'Truck_AutoOut';             //自动出厂
@@ -268,6 +269,7 @@ ResourceString
   sTable_Truck        = 'S_Truck';                   //车辆表
   sTable_ZTLines      = 'S_ZTLines';                 //装车道
   sTable_ZTTrucks     = 'S_ZTTrucks';                //车辆队列
+  sTable_Batcode      = 'S_Batcode';                 //批次编号
 
   sTable_Provider     = 'P_Provider';                //客户表
   sTable_Materails    = 'P_Materails';               //物料表
@@ -298,8 +300,7 @@ ResourceString
   sTable_PoundBak     = 'Sys_PoundBak';              //过磅作废
   sTable_Picture      = 'Sys_Picture';               //存放图片
 
-  sTable_K3_SyncItem  = 'DL_SyncItem';               //数据同步项
-  sTable_K3_Customer  = 'T_Organization';            //组织结构(客户)
+  sTable_AX_CardInfo  = 'S_AXCardInfo';              //销售卡片
 
   {*新建表*}
   sSQL_NewSysDict = 'Create Table $Table(D_ID $Inc, D_Name varChar(15),' +
@@ -1120,6 +1121,31 @@ ResourceString
    *.M_Memo: 备注
   -----------------------------------------------------------------------------}
 
+  sSQL_NewBatcode = 'Create Table $Table(R_ID $Inc, B_Stock varChar(32),' +
+       'B_Name varChar(80), B_Prefix varChar(5), B_Base Integer,' +
+       'B_Incement Integer, B_Length Integer,' +
+       'B_Value $Float, B_Low $Float, B_High $Float, B_Week Integer,' +
+       'B_AutoNew Char(1), B_UseDate Char(1), B_FirstDate DateTime,' +
+       'B_LastDate DateTime)';
+  {-----------------------------------------------------------------------------
+   批次编码表: Batcode
+   *.R_ID: 编号
+   *.B_Stock: 物料号
+   *.B_Name: 物料名
+   *.B_Prefix: 前缀
+   *.B_Base: 起始编码(基数)
+   *.B_Interval: 有效时长(天)
+   *.B_Incement: 编号增量
+   *.B_Length: 编号长度
+   *.B_Value:检测量
+   *.B_Low,B_High:上下限(%)
+   *.B_Week: 编号周期(天)
+   *.B_AutoNew: 元旦重置(Y/N)
+   *.B_UseDate: 使用日期编码
+   *.B_FirstDate: 首次使用时间
+   *.B_LastDate: 上次基数更新时间
+  -----------------------------------------------------------------------------}
+
   sSQL_NewStockParam = 'Create Table $Table(P_ID varChar(15), P_Stock varChar(30),' +
        'P_Type Char(1), P_Name varChar(50), P_QLevel varChar(20), P_Memo varChar(50),' +
        'P_MgO varChar(20), P_SO3 varChar(20), P_ShaoShi varChar(20),' +
@@ -1242,6 +1268,18 @@ ResourceString
    *.H_Reporter:报告人
   -----------------------------------------------------------------------------}
 
+  sSQL_NewAXCard = 'Create Table $Table(R_ID $Inc, C_ID varChar(20),' +
+       'C_Card varChar(50), C_Stock varChar(32), C_Freeze $Float, C_HasDone $Float)';
+  {-----------------------------------------------------------------------------
+   订单表: Order
+   *.R_ID: 记录编号
+   *.C_ID: 记录编号
+   *.C_Card: 卡片编号
+   *.C_Stock: 品种编号
+   *.C_Freeze: 冻结量
+   *.C_HasDone: 完成量
+  -----------------------------------------------------------------------------}
+  
 //------------------------------------------------------------------------------
 // 数据查询
 //------------------------------------------------------------------------------
@@ -1376,6 +1414,7 @@ begin
   AddSysTableItem(sTable_Picture, sSQL_NewPicture);
   AddSysTableItem(sTable_Provider, ssql_NewProvider);
   AddSysTableItem(sTable_Materails, sSQL_NewMaterails);
+  AddSysTableItem(sTable_Batcode, sSQL_NewBatcode);
 
   AddSysTableItem(sTable_StockParam, sSQL_NewStockParam);
   AddSysTableItem(sTable_StockParamExt, sSQL_NewStockRecord);
@@ -1388,6 +1427,8 @@ begin
   AddSysTableItem(sTable_OrderDtlBak, sSQL_NewOrderDtl);
   AddSysTableItem(sTable_OrderBase, sSQL_NewOrderBase);
   AddSysTableItem(sTable_OrderBaseBak, sSQL_NewOrderBase);
+
+  AddSysTableItem(sTable_AX_CardInfo, sSQL_NewAXCard);
 end;
 
 //Desc: 清理系统表

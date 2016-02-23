@@ -29,6 +29,7 @@ const
   cBC_SaveTruckInfo           = $0013;   //保存车辆信息
   cBC_GetTruckPoundData       = $0015;   //获取车辆称重数据
   cBC_SaveTruckPoundData      = $0016;   //保存车辆称重数据
+  cBC_GetStockItemInfo        = $0017;   //获取物料信息
 
   cBC_SaveBills               = $0020;   //保存交货单列表
   cBC_DeleteBill              = $0021;   //删除交货单

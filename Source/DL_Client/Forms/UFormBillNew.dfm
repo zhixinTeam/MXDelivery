@@ -2,24 +2,24 @@ inherited fFormNewBill: TfFormNewBill
   Left = 567
   Top = 378
   Caption = #21019#24314#20132#36135#21333
-  ClientHeight = 225
-  ClientWidth = 411
+  ClientHeight = 250
+  ClientWidth = 446
   Position = poMainFormCenter
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 411
-    Height = 225
+    Width = 446
+    Height = 250
     AutoControlAlignment = False
     inherited BtnOK: TButton
-      Left = 265
-      Top = 192
+      Left = 300
+      Top = 217
       Caption = #30830#23450
       TabOrder = 2
     end
     inherited BtnExit: TButton
-      Left = 335
-      Top = 192
+      Left = 370
+      Top = 217
       TabOrder = 3
     end
     object EditID: TcxTextEdit [2]

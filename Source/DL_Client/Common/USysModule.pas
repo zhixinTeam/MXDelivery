@@ -13,7 +13,9 @@ uses
   UFrameLog, UFrameSysLog, UFormIncInfo, UFormBackupSQL, UFormRestoreSQL,
   UFormPassword, UFormBaseInfo, UFrameAuthorize, UFormAuthorize,
   UFramePMaterails, UFormPMaterails, UFramePProvider, UFormPProvider,
-  UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew;
+  UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew,
+  UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
+  UFrameTruckQuery, UFormBatcode, UFrameBatcode;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

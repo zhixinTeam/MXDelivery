@@ -18,8 +18,14 @@ type
     //数据通道
     FXML: TNativeXml;
     //数据解析
+    FCompanyID: string;
+    //工厂标识
     FListA,FListB,FListC: TStrings;
     //数据列表
+    procedure BuildDefaultXMLPack;
+    //XML默认请求包
+    function GetSystemCompanyID: string;
+    //系统所在工厂
     procedure GetMsgNo(nPairID: string; var nMsgNo,nKey: string);
     procedure UpdateMsgStatus(const nMsgNo,nStatus: string);
     //消息号
@@ -27,6 +33,8 @@ type
     function DoAfterCallAX(var nData: string): Boolean; virtual;
     function DoAfterCallAXDone(var nData: string): Boolean; virtual;
     //AX调用
+    function DefaultParseError(const nData: string): Boolean;
+    //默认错误处理
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -40,6 +48,8 @@ type
   protected
     FIn: TWorkerBusinessCommand;
     FOut: TWorkerBusinessCommand;
+    function GetStockType(var nData: string): Boolean;
+    //获取物料类型
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
   public
@@ -190,6 +200,51 @@ begin
   gDBConnManager.WorkerExec(FDBConn, nStr);
 end;
 
+//Date: 2016-01-28
+//Desc: 向AX发送请求时的XML默认节点
+procedure TAXWorkerBase.BuildDefaultXMLPack;
+begin
+  with FXML do
+  begin
+    Clear;
+    VersionString := '1.0';
+    EncodingString := 'utf-8';
+
+    XmlFormat := xfCompact;
+    Root.Name := 'DATA';
+    //first node
+    
+    with Root.NodeNew('HEAD') do
+    begin
+      NodeNew('CompanyID').ValueAsString := GetSystemCompanyID;
+      NodeNew('MsgNo').ValueAsString := FDataIn.FMsgNO;
+
+      if FDataIn.FKey = '0' then
+           NodeNew('MsgStatus').ValueAsString := 'Y'
+      else NodeNew('MsgStatus').ValueAsString := 'E'
+    end;
+  end;
+end;
+
+//Date: 2016-01-28
+//Desc: 获取当前系统所在的工厂标识
+function TAXWorkerBase.GetSystemCompanyID: string;
+var nStr: string;
+begin
+  if FCompanyID = '' then
+  begin
+    nStr := 'Select D_Value From %s Where D_Name=''%s''';
+    nStr := Format(nStr, [sTable_SysDict, sFlag_CompanyID]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+     if RecordCount > 0 then
+      FCompanyID := Fields[0].AsString;
+    //xxxxx
+  end;
+
+  Result := FCompanyID;
+end;
+
 //Date: 2016-01-15
 //Parm: 数据;结果
 //Desc: 数据业务调用完毕,执行结果
@@ -275,6 +330,32 @@ begin
   end;
 end;
 
+//Date: 2016-01-28
+//Desc: 解析AX返回的数据中的错误描述节点
+function TAXWorkerBase.DefaultParseError(const nData: string): Boolean;
+var nIdx: Integer;
+    nItem: TXmlNode;
+begin
+  with FXML,FDataOut^ do
+  begin
+    Result := False;
+    nItem := Root.FindNode('EXMG');
+    if not (Assigned(nItem) and (nItem.NodeCount > 0)) then Exit;
+
+    FErrCode := '';
+    FErrDesc := '';
+
+    for nIdx:=0 to nItem.NodeCount - 1 do
+    with nItem.Nodes[nIdx] do
+    begin
+      FErrCode := FErrCode + NodeByName('MsgType').ValueAsString + '.' + '00' + #9;
+      FErrDesc := FErrDesc + NodeByName('MsgTxt').ValueAsString + #9;
+    end;
+
+    Result := True;
+  end;
+end;
+
 //------------------------------------------------------------------------------
 class function TAXWorkerReadSalesInfo.FunctionName: string;
 begin
@@ -297,40 +378,84 @@ begin
   FDataOutNeedUnPack := False;
 end;
 
+function TAXWorkerReadSalesInfo.GetStockType(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  with TWorkerBusinessCommander do
+    Result := CallMe(cBC_GetStockItemInfo, nData, '', @nOut);
+  //xxxxx
+  
+  if Result then
+  begin
+    FListC.Text := PackerDecodeStr(nOut.FData);
+    nData := FListC.Values['Type'];
+  end else
+  begin
+    nData := nOut.FData;
+    Exit;
+  end;
+end;
+
 function TAXWorkerReadSalesInfo.DoAXWork(var nData: string): Boolean;
-var nNode: TXmlNode;
+var nIdx: Integer;
+    nNode: TXmlNode;
 begin
   Result := False;
-  nData := IWebService(FChannel.FChannel).GetSalesInfoByCustCard(FIn.FData);
+  BuildDefaultXMLPack;
+
+  with FXML.Root.NodeByName('HEAD') do
+    NodeNew('CardNo').ValueAsString := FIn.FData;
+  //xxxxx
+
+  nData := IWebService(FChannel.FChannel).GetSalesInfoByCustCard(FXML.WriteToString);
   //remote call
 
-  FXML.ReadFromString(nData);
-  nNode := FXML.Root.FindNode('Item');
-  
-  if not Assigned(nNode) then
-  begin
-    nData := 'AX返回无效节点(Item Is Null).';
-    Exit;
-  end;
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerReadSalesInfo --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerReadSalesInfo <-- AX ::: ' + nData);
+  {$ENDIF}
 
-  nNode := nNode.FindNode('InvoiceCard');
-  if not Assigned(nNode) then
+  FXML.ReadFromString(nData);
+  if DefaultParseError(nData) then
   begin
-    nData := '单据号无效,或AX返回错误(InvoiceCard Is Null).';
+    Result := True;
     Exit;
-  end;
+  end; //has any error
 
   FListA.Clear;
+  nNode := FXML.Root.FindNode('Head');
+
   with FListA,nNode do
   begin
     Values['Card'] := NodeByName('Card').ValueAsString;
+    Values['Amount'] := NodeByName('Amount').ValueAsString;
+  end;
+
+  nNode := FXML.Root.FindNode('Items');
+  FListA.Values['DataNum'] := IntToStr(nNode.NodeCount);
+  FListB.Clear;
+
+  for nIdx:=0 to nNode.NodeCount - 1 do
+  with FListB,nNode.Nodes[nIdx] do
+  begin
+    Values['Card'] := NodeByName('Card').ValueAsString;
     Values['CustAccount'] := NodeByName('CustAccount').ValueAsString;
+    Values['CustName'] := NodeByName('CustName').ValueAsString;
+
     Values['DealerAccount'] := NodeByName('DealerAccount').ValueAsString;
+    Values['DealerName'] := NodeByName('DealerName').ValueAsString;
     Values['ItemID'] := NodeByName('ItemID').ValueAsString;
     Values['ItemName'] := NodeByName('ItemName').ValueAsString;
     Values['Qty'] := NodeByName('Qty').ValueAsString;
     Values['Amount'] := NodeByName('Amount').ValueAsString;
     Values['Price'] := NodeByName('Price').ValueAsString;
+
+    nData := Values['ItemID'];
+    if not GetStockType(nData) then Exit;
+    Values['ItemType'] := nData;
+
+    FListA.Values['Data' + IntToStr(nIdx)] := PackerEncodeStr(FListB.Text);
+    //
   end;
 
   Result := True;

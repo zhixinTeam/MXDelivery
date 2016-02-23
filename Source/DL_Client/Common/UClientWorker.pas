@@ -153,19 +153,18 @@ begin
       Exit;
     end;
 
+    SetLength(nArray, 0);
+    nStr := '业务执行异常,描述如下: ' + #13#10#13#10 +
+            ErrDescription(FErrCode, FErrDesc, nArray) +
+            '请检查输入参数、操作是否有效,或联系管理员!' + #32#32#32;
+    //xxxxx
+
     if Pos(sParam_NoHintOnError, nParam) < 1 then
     begin
       CloseWaitForm;
       Application.ProcessMessages;
-      SetLength(nArray, 0);
-
-      nStr := '业务执行异常,描述如下: ' + #13#10#13#10 +
-
-              ErrDescription(FErrCode, FErrDesc, nArray) +
-
-              '请检查输入参数、操作是否有效,或联系管理员!' + #32#32#32;
       ShowDlg(nStr, sWarn, Screen.ActiveForm.Handle);
-    end;
+    end else PBWDataBase(nOut)^.FErrDesc := nStr;
   end;
 end;
 
