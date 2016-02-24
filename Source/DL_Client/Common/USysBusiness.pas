@@ -141,38 +141,11 @@ procedure PrinterEnable(const nTunnel: string; const nEnable: Boolean);
 function ChangeDispatchMode(const nMode: Byte): Boolean;
 //切换调度模式
 
-function GetHYMaxValue: Double;
-function GetHYValueByStockNo(const nNo: string): Double;
-//获取化验单已开量
-
-function IsWeekValid(const nWeek: string; var nHint: string): Boolean;
-//周期是否有效
-function IsWeekHasEnable(const nWeek: string): Boolean;
-//周期是否启用
-function IsNextWeekEnable(const nWeek: string): Boolean;
-//下一周期是否启用
-function IsPreWeekOver(const nWeek: string): Integer;
-//上一周期是否结束
-function SaveCompensation(const nSaleMan,nCusID,nCusName,nPayment,nMemo: string;
- const nMoney: Double): Boolean;
-//保存用户补偿金
-
 //------------------------------------------------------------------------------
-procedure PrintSaleContractReport(const nID: string; const nAsk: Boolean);
-//打印合同
-function PrintZhiKaReport(const nZID: string; const nAsk: Boolean): Boolean;
-//打印纸卡
-function PrintShouJuReport(const nSID: string; const nAsk: Boolean): Boolean;
-//打印收据
 function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 //打印提货单
-function PrintOrderReport(const nOrder: string;  const nAsk: Boolean): Boolean;
-//打印采购单
 function PrintPoundReport(const nPound: string; nAsk: Boolean): Boolean;
 //打印榜单
-function PrintHuaYanReport(const nHID: string; const nAsk: Boolean): Boolean;
-function PrintHeGeReport(const nHID: string; const nAsk: Boolean): Boolean;
-//化验单,合格证
 
 implementation
 
@@ -1086,126 +1059,6 @@ begin
 end;
 
 //------------------------------------------------------------------------------
-//Desc: 每批次最大量
-function GetHYMaxValue: Double;
-var nStr: string;
-begin
-  nStr := 'Select D_Value From %s Where D_Name=''%s'' and D_Memo=''%s''';
-  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_HYValue]);
-
-  with FDM.QueryTemp(nStr) do
-  if RecordCount > 0 then
-       Result := Fields[0].AsFloat
-  else Result := 0;
-end;
-
-//Desc: 获取nNo水泥编号的已开量
-function GetHYValueByStockNo(const nNo: string): Double;
-var nStr: string;
-begin
-  nStr := 'Select R_SerialNo,Sum(H_Value) From %s ' +
-          ' Left Join %s on H_SerialNo= R_SerialNo ' +
-          'Where R_SerialNo=''%s'' Group By R_SerialNo';
-  nStr := Format(nStr, [sTable_StockRecord, sTable_StockHuaYan, nNo]);
-
-  with FDM.QueryTemp(nStr) do
-  if RecordCount > 0 then
-       Result := Fields[1].AsFloat
-  else Result := -1;
-end;
-
-//Desc: 检测nWeek是否存在或过期
-function IsWeekValid(const nWeek: string; var nHint: string): Boolean;
-var nStr: string;
-begin
-  nStr := 'Select W_End,$Now From $W Where W_NO=''$NO''';
-  nStr := MacroValue(nStr, [MI('$W', sTable_InvoiceWeek),
-          MI('$Now', FDM.SQLServerNow), MI('$NO', nWeek)]);
-  //xxxxx
-
-  with FDM.QueryTemp(nStr) do
-  if RecordCount > 0 then
-  begin
-    Result := Fields[0].AsDateTime + 1 > Fields[1].AsDateTime;
-    if not Result then
-      nHint := '该结算周期已结束';
-    //xxxxx
-  end else
-  begin
-    Result := False;
-    nHint := '该结算周期已无效';
-  end;
-end;
-
-//Desc: 检查nWeek是否已扎账
-function IsWeekHasEnable(const nWeek: string): Boolean;
-var nStr: string;
-begin
-  nStr := 'Select Top 1 * From $Req Where R_Week=''$NO''';
-  nStr := MacroValue(nStr, [MI('$Req', sTable_InvoiceReq), MI('$NO', nWeek)]);
-  Result := FDM.QueryTemp(nStr).RecordCount > 0;
-end;
-
-//Desc: 检测nWeek后面的周期是否已扎账
-function IsNextWeekEnable(const nWeek: string): Boolean;
-var nStr: string;
-begin
-  nStr := 'Select Top 1 * From $Req Where R_Week In ' +
-          '( Select W_NO From $W Where W_Begin > (' +
-          '  Select Top 1 W_Begin From $W Where W_NO=''$NO''))';
-  nStr := MacroValue(nStr, [MI('$Req', sTable_InvoiceReq),
-          MI('$W', sTable_InvoiceWeek), MI('$NO', nWeek)]);
-  Result := FDM.QueryTemp(nStr).RecordCount > 0;
-end;
-
-//Desc: 检测nWee前面的周期是否已结算完成
-function IsPreWeekOver(const nWeek: string): Integer;
-var nStr: string;
-begin
-  nStr := 'Select Count(*) From $Req Where (R_ReqValue<>R_KValue) And ' +
-          '(R_Week In ( Select W_NO From $W Where W_Begin < (' +
-          '  Select Top 1 W_Begin From $W Where W_NO=''$NO'')))';
-  nStr := MacroValue(nStr, [MI('$Req', sTable_InvoiceReq),
-          MI('$W', sTable_InvoiceWeek), MI('$NO', nWeek)]);
-  //xxxxx
-
-  with FDM.QueryTemp(nStr) do
-  if RecordCount > 0 then
-       Result := Fields[0].AsInteger
-  else Result := 0;
-end;
-
-//Desc: 保存用户补偿金
-function SaveCompensation(const nSaleMan,nCusID,nCusName,nPayment,nMemo: string;
- const nMoney: Double): Boolean;
-var nStr: string;
-    nBool: Boolean;
-begin
-  nBool := FDM.ADOConn.InTransaction;
-  if not nBool then FDM.ADOConn.BeginTrans;
-  try
-    nStr := 'Update %s Set A_Compensation=A_Compensation+%s Where A_CID=''%s''';
-    nStr := Format(nStr, [sTable_CusAccount, FloatToStr(nMoney), nCusID]);
-    FDM.ExecuteSQL(nStr);
-
-    nStr := 'Insert Into %s(M_SaleMan,M_CusID,M_CusName,M_Type,M_Payment,' +
-            'M_Money,M_Date,M_Man,M_Memo) Values(''%s'',''%s'',''%s'',' +
-            '''%s'',''%s'',%s,%s,''%s'',''%s'')';
-    nStr := Format(nStr, [sTable_InOutMoney, nSaleMan, nCusID, nCusName,
-            sFlag_MoneyFanHuan, nPayment, FloatToStr(nMoney),
-            FDM.SQLServerNow, gSysParam.FUserID, nMemo]);
-    FDM.ExecuteSQL(nStr);
-
-    if not nBool then
-      FDM.ADOConn.CommitTrans;
-    Result := True;
-  except
-    Result := False;
-    if not nBool then FDM.ADOConn.RollbackTrans;
-  end;
-end;
-
-//------------------------------------------------------------------------------
 //Desc: 打印标识为nID的销售合同
 procedure PrintSaleContractReport(const nID: string; const nAsk: Boolean);
 var nStr: string;
@@ -1309,45 +1162,6 @@ begin
   Result := FDR.PrintSuccess;
 end;
 
-//Desc: 打印收据
-function PrintShouJuReport(const nSID: string; const nAsk: Boolean): Boolean;
-var nStr: string;
-    nParam: TReportParamItem;
-begin
-  Result := False;
-
-  if nAsk then
-  begin
-    nStr := '是否要打印收据?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end;
-
-  nStr := 'Select * From %s Where R_ID=%s';
-  nStr := Format(nStr, [sTable_SysShouJu, nSID]);
-  
-  if FDM.QueryTemp(nStr).RecordCount < 1 then
-  begin
-    nStr := '凭单号为[ %s ] 的收据已无效!!';
-    nStr := Format(nStr, [nSID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := gPath + sReportDir + 'ShouJu.fr3';
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nParam.FName := 'Company';
-  nParam.FValue := gSysParam.FHintText;
-  FDR.AddParamItem(nParam);
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.ShowReport;
-  Result := FDR.PrintSuccess;
-end;
-
 //Desc: 打印提货单
 function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 var nStr: string;
@@ -1376,56 +1190,6 @@ begin
   end;
 
   nStr := gPath + sReportDir + 'LadingBill.fr3';
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nParam.FName := 'UserName';
-  nParam.FValue := gSysParam.FUserID;
-  FDR.AddParamItem(nParam);
-
-  nParam.FName := 'Company';
-  nParam.FValue := gSysParam.FHintText;
-  FDR.AddParamItem(nParam);
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.ShowReport;
-  Result := FDR.PrintSuccess;
-end;
-
-
-//Date: 2012-4-1
-//Parm: 采购单号;提示;数据对象;打印机
-//Desc: 打印nOrder采购单号
-function PrintOrderReport(const nOrder: string;  const nAsk: Boolean): Boolean;
-var nStr: string;
-    nDS: TDataSet;
-    nParam: TReportParamItem;
-begin
-  Result := False;
-
-  if nAsk then
-  begin
-    nStr := '是否要打印采购单?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end;
-
-  nStr := 'Select * From %s oo Inner Join %s od on oo.O_ID=od.D_OID Where D_ID=''%s''';
-  nStr := Format(nStr, [sTable_Order, sTable_OrderDtl, nOrder]);
-
-  nDS := FDM.QueryTemp(nStr);
-  if not Assigned(nDS) then Exit;
-
-  if nDS.RecordCount < 1 then
-  begin
-    nStr := '采购单[ %s ] 已无效!!';
-    nStr := Format(nStr, [nOrder]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := gPath + 'Report\PurchaseOrder.fr3';
   if not FDR.LoadReportFile(nStr) then
   begin
     nStr := '无法正确加载报表文件';
@@ -1517,96 +1281,6 @@ begin
   else if Pos('52', Result) > 0 then
     Result := gPath + sReportDir + 'HuaYan42.fr3'
   else Result := '';
-end;
-
-//Desc: 打印标识为nHID的化验单
-function PrintHuaYanReport(const nHID: string; const nAsk: Boolean): Boolean;
-var nStr,nSR: string;
-begin
-  if nAsk then
-  begin
-    Result := True;
-    nStr := '是否要打印化验单?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end else Result := False;
-
-  nSR := 'Select * From %s sr ' +
-         ' Left Join %s sp on sp.P_ID=sr.R_PID';
-  nSR := Format(nSR, [sTable_StockRecord, sTable_StockParam]);
-
-  nStr := 'Select hy.*,sr.*,C_Name From $HY hy ' +
-          ' Left Join $Cus cus on cus.C_ID=hy.H_Custom' +
-          ' Left Join ($SR) sr on sr.R_SerialNo=H_SerialNo ' +
-          'Where H_ID in ($ID)';
-  //xxxxx
-
-  nStr := MacroValue(nStr, [MI('$HY', sTable_StockHuaYan),
-          MI('$Cus', sTable_Customer), MI('$SR', nSR), MI('$ID', nHID)]);
-  //xxxxx
-
-  if FDM.QueryTemp(nStr).RecordCount < 1 then
-  begin
-    nStr := '编号为[ %s ] 的化验单记录已无效!!';
-    nStr := Format(nStr, [nHID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := FDM.SqlTemp.FieldByName('P_Stock').AsString;
-  nStr := GetReportFileByStock(nStr);
-
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.ShowReport;
-  Result := FDR.PrintSuccess;
-end;
-
-//Desc: 打印标识为nID的合格证
-function PrintHeGeReport(const nHID: string; const nAsk: Boolean): Boolean;
-var nStr,nSR: string;
-begin
-  if nAsk then
-  begin
-    Result := True;
-    nStr := '是否要打印合格证?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end else Result := False;
-
-  nSR := 'Select R_SerialNo,P_Stock,P_Name,P_QLevel From %s sr ' +
-         ' Left Join %s sp on sp.P_ID=sr.R_PID';
-  nSR := Format(nSR, [sTable_StockRecord, sTable_StockParam]);
-
-  nStr := 'Select hy.*,sr.*,C_Name From $HY hy ' +
-          ' Left Join $Cus cus on cus.C_ID=hy.H_Custom' +
-          ' Left Join ($SR) sr on sr.R_SerialNo=H_SerialNo ' +
-          'Where H_ID in ($ID)';
-  //xxxxx
-
-  nStr := MacroValue(nStr, [MI('$HY', sTable_StockHuaYan),
-          MI('$Cus', sTable_Customer), MI('$SR', nSR), MI('$ID', nHID)]);
-  //xxxxx
-
-  if FDM.QueryTemp(nStr).RecordCount < 1 then
-  begin
-    nStr := '编号为[ %s ] 的化验单记录已无效!!';
-    nStr := Format(nStr, [nHID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := gPath + sReportDir + 'HeGeZheng.fr3';
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.ShowReport;
-  Result := FDR.PrintSuccess;
 end;
 
 //Date: 2015/1/18
