@@ -35,7 +35,7 @@ type
     dxLayout1Item11: TdxLayoutItem;
     EditHigh: TcxTextEdit;
     dxLayout1Item12: TdxLayoutItem;
-    CheckAutoNew: TcxCheckBox;
+    Check2: TcxCheckBox;
     dxLayout1Item13: TdxLayoutItem;
     dxLayout1Group5: TdxLayoutGroup;
     cxLabel1: TcxLabel;
@@ -58,6 +58,7 @@ type
     dxLayout1Group6: TdxLayoutGroup;
     procedure BtnOKClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure EditStockPropertiesEditValueChanged(Sender: TObject);
   protected
     { Protected declarations }
     FRecordID: string;
@@ -153,14 +154,44 @@ begin
       EditLow.Text := FieldByName('B_Low').AsString;
       EditHigh.Text := FieldByName('B_High').AsString;
       EditWeek.Text := FieldByName('B_Week').AsString;
-      CheckAutoNew.Checked := FieldByName('B_AutoNew').AsString = sFlag_Yes;
+      Check2.Checked := FieldByName('B_AutoNew').AsString = sFlag_Yes;
     end;
   end;
+
+  EditStock.SelLength := 0;
+  EditStock.SelStart := 1;
+  ActiveControl := EditPrefix;
+end;
+
+procedure TfFormBatcode.EditStockPropertiesEditValueChanged(Sender: TObject);
+var nStr: string;
+begin
+  nStr := EditStock.Text;
+  System.Delete(nStr, 1, Length(GetCtrlData(EditStock) + '.'));
+  EditName.Text := nStr;
 end;
 
 function TfFormBatcode.OnVerifyCtrl(Sender: TObject; var nHint: string): Boolean;
+var nStr: string;
 begin
   Result := True;
+
+  if Sender = EditStock then
+  begin
+    Result := EditStock.ItemIndex >= 0;
+    nHint := '请选择物料';
+    if not Result then Exit;
+
+    nStr := 'Select R_ID From %s Where B_Stock=''%s''';
+    nStr := Format(nStr, [sTable_Batcode, GetCtrlData(EditStock)]);
+
+    with FDM.QueryTemp(nStr) do
+    if RecordCount > 0 then
+    begin
+      Result := FRecordID = Fields[0].AsString;
+      nHint := '该物料的编码规则已存在';
+    end;
+  end else
 
   if Sender = EditBase then
   begin
@@ -207,7 +238,7 @@ end;
 
 //Desc: 保存
 procedure TfFormBatcode.BtnOKClick(Sender: TObject);
-var nStr,nU: string;
+var nStr,nU,nN: string;
 begin
   if not IsDataValid then Exit;
   //验证不通过
@@ -215,6 +246,10 @@ begin
   if Check1.Checked then
        nU := sFlag_Yes
   else nU := sFlag_No;
+
+  if Check2.Checked then
+       nN := sFlag_Yes
+  else nN := sFlag_No;
 
   if FRecordID = '' then
        nStr := ''
@@ -225,10 +260,14 @@ begin
           SF('B_Prefix', EditPrefix.Text),
           SF('B_Base', EditBase.Text, sfVal),
           SF('B_Length', EditLen.Text, sfVal),
-
-          SF('B_Interval', EditInter.Text, sfVal),
           SF('B_Incement', EditInc.Text, sfVal),
           SF('B_UseDate', nU),
+
+          SF('B_Value', EditValue.Text, sfVal),
+          SF('B_Low', EditLow.Text, sfVal),
+          SF('B_High', EditHigh.Text, sfVal),
+          SF('B_Week', EditWeek.Text, sfVal),
+          SF('B_AutoNew', nN),
           SF('B_LastDate', sField_SQLServer_Now, sfVal)
           ], sTable_Batcode, nStr, FRecordID = '');
   FDM.ExecuteSQL(nStr);

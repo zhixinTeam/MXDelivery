@@ -254,6 +254,7 @@ inherited fFrameBill: TfFrameBill
     end
     object N3: TMenuItem
       Caption = #35843#25320#25552#36135#21333
+      Visible = False
       OnClick = N3Click
     end
     object N8: TMenuItem

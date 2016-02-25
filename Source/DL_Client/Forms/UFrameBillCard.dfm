@@ -45,7 +45,7 @@ inherited fFrameBillCard: TfFrameBillCard
   inherited dxLayout1: TdxLayoutControl
     Width = 879
     Height = 138
-    object EditBill: TcxButtonEdit [0]
+    object EditTruck: TcxButtonEdit [0]
       Left = 81
       Top = 36
       ParentFont = False
@@ -59,36 +59,8 @@ inherited fFrameBillCard: TfFrameBillCard
       OnKeyPress = OnCtrlKeyPress
       Width = 125
     end
-    object EditTruck: TcxButtonEdit [1]
+    object EditDate: TcxButtonEdit [1]
       Left = 269
-      Top = 36
-      ParentFont = False
-      Properties.Buttons = <
-        item
-          Default = True
-          Kind = bkEllipsis
-        end>
-      Properties.OnButtonClick = EditTruckPropertiesButtonClick
-      TabOrder = 1
-      OnKeyPress = OnCtrlKeyPress
-      Width = 125
-    end
-    object EditCus: TcxButtonEdit [2]
-      Left = 457
-      Top = 36
-      ParentFont = False
-      Properties.Buttons = <
-        item
-          Default = True
-          Kind = bkEllipsis
-        end>
-      Properties.OnButtonClick = EditTruckPropertiesButtonClick
-      TabOrder = 2
-      OnKeyPress = OnCtrlKeyPress
-      Width = 125
-    end
-    object EditDate: TcxButtonEdit [3]
-      Left = 645
       Top = 36
       ParentFont = False
       Properties.Buttons = <
@@ -98,48 +70,22 @@ inherited fFrameBillCard: TfFrameBillCard
         end>
       Properties.ReadOnly = True
       Properties.OnButtonClick = EditDatePropertiesButtonClick
-      TabOrder = 3
+      TabOrder = 1
       Width = 185
     end
-    object cxTextEdit1: TcxTextEdit [4]
+    object cxTextEdit3: TcxTextEdit [2]
       Left = 81
-      Top = 96
-      Hint = 'T.L_ID'
-      ParentFont = False
-      TabOrder = 4
-      Width = 125
-    end
-    object cxTextEdit3: TcxTextEdit [5]
-      Left = 269
-      Top = 96
+      Top = 93
       Hint = 'T.L_Truck'
       ParentFont = False
-      TabOrder = 5
+      TabOrder = 2
       Width = 125
-    end
-    object cxTextEdit2: TcxTextEdit [6]
-      Left = 457
-      Top = 96
-      Hint = 'T.L_CusName'
-      ParentFont = False
-      TabOrder = 6
-      Width = 121
     end
     inherited dxGroup1: TdxLayoutGroup
       inherited GroupSearch1: TdxLayoutGroup
-        object dxLayout1Item1: TdxLayoutItem
-          Caption = #20132#36135#21333#21495':'
-          Control = EditBill
-          ControlOptions.ShowBorder = False
-        end
         object dxLayout1Item3: TdxLayoutItem
           Caption = #36710#29260#21495#30721':'
           Control = EditTruck
-          ControlOptions.ShowBorder = False
-        end
-        object dxLayout1Item5: TdxLayoutItem
-          Caption = #23458#25143#21517#31216':'
-          Control = EditCus
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item2: TdxLayoutItem
@@ -149,21 +95,9 @@ inherited fFrameBillCard: TfFrameBillCard
         end
       end
       inherited GroupDetail1: TdxLayoutGroup
-        object dxLayout1Item6: TdxLayoutItem
-          Caption = #20132#36135#21333#21495':'
-          Control = cxTextEdit1
-          ControlOptions.ShowBorder = False
-        end
         object dxLayout1Item7: TdxLayoutItem
           Caption = #36710#29260#21495#30721':'
           Control = cxTextEdit3
-          ControlOptions.ShowBorder = False
-        end
-        object dxLayout1Item4: TdxLayoutItem
-          AutoAligns = [aaVertical]
-          AlignHorz = ahClient
-          Caption = #23458#25143#21517#31216':'
-          Control = cxTextEdit2
           ControlOptions.ShowBorder = False
         end
       end

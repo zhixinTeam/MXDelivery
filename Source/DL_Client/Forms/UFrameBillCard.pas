@@ -41,20 +41,12 @@ type
     N15: TMenuItem;
     N16: TMenuItem;
     N17: TMenuItem;
-    EditBill: TcxButtonEdit;
-    dxLayout1Item1: TdxLayoutItem;
     EditTruck: TcxButtonEdit;
     dxLayout1Item3: TdxLayoutItem;
-    EditCus: TcxButtonEdit;
-    dxLayout1Item5: TdxLayoutItem;
     EditDate: TcxButtonEdit;
     dxLayout1Item2: TdxLayoutItem;
-    cxTextEdit1: TcxTextEdit;
-    dxLayout1Item6: TdxLayoutItem;
     cxTextEdit3: TcxTextEdit;
     dxLayout1Item7: TdxLayoutItem;
-    cxTextEdit2: TcxTextEdit;
-    dxLayout1Item4: TdxLayoutItem;
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
@@ -162,8 +154,7 @@ begin
 
   if FQueryHas then
   begin
-    nStr := 'Select bc.*,L_ID,L_CusID,L_CusName,L_Truck From $BC bc ' +
-            ' Left Join $Bill b On b.L_Card=bc.C_Card ';
+    nStr := 'Select bc.* From $BC bc ';
     //xxxxx
 
     if FWhere = '' then
@@ -171,7 +162,6 @@ begin
     else nStr := nStr + 'Where (' + FWhere + ')';
 
     nStr := MacroValue(nStr, [MI('$BC', sTable_Card),
-            MI('$Bill', sTable_Bill),
             MI('$S', Date2Str(FStart)), MI('$End', Date2Str(FEnd + 1))]);
     FDM.QueryData(SQLQuery, nStr);
   end;
@@ -227,13 +217,13 @@ begin
 
     nBill := SQLNo1.FieldByName('L_ID').AsString;
     nTruck := SQLNo1.FieldByName('L_Truck').AsString;
-  end;
 
-  if SetBillCard(nBill, nTruck, False) then
-  begin
-    FQueryNo := cxGrid1.ActiveView = cxView2;
-    FQueryHas := True;
-    InitFormData(FWhere);
+    if SetBillCard(nBill, nTruck, False) then
+    begin
+      FQueryNo := cxGrid1.ActiveView = cxView2;
+      FQueryHas := True;
+      InitFormData(FWhere);
+    end;
   end;
 end;
 
@@ -295,45 +285,6 @@ end;
 procedure TfFrameBillCard.EditTruckPropertiesButtonClick(Sender: TObject;
   AButtonIndex: Integer);
 begin
-  if Sender = EditCus then
-  begin
-    EditCus.Text := Trim(EditCus.Text);
-    if EditCus.Text = '' then Exit;
-
-    FWhere := 'L_CusPY like ''%%%s%%'' or L_CusName like ''%%%s%%''' ;
-    FWhere := Format(FWhere, [EditCus.Text, EditCus.Text]);
-    FWhereNo := FWhere;
-    
-    FQueryNo := True;
-    FQueryHas := True;
-    InitFormData(FWhere);
-
-    if SQLNo1.RecordCount > 0 then
-      cxGrid1.ActiveLevel := cxLevel2 else
-    if SQLQuery.RecordCount > 0 then
-      cxGrid1.ActiveLevel := cxLevel1;
-    //xxxxxx
-  end else
-
-  if Sender = EditBill then
-  begin
-    EditBill.Text := Trim(EditBill.Text);
-    if EditBill.Text = '' then Exit;
-
-    FQueryNo := True;
-    FQueryHas := True;
-
-    FWhere := 'L_ID like ''%' + EditBill.Text + '%''';
-    FWhereNo := FWhere;
-    InitFormData(FWhere);
-
-    if SQLNo1.RecordCount > 0 then
-      cxGrid1.ActiveLevel := cxLevel2 else
-    if SQLQuery.RecordCount > 0 then
-      cxGrid1.ActiveLevel := cxLevel1;
-    //xxxxxx
-  end else
-  
   if Sender = EditTruck then
   begin
     EditTruck.Text := Trim(EditTruck.Text);
@@ -342,8 +293,8 @@ begin
     FQueryNo := True;
     FQueryHas := True;
 
-    FWhere := 'L_Truck like ''%' + EditTruck.Text + '%''';
-    FWhereNo := FWhere;
+    FWhere := 'C_TruckNo like ''%' + EditTruck.Text + '%''';
+    FWhereNo := 'L_Truck like ''%' + EditTruck.Text + '%''';
     InitFormData(FWhere);
 
     if SQLNo1.RecordCount > 0 then
@@ -370,7 +321,7 @@ begin
   FQueryNo := False;
   FQueryHas := True;
 
-  FWhere := 'L_ID Is Null';
+  FWhere := Format('C_Status<>''%s''', [sFlag_CardUsed]);
   InitFormData(FWhere);
 end;
 
@@ -469,15 +420,32 @@ end;
 
 //Desc: 补办磁卡
 procedure TfFrameBillCard.N11Click(Sender: TObject);
-var nBill,nTruck: string;
+var nStr,nBill,nTruck: string;
 begin
-  nBill := SQLQuery.FieldByName('L_ID').AsString;
-  nTruck := SQLQuery.FieldByName('L_Truck').AsString;
-
-  if SetBillCard(nBill, nTruck, False) then
+  nStr :=  SQLQuery.FieldByName('C_Used').AsString;
+  if nStr = sFlag_Sale then //销售
   begin
-    InitFormData(FWhere);
-    ShowMsg('补卡操作成功', sHint);
+    nBill := SQLQuery.FieldByName('C_Card').AsString;
+    nStr := 'Select L_ID,L_Truck From %s Where L_Card=''%s''';
+    nStr := Format(nStr, [sTable_Bill, nBill]);
+
+    with FDM.QueryTemp(nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        ShowMsg('磁卡对应的提货信息已丢失', sHint);
+        Exit;
+      end;
+
+      nBill := FieldByName('L_ID').AsString;
+      nTruck := FieldByName('L_Truck').AsString;
+    end;
+
+    if SetBillCard(nBill, nTruck, False) then
+    begin
+      InitFormData(FWhere);
+      ShowMsg('补卡操作成功', sHint);
+    end;
   end;
 end;
 

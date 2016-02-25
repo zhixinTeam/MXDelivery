@@ -20,7 +20,7 @@ type
     //数据解析
     FCompanyID: string;
     //工厂标识
-    FListA,FListB,FListC: TStrings;
+    FListA,FListB,FListC,FListD: TStrings;
     //数据列表
     procedure BuildDefaultXMLPack;
     //XML默认请求包
@@ -50,6 +50,8 @@ type
     FOut: TWorkerBusinessCommand;
     function GetStockType(var nData: string): Boolean;
     //获取物料类型
+    procedure LoadCardFreezeList(const nCard: string);
+    //载入冻结项
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
   public
@@ -84,7 +86,8 @@ begin
 
   FListA := TStringList.Create;
   FListB := TStringList.Create;
-  FListC := TStringList.Create; 
+  FListC := TStringList.Create;
+  FListD := TStringList.Create;
 end;
 
 destructor TAXWorkerBase.Destroy;
@@ -92,7 +95,8 @@ begin
   FreeAndNil(FListA);
   FreeAndNil(FListB);
   FreeAndNil(FListC);
-
+  FreeAndNil(FListD);
+  
   FreeAndNil(FXML);
   inherited;
 end;
@@ -410,8 +414,32 @@ begin
   end;
 end;
 
+procedure TAXWorkerReadSalesInfo.LoadCardFreezeList(const nCard: string);
+var nStr: string;
+begin
+  FListD.Clear;
+  nStr := 'Select * From %s Where C_Card=''%s''';
+  nStr := Format(nStr, [sTable_AX_CardInfo, nCard]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      nStr := FieldByName('C_Stock').AsString;
+      FListD.Values[nStr] := FloatToStr(FieldByName('C_Freeze').AsFloat);
+      
+      Next;
+    end;
+  end;
+end;
+
 function TAXWorkerReadSalesInfo.DoAXWork(var nData: string): Boolean;
-var nIdx: Integer;
+var nStr: string;
+    nIdx: Integer;
+    nVal: Double;
     nNode: TXmlNode;
 begin
   Result := False;
@@ -436,6 +464,7 @@ begin
     Exit;
   end; //has any error
 
+  LoadCardFreezeList(FIn.FData);
   FListA.Clear;
   nNode := FXML.Root.FindNode('Head');
 
@@ -468,8 +497,17 @@ begin
     if not GetStockType(nData) then Exit;
     Values['ItemType'] := nData;
 
+    nStr := FListD.Values[Values['ItemID']];
+    if IsNumber(nStr, True) then
+    begin
+      nVal := StrToFloat(Values['Qty']) - StrToFloat(nStr);
+      //订单量 - 冻结量
+      nVal := Float2Float(nVal, cPrecision, False);
+      Values['Qty'] := FloatToStr(nVal);
+    end;
+
     FListA.Values['Data' + IntToStr(nIdx)] := PackerEncodeStr(FListB.Text);
-    //
+    //大卡明细
   end;
 
   Result := True;

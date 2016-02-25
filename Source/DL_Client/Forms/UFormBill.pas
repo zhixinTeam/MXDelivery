@@ -34,7 +34,6 @@ type
     dxlytmLayout1Item11: TdxLayoutItem;
     EditTruck: TcxButtonEdit;
     dxlytmLayout1Item12: TdxLayoutItem;
-    dxGroupLayout1Group5: TdxLayoutGroup;
     dxlytmLayout1Item13: TdxLayoutItem;
     EditType: TcxComboBox;
     dxlytmLayout1Item14: TdxLayoutItem;
@@ -49,6 +48,7 @@ type
     dxLayout1Item4: TdxLayoutItem;
     EditCard: TcxTextEdit;
     dxLayout1Item5: TdxLayoutItem;
+    dxLayout1Group2: TdxLayoutGroup;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -210,7 +210,7 @@ begin
 
     if nNum > 0 then
       ItemIndex := 0;
-    //xxxxx
+    ListStock.SelStart := 1;
   end;
 end;
 
@@ -219,7 +219,10 @@ end;
 //Desc: 读取nIdx条卡片信息到窗口
 procedure TfFormBill.LoadCardInfo(const nIdx: Integer);
 begin
+  if nIdx < 0 then Exit;
+  FCardData.Values['DataIndex'] := IntToStr(nIdx);
   FListA.Text := PackerDecodeStr(FCardData.Values['Data' + IntToStr(nIdx)]);
+
   with FListA do
   begin
     EditCard.Text   := Values['Card'];
@@ -232,13 +235,19 @@ begin
     EditStock.Text  := Values['ItemID'];
     EditSName.Text  := Values['ItemName'];
     EditMax.Text    := Values['Qty'];
+    EditFQ.Text     := GetStockBatcode(EditStock.Text, 0);
   end;
 end;
 
 function TfFormBill.OnVerifyCtrl(Sender: TObject; var nHint: string): Boolean;
-var nVal: Double;
 begin
   Result := True;
+
+  if Sender = ListStock then
+  begin
+    Result := ListStock.ItemIndex >= 0;
+    nHint := '请先选择物料';
+  end;
 
   if Sender = EditTruck then
   begin
@@ -250,54 +259,56 @@ begin
   begin
     Result := IsNumber(EditValue.Text, True) and (StrToFloat(EditValue.Text)>0);
     nHint := '请填写有效的办理量';
-    if not Result then Exit;
-                    
-    nVal := StrToFloat(EditValue.Text);
-    Result := FloatRelation(nVal, StrToFloat(FCardData.Values['Qty']), rtLE);
-    nHint := '已超出可提货量';
+  end else
+
+  if Sender = EditFQ then
+  begin
+    Result := Trim(EditFQ.Text) <> '';
+    nHint := '批次号无效,无法开单';
   end;
 end;
 
 //Desc: 保存
 procedure TfFormBill.BtnOKClick(Sender: TObject);
-var nPrint: Boolean;
-    nList,nTmp,nStocks: TStrings;
+var nStr: string;
+    nPrint: Boolean;
+    nList,nStocks: TStrings;
 begin
   if not IsDataValid then Exit;
   //check valid
 
   nStocks := TStringList.Create;
   nList := TStringList.Create;
-  nTmp := TStringList.Create;
   try
     nList.Clear;
     nPrint := False;
     LoadSysDictItem(sFlag_PrintBill, nStocks);
     //需打印品种
 
-    //+++++: start loop
-    nTmp.Values['StockNO'] := FCardData.Values['ItemID'];
-    nTmp.Values['StockName'] := FCardData.Values['ItemName'];
-    nTmp.Values['Type'] := FCardData.Values['ItemType'];
-    nTmp.Values['Value'] := EditValue.Text;
-
-    nList.Add(PackerEncodeStr(nTmp.Text));
-    //new bill
-
-    if (not nPrint) and (FBuDanFlag <> sFlag_Yes) then
-      nPrint := nStocks.IndexOf(FCardData.Values['ItemID']) >= 0;
-    //-----: end loop,此处可添加多条明细
-
+    nStr := 'Data' + FCardData.Values['DataIndex'];
+    FListA.Text := PackerDecodeStr(FCardData.Values[nStr]);
+     
     with nList do
     begin
-      Values['Bills'] := PackerEncodeStr(nList.Text);
       Values['ZhiKa'] := PackerEncodeStr(FCardData.Text);
+      Values['DataIndex'] := FCardData.Values['DataIndex'];
+      //选中品种索引
+
+      Values['StockNO'] := FListA.Values['ItemID'];
+      Values['StockName'] := FListA.Values['ItemName'];
+      Values['Type'] := FListA.Values['ItemType'];
+      Values['Value'] := EditValue.Text;
+
       Values['Truck'] := EditTruck.Text;
       Values['Lading'] := sFlag_TiHuo;
       Values['IsVIP'] := GetCtrlData(EditType);
       Values['HYDan'] := EditFQ.Text;
       Values['BuDan'] := FBuDanFlag;
     end;
+
+    if (not nPrint) and (FBuDanFlag <> sFlag_Yes) then
+      nPrint := nStocks.IndexOf(FListA.Values['ItemID']) >= 0;
+    //xxxxx
 
     FNewBillID := SaveBill(PackerEncodeStr(nList.Text));
     //call mit bus

@@ -42,18 +42,9 @@ const
   cBC_ReadAXCard              = $0026;   //读取AX卡片信息
   cBC_VerifyAXCard            = $0027;   //校验AX卡片有效性
 
-  cBC_SaveOrder               = $0040;
-  cBC_DeleteOrder             = $0041;
-  cBC_SaveOrderCard           = $0042;
-  cBC_LogOffOrderCard         = $0043;
-  cBC_GetPostOrders           = $0044;   //获取岗位采购单
-  cBC_SavePostOrders          = $0045;   //保存岗位采购单
-  cBC_SaveOrderBase           = $0046;   //保存采购申请单
-  cBC_DeleteOrderBase         = $0047;   //删除采购申请单
-  cBC_GetGYOrderValue         = $0048;   //获取已收货量
-
   cBC_GetPostBills            = $0030;   //获取岗位交货单
   cBC_SavePostBills           = $0031;   //保存岗位交货单
+  cBC_GetBatcode              = $0032;   //获取批次编号
 
   cBC_ChangeDispatchMode      = $0053;   //切换调度模式
   cBC_GetPoundCard            = $0054;   //获取磅站卡号
@@ -118,6 +109,7 @@ type
     FPrice      : Double;          //提货单价
 
     FCard       : string;          //磁卡号
+    FCardUse    : string;          //磁卡用途
     FIsVIP      : string;          //通道类型
     FStatus     : string;          //当前状态
     FNextStatus : string;          //下一状态
@@ -216,6 +208,7 @@ begin
         FStockName  := Values['StockName'];
 
         FCard       := Values['Card'];
+        FCardUse    := Values['CardUse'];
         FIsVIP      := Values['IsVIP'];
         FStatus     := Values['Status'];
         FNextStatus := Values['NextStatus'];
@@ -312,6 +305,7 @@ begin
         Values['Price']      := FloatToStr(FPrice);
 
         Values['Card']       := FCard;
+        Values['CardUse']    := FCardUse;
         Values['IsVIP']      := FIsVIP;
         Values['Status']     := FStatus;
         Values['NextStatus'] := FNextStatus;

@@ -1,30 +1,30 @@
 inherited fFormBill: TfFormBill
-  Left = 426
-  Top = 446
-  ClientHeight = 453
-  ClientWidth = 435
+  Left = 380
+  Top = 408
+  ClientHeight = 480
+  ClientWidth = 458
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 435
-    Height = 453
+    Width = 458
+    Height = 480
     AutoControlTabOrders = False
     inherited BtnOK: TButton
-      Left = 289
-      Top = 420
+      Left = 312
+      Top = 447
       Caption = #24320#21333
       TabOrder = 11
     end
     inherited BtnExit: TButton
-      Left = 359
-      Top = 420
+      Left = 382
+      Top = 447
       TabOrder = 13
     end
     object EditValue: TcxTextEdit [2]
       Left = 296
-      Top = 361
+      Top = 378
       ParentFont = False
       TabOrder = 10
       OnKeyPress = EditLadingKeyPress
@@ -68,16 +68,16 @@ inherited fFormBill: TfFormBill
     end
     object EditStock: TcxTextEdit [7]
       Left = 81
-      Top = 286
+      Top = 328
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 4
       OnKeyPress = EditLadingKeyPress
-      Width = 121
+      Width = 152
     end
     object EditSName: TcxTextEdit [8]
       Left = 81
-      Top = 311
+      Top = 303
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 5
@@ -86,7 +86,7 @@ inherited fFormBill: TfFormBill
     end
     object EditMax: TcxTextEdit [9]
       Left = 296
-      Top = 311
+      Top = 328
       ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 6
@@ -95,7 +95,7 @@ inherited fFormBill: TfFormBill
     end
     object EditTruck: TcxButtonEdit [10]
       Left = 81
-      Top = 361
+      Top = 378
       ParentFont = False
       Properties.Buttons = <
         item
@@ -109,7 +109,7 @@ inherited fFormBill: TfFormBill
     end
     object EditType: TcxComboBox [11]
       Left = 81
-      Top = 336
+      Top = 353
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
       Properties.ItemHeight = 18
@@ -124,9 +124,10 @@ inherited fFormBill: TfFormBill
     end
     object EditFQ: TcxTextEdit [12]
       Left = 296
-      Top = 336
+      Top = 353
       ParentFont = False
       Properties.MaxLength = 100
+      Properties.ReadOnly = True
       TabOrder = 8
       Width = 132
     end
@@ -140,6 +141,7 @@ inherited fFormBill: TfFormBill
     object ListStock: TcxComboBox [14]
       Left = 81
       Top = 36
+      ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
       Properties.ItemHeight = 20
       Properties.ReadOnly = False
@@ -150,6 +152,7 @@ inherited fFormBill: TfFormBill
     object EditCard: TcxTextEdit [15]
       Left = 81
       Top = 61
+      ParentFont = False
       Properties.ReadOnly = True
       TabOrder = 18
       Width = 121
@@ -196,24 +199,25 @@ inherited fFormBill: TfFormBill
         AutoAligns = [aaHorizontal]
         AlignVert = avClient
         Caption = #25552#21333#20449#24687
-        object dxlytmLayout1Item9: TdxLayoutItem
-          Caption = #27700#27877#32534#21495':'
-          Control = EditStock
-          ControlOptions.ShowBorder = False
-        end
-        object dxGroupLayout1Group5: TdxLayoutGroup
+        object dxGroupLayout1Group7: TdxLayoutGroup
           ShowCaption = False
           Hidden = True
           ShowBorder = False
-          object dxGroupLayout1Group7: TdxLayoutGroup
+          object dxlytmLayout1Item10: TdxLayoutItem
+            AutoAligns = [aaVertical]
+            AlignHorz = ahClient
+            Caption = #27700#27877#21517#31216':'
+            Control = EditSName
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayout1Group2: TdxLayoutGroup
             ShowCaption = False
             Hidden = True
             LayoutDirection = ldHorizontal
             ShowBorder = False
-            object dxlytmLayout1Item10: TdxLayoutItem
-              AutoAligns = [aaVertical]
-              Caption = #27700#27877#21517#31216':'
-              Control = EditSName
+            object dxlytmLayout1Item9: TdxLayoutItem
+              Caption = #27700#27877#32534#21495':'
+              Control = EditStock
               ControlOptions.ShowBorder = False
             end
             object dxlytmLayout1Item11: TdxLayoutItem
@@ -224,45 +228,45 @@ inherited fFormBill: TfFormBill
               ControlOptions.ShowBorder = False
             end
           end
-          object dxGroupLayout1Group6: TdxLayoutGroup
+        end
+        object dxGroupLayout1Group6: TdxLayoutGroup
+          ShowCaption = False
+          Hidden = True
+          ShowBorder = False
+          object dxGroupLayout1Group4: TdxLayoutGroup
             ShowCaption = False
             Hidden = True
+            LayoutDirection = ldHorizontal
             ShowBorder = False
-            object dxGroupLayout1Group4: TdxLayoutGroup
-              ShowCaption = False
-              Hidden = True
-              LayoutDirection = ldHorizontal
-              ShowBorder = False
-              object dxlytmLayout1Item13: TdxLayoutItem
-                Caption = #25552#36135#36890#36947':'
-                Control = EditType
-                ControlOptions.ShowBorder = False
-              end
-              object dxlytmLayout1Item14: TdxLayoutItem
-                AutoAligns = [aaVertical]
-                AlignHorz = ahClient
-                Caption = #27700#27877#32534#21495':'
-                Control = EditFQ
-                ControlOptions.ShowBorder = False
-              end
+            object dxlytmLayout1Item13: TdxLayoutItem
+              Caption = #25552#36135#36890#36947':'
+              Control = EditType
+              ControlOptions.ShowBorder = False
             end
-            object dxGroupLayout1Group3: TdxLayoutGroup
-              ShowCaption = False
-              Hidden = True
-              LayoutDirection = ldHorizontal
-              ShowBorder = False
-              object dxlytmLayout1Item12: TdxLayoutItem
-                Caption = #25552#36135#36710#36742':'
-                Control = EditTruck
-                ControlOptions.ShowBorder = False
-              end
-              object dxLayout1Item8: TdxLayoutItem
-                AutoAligns = [aaVertical]
-                AlignHorz = ahClient
-                Caption = #21150#29702#21544#25968':'
-                Control = EditValue
-                ControlOptions.ShowBorder = False
-              end
+            object dxlytmLayout1Item14: TdxLayoutItem
+              AutoAligns = [aaVertical]
+              AlignHorz = ahClient
+              Caption = #27700#27877#32534#21495':'
+              Control = EditFQ
+              ControlOptions.ShowBorder = False
+            end
+          end
+          object dxGroupLayout1Group3: TdxLayoutGroup
+            ShowCaption = False
+            Hidden = True
+            LayoutDirection = ldHorizontal
+            ShowBorder = False
+            object dxlytmLayout1Item12: TdxLayoutItem
+              Caption = #25552#36135#36710#36742':'
+              Control = EditTruck
+              ControlOptions.ShowBorder = False
+            end
+            object dxLayout1Item8: TdxLayoutItem
+              AutoAligns = [aaVertical]
+              AlignHorz = ahClient
+              Caption = #21150#29702#21544#25968':'
+              Control = EditValue
+              ControlOptions.ShowBorder = False
             end
           end
         end

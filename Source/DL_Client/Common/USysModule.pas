@@ -12,13 +12,12 @@ uses
   UClientWorker, UMITPacker,
   UFrameLog, UFrameSysLog, UFormIncInfo, UFormBackupSQL, UFormRestoreSQL,
   UFormPassword, UFormBaseInfo, UFrameAuthorize, UFormAuthorize,
-
   UFramePMaterails, UFormPMaterails, UFramePProvider, UFormPProvider,
   UFormGetProvider, UFormOrder, UFormOrdersAX,
-
   UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
-  UFrameTruckQuery, UFormBatcode, UFrameBatcode;
+  UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
+  UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery;
 
 procedure InitSystemObject;
 procedure RunSystemObject;
@@ -27,8 +26,8 @@ procedure FreeSystemObject;
 implementation
 
 uses
-  UMgrChannel, UChannelChooser, UDataModule, USysDB, USysMAC, SysUtils,
-  USysLoger, USysConst;
+  UMgrChannel, UChannelChooser, UMemDataPool, UDataModule, USysDB, USysMAC,
+  SysUtils, USysLoger, USysConst;
 
 //Desc: 初始化系统对象
 procedure InitSystemObject;
@@ -42,6 +41,9 @@ begin
   gChannelChoolser := TChannelChoolser.Create('');
   gChannelChoolser.AutoUpdateLocal := False;
   //channel
+
+  gMemDataManager := TMemDataManager.Create;
+  //data pool
 end;
 
 //Desc: 运行系统对象

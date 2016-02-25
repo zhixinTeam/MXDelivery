@@ -92,6 +92,8 @@ ResourceString
   sFlag_Sale          = 'S';                         //销售
   sFlag_Returns       = 'R';                         //退货
   sFlag_Other         = 'O';                         //其它
+  sFlag_DuanDao       = 'D';                         //短倒(预制皮重,单次称重)
+  sFlag_WaiXie        = 'W';                         //外协(进-重-出-进-皮-出)
   
   sFlag_TiHuo         = 'T';                         //自提
   sFlag_SongH         = 'S';                         //送货
@@ -107,17 +109,6 @@ ResourceString
   sFlag_BillPick      = 'P';                         //拣配
   sFlag_BillPost      = 'G';                         //过账
   sFlag_BillDone      = 'O';                         //完成
-
-  sFlag_OrderNew       = 'N';                        //新单
-  sFlag_OrderEdit      = 'E';                        //修改
-  sFlag_OrderDel       = 'D';                        //删除
-  sFlag_OrderPuring    = 'L';                        //送货中
-  sFlag_OrderDone      = 'O';                        //完成
-  sFlag_OrderAbort     = 'A';                        //废弃
-  sFlag_OrderStop      = 'S';                        //终止
-
-  sFlag_OrderCardL     = 'L';                        //临时
-  sFlag_OrderCardG     = 'G';                        //固定
 
   sFlag_TypeShip      = 'S';                         //船运
   sFlag_TypeZT        = 'Z';                         //栈台
@@ -163,6 +154,7 @@ ResourceString
   sFlag_PoundWuCha    = 'PoundWuCha';                //过磅误差分组
   sFlag_PoundIfDai    = 'PoundIFDai';                //袋装是否过磅
   sFlag_NFStock       = 'NoFaHuoStock';              //现场无需发货
+  sFlag_DispatchPound = 'PoundDispatch';             //磅站调度
 
   sFlag_CommonItem    = 'CommonItem';                //公共信息
   sFlag_CardItem      = 'CardItem';                  //磁卡信息项
@@ -725,10 +717,10 @@ ResourceString
 
   sSQL_NewBatcode = 'Create Table $Table(R_ID $Inc, B_Stock varChar(32),' +
        'B_Name varChar(80), B_Prefix varChar(5), B_Base Integer,' +
-       'B_Incement Integer, B_Length Integer,' +
+       'B_Incement Integer, B_Length Integer, ' +
        'B_Value $Float, B_Low $Float, B_High $Float, B_Week Integer,' +
        'B_AutoNew Char(1), B_UseDate Char(1), B_FirstDate DateTime,' +
-       'B_LastDate DateTime)';
+       'B_LastDate DateTime, B_HasUse $Float Default 0, B_Batcode varChar(32))';
   {-----------------------------------------------------------------------------
    批次编码表: Batcode
    *.R_ID: 编号
@@ -736,7 +728,6 @@ ResourceString
    *.B_Name: 物料名
    *.B_Prefix: 前缀
    *.B_Base: 起始编码(基数)
-   *.B_Interval: 有效时长(天)
    *.B_Incement: 编号增量
    *.B_Length: 编号长度
    *.B_Value:检测量
@@ -746,6 +737,8 @@ ResourceString
    *.B_UseDate: 使用日期编码
    *.B_FirstDate: 首次使用时间
    *.B_LastDate: 上次基数更新时间
+   *.B_HasUse: 已使用
+   *.B_Batcode: 当前批次号
   -----------------------------------------------------------------------------}
 
   sSQL_NewAXCard = 'Create Table $Table(R_ID $Inc, C_ID varChar(20),' +
@@ -790,6 +783,8 @@ function BillTypeToStr(const nType: string): string;
 //订单类型
 function PostTypeToStr(const nPost: string): string;
 //岗位类型
+function BusinessToStr(const nBus: string): string;
+//业务类型
 
 implementation
 
@@ -832,6 +827,17 @@ begin
   if nPost = sFlag_TruckBFM  then Result := '磅房称重' else
   if nPost = sFlag_TruckFH   then Result := '散装放灰' else
   if nPost = sFlag_TruckZT   then Result := '袋装栈台' else Result := '厂外';
+end;
+
+//Desc: 业务类型转为可识别内容
+function BusinessToStr(const nBus: string): string;
+begin
+  if nBus = sFlag_Sale       then Result := '销售' else
+  if nBus = sFlag_Provide    then Result := '供应' else
+  if nBus = sFlag_Returns    then Result := '退货' else
+  if nBus = sFlag_DuanDao    then Result := '短倒' else
+  if nBus = sFlag_WaiXie     then Result := '外协' else
+  if nBus = sFlag_Other      then Result := '其它';
 end;
 
 //------------------------------------------------------------------------------

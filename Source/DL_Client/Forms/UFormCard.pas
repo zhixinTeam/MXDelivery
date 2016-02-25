@@ -205,10 +205,13 @@ begin
     ShowMsg('«Î ‰»Î”––ßø®∫≈', sHint);
     Exit;
   end;
-
+  {
   if FParam.FParamC = sFlag_Provide then
        nRet := SaveOrderCard(EditBill.Text, EditCard.Text)
-  else nRet := SaveBillCard(EditBill.Text, EditCard.Text);
+  else
+  }
+  nRet := SaveBillCard(EditBill.Text, EditCard.Text);
+
   if nRet then
     ModalResult := mrOk;
   //done
