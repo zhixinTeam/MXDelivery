@@ -209,6 +209,7 @@ ResourceString
   sFlag_WeiXin        = 'Bus_WeiXin';                //微信映射编号
   sFlag_HYDan         = 'Bus_HYDan';                 //化验单号
   sFlag_ForceHint     = 'Bus_HintMsg';               //强制提示
+  sFlag_PurchInfo     = 'Bus_PurchID';               //业务员编号
 
   sFlag_SerialAX      = 'AXFunction';                //AX编码组
   sFlag_AXMsgNo       = 'AX_MsgNo';                  //AX消息号
@@ -253,6 +254,9 @@ ResourceString
 
   sTable_Provider     = 'P_Provider';                //客户表
   sTable_Materails    = 'P_Materails';               //物料表
+  sTable_PurchInfo    = 'P_PurchInfo';               //采购单
+  sTable_PurchInfoBak = 'P_PurchInfoBak';            //采购单
+
   sTable_WeixinLog    = 'Sys_WeixinLog';             //微信日志
   sTable_WeixinMatch  = 'Sys_WeixinMatch';           //账号匹配
   sTable_WeixinTemp   = 'Sys_WeixinTemplate';        //信息模板
@@ -260,7 +264,9 @@ ResourceString
   sTable_PoundLog     = 'Sys_PoundLog';              //过磅数据
   sTable_PoundBak     = 'Sys_PoundBak';              //过磅作废
   sTable_Picture      = 'Sys_Picture';               //存放图片
+  
   sTable_AX_CardInfo  = 'S_AXCardInfo';              //销售卡片
+  sTable_AX_OrderInfo = 'P_AXOrderInfo';             //供应订单
 
   {*新建表*}
   sSQL_NewSysDict = 'Create Table $Table(D_ID $Inc, D_Name varChar(15),' +
@@ -676,6 +682,47 @@ ResourceString
    *.M_Memo: 备注
   -----------------------------------------------------------------------------}
 
+  sSQL_NewPurchInfo = 'Create Table $Table(R_ID $Inc, P_ID varChar(20),' +
+       'P_Card varChar(16), P_Truck varChar(15),' +
+       'P_ProID varChar(15), P_ProName varChar(160), P_ProPY varChar(160),' +
+       'P_TransID varChar(15), P_TransName varChar(160), P_TransPY varChar(160),' +
+       'P_SaleID varChar(32), P_SaleMan varChar(80), P_SalePY varChar(80),' +
+       'P_Type Char(1), P_StockNo varChar(32), P_StockName varChar(160),' +
+       'P_Status Char(1), P_NextStatus Char(1),' +
+       'P_InTime DateTime, P_InMan varChar(32),' +
+       'P_PValue $Float, P_PDate DateTime, P_PMan varChar(32),' +
+       'P_MValue $Float, P_MDate DateTime, P_MMan varChar(32),' +
+       'P_YTime DateTime, P_YMan varChar(32), ' +
+       'P_OutFact DateTime, P_OutMan varChar(32), ' +
+       'P_Value $Float,P_KZValue $Float, P_AKValue $Float,' +
+       'P_YSResult Char(1), P_YLine varChar(15), P_YLineName varChar(32),' +
+       'P_Man varChar(32), P_Date DateTime,' +
+       'P_DelMan varChar(32), P_DelDate DateTime,' +
+       'P_Memo varChar(500))';
+  {-----------------------------------------------------------------------------
+   入厂表: PurchInfo
+   *.R_ID: 编号
+   *.P_ID: 入厂号
+   *.P_Card: 磁卡号
+   *.P_ProID,P_ProName,P_ProPY:客户
+   *.P_SaleID,P_SaleMan, P_SalePY:业务员
+   *.P_Type: 类型(袋,散)
+   *.P_StockNo: 物料编号
+   *.P_StockName: 物料描述
+   *.P_Truck: 车牌号
+   *.P_Status,P_NextStatus: 状态
+   *.P_InTime,P_InMan: 进厂放行
+   *.P_PValue,P_PDate,P_PMan: 称皮重
+   *.P_MValue,P_MDate,P_MMan: 称毛重
+   *.P_YTime,P_YMan: 收货时间,验收人,
+   *.P_Value,P_KZValue,P_AKValue: 收货量,验收扣除(明扣),暗扣
+   *.P_YLine,P_YLineName: 收货通道
+   *.P_YSResult: 验收结果
+   *.P_OutFact,P_OutMan: 出厂放行
+   *.P_Man,P_Date: 删除信息
+   *.P_DelMan,P_DelDate: 删除信息
+  -----------------------------------------------------------------------------}
+
   sSQL_NewBatcode = 'Create Table $Table(R_ID $Inc, B_Stock varChar(32),' +
        'B_Name varChar(80), B_Prefix varChar(5), B_Base Integer,' +
        'B_Incement Integer, B_Length Integer,' +
@@ -702,13 +749,15 @@ ResourceString
   -----------------------------------------------------------------------------}
 
   sSQL_NewAXCard = 'Create Table $Table(R_ID $Inc, C_ID varChar(20),' +
-       'C_Card varChar(50), C_Stock varChar(32), C_Freeze $Float, C_HasDone $Float)';
+       'C_Card varChar(50), C_Stock varChar(32), C_Count Integer Default 0,' +
+       'C_Freeze $Float, C_HasDone $Float)';
   {-----------------------------------------------------------------------------
    订单表: Order
    *.R_ID: 记录编号
    *.C_ID: 记录编号
    *.C_Card: 卡片编号
    *.C_Stock: 品种编号
+   *.C_Count: 厂内车辆
    *.C_Freeze: 冻结量
    *.C_HasDone: 完成量
   -----------------------------------------------------------------------------}
@@ -817,7 +866,7 @@ begin
   AddSysTableItem(sTable_WeixinTemp, sSQL_NewWXTemplate);
 
   AddSysTableItem(sTable_Card, sSQL_NewCard);
-  AddSysTableItem(sTable_CardExt, sSQL_NewCard);
+  //AddSysTableItem(sTable_CardExt, sSQL_NewCard);
   AddSysTableItem(sTable_Bill, sSQL_NewBill);
   AddSysTableItem(sTable_BillBak, sSQL_NewBill);
 
@@ -827,10 +876,15 @@ begin
   AddSysTableItem(sTable_PoundLog, sSQL_NewPoundLog);
   AddSysTableItem(sTable_PoundBak, sSQL_NewPoundLog);
   AddSysTableItem(sTable_Picture, sSQL_NewPicture);
+  AddSysTableItem(sTable_Batcode, sSQL_NewBatcode);
+
+  AddSysTableItem(sTable_AX_CardInfo, sSQL_NewAXCard);
+  AddSysTableItem(sTable_AX_OrderInfo, sSQL_NewAXCard);
+
   AddSysTableItem(sTable_Provider, ssql_NewProvider);
   AddSysTableItem(sTable_Materails, sSQL_NewMaterails);
-  AddSysTableItem(sTable_Batcode, sSQL_NewBatcode);
-  AddSysTableItem(sTable_AX_CardInfo, sSQL_NewAXCard);
+  AddSysTableItem(sTable_PurchInfo, sSQL_NewPurchInfo);
+  AddSysTableItem(sTable_PurchInfoBak, sSQL_NewPurchInfo);
 end;
 
 //Desc: 清理系统表

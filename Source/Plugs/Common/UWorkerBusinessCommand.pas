@@ -82,6 +82,8 @@ type
     //存取车辆称重数据
     function GetStockItem(var nData: string): Boolean;
     //获取物料信息
+    function GetPurchFreeze(var nData: string): Boolean;
+    //获取物料冻结量
   public
     constructor Create; override;
     destructor destroy; override;
@@ -313,6 +315,7 @@ begin
    cBC_GetTruckPoundData   : Result := GetTruckPoundData(nData);
    cBC_SaveTruckPoundData  : Result := SaveTruckPoundData(nData);
    cBC_GetStockItemInfo    : Result := GetStockItem(nData);
+   cBC_GetPurchFreeze      : Result := GetPurchFreeze(nData);
    else
     begin
       Result := False;
@@ -707,6 +710,34 @@ begin
     FOut.FData := FPoundID;
     Result := True;
   end;
+end;
+//Date: 2016/2/25
+//Parm: 
+//Desc: 获取供应商对应物料编号的冻结量
+function TWorkerBusinessCommander.GetPurchFreeze(var nData: string): Boolean;
+var nStr, nFreezeV, nFreezeC: string;
+begin
+  Result := True;
+  FIn.FData := UpperCase(FIn.FData);
+  FIn.FExtParam := UpperCase(FIn.FExtParam);
+
+  nStr := 'Select C_Freeze, C_Count From %s Where C_ID=''%s'' And C_Stock=''%s''';
+  nStr := Format(nStr, [sTable_AX_OrderInfo, FIn.FData, FIn.FExtParam]);
+  //xxxxx
+
+  nFreezeC := '0';
+  nFreezeV := '0.00';
+
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    nFreezeV := Format('%.2f', [Fields[0].AsFloat]);
+    nFreezeC := IntToStr(Fields[0].AsInteger);
+  end;
+
+  FOut.FData := nFreezeV;
+  FOut.FExtParam := nFreezeC;
 end;
 
 initialization

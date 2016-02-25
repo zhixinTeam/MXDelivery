@@ -25,6 +25,7 @@ const
   cBC_ServerNow               = $0002;   //服务器当前时间
   cBC_IsSystemExpired         = $0003;   //系统是否已过期
   cBC_GetCardUsed             = $0004;   //获取卡片类型
+  cBC_GetPurchFreeze          = $0005;   //获取物料冻结量
 
   cBC_SaveTruckInfo           = $0013;   //保存车辆信息
   cBC_GetTruckPoundData       = $0015;   //获取车辆称重数据
@@ -165,12 +166,15 @@ resourcestring
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
+  sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder';     //读取订单
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
   sCLI_GetQueryField          = 'CLI_GetQueryField';    //查询的字段
 
-  sCLI_BusinessReadSale       = 'CLI_BusinessReadSale'; //读取订单
+  sCLI_BusinessReadSale       = 'CLI_BusinessReadSale'; //读取销售订单
+  sCLI_BusinessReadOrder      = 'CLI_BusinessReadOrder';//读取采购订单
+
   sCLI_BusinessSaleBill       = 'CLI_BusinessSaleBill'; //交货单业务
   sCLI_BusinessCommand        = 'CLI_BusinessCommand';  //业务指令
   sCLI_HardwareCommand        = 'CLI_HardwareCommand';  //硬件指令

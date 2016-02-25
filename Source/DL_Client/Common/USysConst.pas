@@ -132,6 +132,7 @@ const
   cFI_FormProvider      = $1051;                     //供应商
   cFI_FormMaterails     = $1052;                     //原材料
   cFI_FormOrder         = $1053;                     //采购订单
+  cFI_FormOrdersAX      = $1057;                     //采购订单
   cFI_FormOrderBase     = $1054;                     //采购订单
   cFI_FormPurchase      = $1055;                     //采购验收
   cFI_FormGetPOrderBase  = $1056;                     //采购订单
@@ -360,6 +361,7 @@ begin
   AddMenuModuleItem('MAIN_M02', cFI_FrameMaterails);
   AddMenuModuleItem('MAIN_M03', cFI_FrameMakeOCard); 
   AddMenuModuleItem('MAIN_M04', cFI_FrameOrder);
+  AddMenuModuleItem('MAIN_M05', cFI_FormOrder, mtForm);
   AddMenuModuleItem('MAIN_M08', cFI_FrameOrderDetail);
   AddMenuModuleItem('MAIN_M09', cFI_FrameOrderBase);
 

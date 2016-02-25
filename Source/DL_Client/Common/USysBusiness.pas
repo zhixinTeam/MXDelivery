@@ -61,11 +61,15 @@ function GetLadingStockItems(var nItems: TDynamicStockItemArray): Boolean;
 //可用品种列表
 function GetCardUsed(const nCard: string): string;
 //获取卡片类型
+function GetPurchFreeze(var nFreeV, nFreeC: string): Boolean;
+//获取物料冻结量
 
 function LoadSysDictItem(const nItem: string; const nList: TStrings): TDataSet;
 //读取系统字典项
 function AXReadCardInfo(var nCard: string): Boolean;
 //读取AX卡片信息
+function AXReadOrdersInfo(var nData: string): Boolean;
+//读取AX采购订单信息
 
 function SaveBill(const nBillData: string): string;
 //保存交货单
@@ -146,6 +150,9 @@ function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 //打印提货单
 function PrintPoundReport(const nPound: string; nAsk: Boolean): Boolean;
 //打印榜单
+
+function GetProviderInfo(var nProID, nProName:string; const nSrc: string=''): Boolean;
+//获取供应商信息
 
 implementation
 
@@ -363,6 +370,21 @@ begin
   //xxxxx
 end;
 
+//Date: 2014-09-17
+//Parm: 供应商编号,原材料编号(In);冻结量,厂内同品种车辆(Out)
+//Desc: 获取供应商物料冻结量
+function GetPurchFreeze(var nFreeV, nFreeC: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessCommand(cBC_GetPurchFreeze, nFreeV, nFreeC, @nOut);
+
+  if Result then
+  begin
+    nFreeV := nOut.FData;
+    nFreeC := nOut.FExtParam;
+  end;  
+end;
+
 //Desc: 获取当前系统可用的水泥品种列表
 function GetLadingStockItems(var nItems: TDynamicStockItemArray): Boolean;
 var nStr: string;
@@ -574,7 +596,7 @@ var nIn,nOut: TWorkerBusinessCommand;
 begin
   nWorker := nil;
   try
-    nIn.FData := nCard; 
+    nIn.FData := nCard;
     nIn.FBase.FMsgNO := sFlag_NotMatter;
     nIn.FBase.FParam := sParam_NoHintOnError;
 
@@ -584,6 +606,30 @@ begin
     if Result then
          nCard := nOut.FData
     else nCard := nOut.FBase.FErrDesc;
+  finally
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
+//Date: 2016 -02-24
+//Parm: 供应商编号[in];采购订单信息[out]
+//Desc: 从AX系统中读取指定供应商的采购订单
+function AXReadOrdersInfo(var nData: string): Boolean;
+var nIn,nOut: TWorkerBusinessCommand;
+    nWorker: TBusinessWorkerBase;
+begin
+  nWorker := nil;
+  try
+    nIn.FData := nData;
+    nIn.FBase.FMsgNO := sFlag_NotMatter;
+    nIn.FBase.FParam := sParam_NoHintOnError;
+
+    nWorker := gBusinessWorkerManager.LockWorker(sCLI_BusinessReadOrder);
+    Result := nWorker.WorkActive(@nIn, @nOut);
+
+    if Result then
+         nData := nOut.FData
+    else nData := nOut.FBase.FErrDesc;
   finally
     gBusinessWorkerManager.RelaseWorker(nWorker);
   end;
@@ -1001,7 +1047,6 @@ begin
   end;
 end;
 
-
 //Date: 2014-09-17
 //Parm: 交货单项; MCListBox;分隔符
 //Desc: 将nItem载入nMC
@@ -1298,6 +1343,19 @@ begin
   nRFIDCard := nP.FParamB;
   nIsUse    := nP.FParamC;
   Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+end;
+
+function GetProviderInfo(var nProID, nProName:string;
+    const nSrc: string=''): Boolean;
+var nP: TFormCommandParam;
+begin
+  nP.FParamA := nSrc;
+  CreateBaseFormItem(cFI_FormGetProvider, '', @nP);
+  Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+  if not Result then Exit;
+
+  nProID   := nP.FParamB;
+  nProName := nP.FParamC;
 end;
 
 

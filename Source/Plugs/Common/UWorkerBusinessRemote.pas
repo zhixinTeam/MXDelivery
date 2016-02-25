@@ -57,6 +57,20 @@ type
     class function FunctionName: string; override;
   end;
 
+  TAXWorkerReadOrdersInfo = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override;
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+    class function CallMe(const nData: string;
+      const nOut: PWorkerBusinessCommand): Boolean;
+    //local call
+  end;
+
 implementation
 
 uses
@@ -463,6 +477,111 @@ begin
   FOut.FData := PackerEncodeStr(FListA.Text); 
 end;
 
+//------------------------------------------------------------------------------
+class function TAXWorkerReadOrdersInfo.FunctionName: string;
+begin
+  Result := sAX_ReadPuchaseOrder;
+end;
+
+function TAXWorkerReadOrdersInfo.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerReadOrdersInfo.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerReadOrdersInfo.DoAXWork(var nData: string): Boolean;
+var nIdx: Integer;
+    nNode: TXmlNode;
+begin
+  BuildDefaultXMLPack;
+
+  with FXML.Root.NodeByName('HEAD') do
+    NodeNew('VendAccount').ValueAsString := FIn.FData;
+  //xxxxx
+
+  nData := IWebService(FChannel.FChannel).GetPurchInfoByVendAccount(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerReadOrdersInfo --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerReadOrdersInfo <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  if DefaultParseError(nData) then
+  begin
+    Result := True;
+    Exit;
+  end; //has any error
+
+  FListA.Clear;
+  nNode := FXML.Root.FindNode('Items');
+  FListA.Values['DataNum'] := IntToStr(nNode.NodeCount);
+
+  for nIdx:=0 to nNode.NodeCount - 1 do
+  with FListB,nNode.Nodes[nIdx] do
+  begin
+    FListB.Clear;
+
+    Values['VendAccount'] := NodeByName('VendAccount').ValueAsString;
+    Values['ItemName'] := NodeByName('ItemName').ValueAsString;
+    Values['ItemID'] := NodeByName('ItemID').ValueAsString;
+    Values['Qty'] := NodeByName('Qty').ValueAsString;
+
+    FListA.Values['Data' + IntToStr(nIdx)] := PackerEncodeStr(FListB.Text);
+  end;
+
+  Result := True;
+  FOut.FBase.FResult := True;
+  FOut.FData := PackerEncodeStr(FListA.Text); 
+end;
+
+//Date: 2014-09-15
+//Parm: 命令;数据;参数;输出
+//Desc: 本地调用业务对象
+class function TAXWorkerReadOrdersInfo.CallMe(const nData: string;
+    const nOut: PWorkerBusinessCommand): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FData := nData;
+    nIn.FBase.FMsgNO := sFlag_NotMatter;
+    nIn.FBase.FParam := sParam_NoHintOnError;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nPacker.InitData(@nIn, True, False);
+    //init
+    
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(FunctionName);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
 initialization
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadSalesInfo);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerReadOrdersInfo);
 end.

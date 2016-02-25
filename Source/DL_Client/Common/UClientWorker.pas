@@ -69,6 +69,12 @@ type
     class function FunctionName: string; override;
   end;
 
+  TClientBusinessAXReadOrder = class(TClient2MITWorker)
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+  end;
+
 implementation
 
 uses
@@ -311,6 +317,22 @@ begin
 end;
 
 //------------------------------------------------------------------------------
+class function TClientBusinessAXReadOrder.FunctionName: string;
+begin
+  Result := sCLI_BusinessReadOrder;
+end;
+
+function TClientBusinessAXReadOrder.GetFlagStr(const nFlag: Integer): string;
+begin
+  Result := inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+   cWorker_GetMITName    : Result := sAX_ReadPuchaseOrder;
+  end;
+end;
+
+//------------------------------------------------------------------------------
 class function TClientBusinessHardware.FunctionName: string;
 begin
   Result := sCLI_HardwareCommand;
@@ -354,5 +376,6 @@ initialization
   gBusinessWorkerManager.RegisteWorker(TClientBusinessHardware);
 
   gBusinessWorkerManager.RegisteWorker(TClientBusinessAXReadSale);
+  gBusinessWorkerManager.RegisteWorker(TClientBusinessAXReadOrder);
   gBusinessWorkerManager.RegisteWorker(TClientBusinessPurchaseOrder);
 end.
