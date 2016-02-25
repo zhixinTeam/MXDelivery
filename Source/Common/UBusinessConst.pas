@@ -46,6 +46,14 @@ const
   cBC_SavePostBills           = $0031;   //保存岗位交货单
   cBC_GetBatcode              = $0032;   //获取批次编号
 
+  cBC_SaveOrder               = $0040;
+  cBC_DeleteOrder             = $0041;
+  cBC_SaveOrderCard           = $0042;
+  cBC_LogOffOrderCard         = $0043;
+  cBC_GetPostOrders           = $0044;   //获取岗位采购单
+  cBC_SavePostOrders          = $0045;   //保存岗位采购单
+  cBC_GetGYOrderValue         = $0046;   //获取已收货量
+
   cBC_ChangeDispatchMode      = $0053;   //切换调度模式
   cBC_GetPoundCard            = $0054;   //获取磅站卡号
   cBC_GetQueueData            = $0055;   //获取队列数据

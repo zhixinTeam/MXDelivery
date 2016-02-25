@@ -112,6 +112,19 @@ function ReadPoundCard(const nTunnel: string): string;
 procedure CapturePicture(const nTunnel: PPTTunnelItem; const nList: TStrings);
 //抓拍指定通道
 
+function SaveOrder(const nOrderData: string): string;
+//保存采购单
+function DeleteOrder(const nOrder: string): Boolean;
+//删除采购单
+function SetOrderCard(const nOrder,nTruck: string; nVerify: Boolean): Boolean;
+//为采购单办理磁卡
+function SaveOrderCard(const nOrder, nCard: string): Boolean;
+//保存采购单磁卡
+function LogoutOrderCard(const nCard: string): Boolean;
+//注销指定磁卡
+function ChangeOrderTruckNo(const nOrder,nTruck: string): Boolean;
+//修改车牌号
+
 function LoadTruckQueue(var nLines: TZTLineItems; var nTrucks: TZTTruckItems;
  const nRefreshLine: Boolean = False): Boolean;
 //读取车辆队列
@@ -893,6 +906,7 @@ var nStr: string;
     nList: TStrings;
     nOut: TWorkerBusinessCommand;
 begin
+  Result := False;
   if Length(nData) < 1 then Exit;
   nStr := nData[0].FCardUse;
 
@@ -948,6 +962,124 @@ begin
   end;
 end;
 
+//------------------------------------------------------------------------------
+//Date: 2014-09-15
+//Parm: 开单数据
+//Desc: 保存采购单,返回采购单号列表
+function SaveOrder(const nOrderData: string): string;
+var nOut: TWorkerBusinessCommand;
+begin
+  if CallBusinessPurchaseOrder(cBC_SaveOrder, nOrderData, '', @nOut) then
+       Result := nOut.FData
+  else Result := '';
+end;
+
+//Date: 2014-09-15
+//Parm: 交货单号
+//Desc: 删除nBillID单据
+function DeleteOrder(const nOrder: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_DeleteOrder, nOrder, '', @nOut);
+end;
+
+//Date: 2014-09-17
+//Parm: 交货单;车牌号;校验制卡开关
+//Desc: 为nBill交货单制卡
+function SetOrderCard(const nOrder,nTruck: string; nVerify: Boolean): Boolean;
+var nStr: string;
+    nP: TFormCommandParam;
+begin
+  Result := True;
+  if nVerify then
+  begin
+    nStr := 'Select D_Value From %s Where D_Name=''%s'' And D_Memo=''%s''';
+    nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_ViaBillCard]);
+
+    with FDM.QueryTemp(nStr) do
+     if (RecordCount < 1) or (Fields[0].AsString <> sFlag_Yes) then Exit;
+    //no need do card
+  end;
+
+  nP.FParamA := nOrder;
+  nP.FParamB := nTruck;
+  nP.FParamC := sFlag_Provide;
+  CreateBaseFormItem(cFI_FormMakeCard, '', @nP);
+  Result := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+end;
+
+//Date: 2014-09-17
+//Parm: 交货单号;磁卡
+//Desc: 绑定nBill.nCard
+function SaveOrderCard(const nOrder, nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_SaveOrderCard, nOrder, nCard, @nOut);
+end;
+
+//Date: 2014-09-17
+//Parm: 磁卡号
+//Desc: 注销nCard
+function LogoutOrderCard(const nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_LogOffOrderCard, nCard, '', @nOut);
+end;
+
+//Date: 2014-09-15
+//Parm: 交货单;新车牌
+//Desc: 修改nOrder的车牌为nTruck.
+function ChangeOrderTruckNo(const nOrder,nTruck: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_ModifyBillTruck, nOrder, nTruck, @nOut);
+end;
+
+//Date: 2014-09-17
+//Parm: 磁卡号;岗位;交货单列表
+//Desc: 获取nPost岗位上磁卡为nCard的交货单列表
+function GetPurchaseOrders(const nCard,nPost: string;
+ var nBills: TLadingBillItems): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_GetPostOrders, nCard, nPost, @nOut);
+  if Result then
+    AnalyseBillItems(nOut.FData, nBills);
+  //xxxxx
+end;
+
+//Date: 2014-09-18
+//Parm: 岗位;交货单列表;磅站通道
+//Desc: 保存nPost岗位上的交货单数据
+function SavePurchaseOrders(const nPost: string; const nData: TLadingBillItems;
+ const nTunnel: PPTTunnelItem): Boolean;
+var nStr: string;
+    nIdx: Integer;
+    nList: TStrings;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := CombineBillItmes(nData);
+  Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut);
+  if (not Result) or (nOut.FData = '') then Exit;
+
+  if Assigned(nTunnel) then //过磅称重
+  begin
+    nList := TStringList.Create;
+    try
+      CapturePicture(nTunnel, nList);
+      //capture file
+
+      for nIdx:=0 to nList.Count - 1 do
+        SavePicture(nOut.FData, nData[0].FTruck,
+                                nData[0].FStockName, nList[nIdx]);
+      //save file
+    finally
+      nList.Free;
+    end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
 //Desc: 打印标识为nID的销售合同
 procedure PrintSaleContractReport(const nID: string; const nAsk: Boolean);
 var nStr: string;
