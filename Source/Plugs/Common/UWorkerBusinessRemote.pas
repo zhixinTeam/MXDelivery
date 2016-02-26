@@ -73,6 +73,22 @@ type
     //local call
   end;
 
+  TAXWorkerSaveOrdersInfo = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override;
+
+    function BuildBusinessXMLPack(var nData: string): Boolean;
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+    class function CallMe(const nData: string;
+      const nOut: PWorkerBusinessCommand): Boolean;
+    //local call
+  end;
+
 implementation
 
 uses
@@ -619,7 +635,130 @@ begin
   end;
 end;
 
+//------------------------------------------------------------------------------
+class function TAXWorkerSaveOrdersInfo.FunctionName: string;
+begin
+  Result := sAX_SavePuchaseOrder;
+end;
+
+function TAXWorkerSaveOrdersInfo.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerSaveOrdersInfo.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerSaveOrdersInfo.BuildBusinessXMLPack(var nData: string): Boolean;
+var nSQL, nID: string;
+begin
+  Result := False;
+  nID := UpperCase(FIn.FData);
+
+  nSQL := 'Select * From %s Where P_ID=''%s''';
+  nSQL := Format(nSQL, [sTable_PurchInfo, nID]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nSQL),FXML.Root.NodeByName('HEAD') do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '入厂单[ %s ]数据已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    NodeNew('BizID').ValueAsString := FieldByName('P_ID').AsString;
+    NodeNew('ItemID').ValueAsString := FieldByName('P_StockID').AsString;
+    NodeNew('VehicleNum').ValueAsString  := FieldByName('P_Truck').AsString;
+    NodeNew('VendAccount').ValueAsString := FieldByName('P_ProID').AsString;
+    NodeNew('CarrierVendAccount').ValueAsString := FieldByName('P_TransID').AsString;
+
+    NodeNew('TareDateTime').ValueAsString := FieldByName('P_PDate').AsString;
+    NodeNew('GrossDateTime').ValueAsString := FieldByName('P_MDate').AsString;
+    NodeNew('IssueCardDateTime').ValueAsString := FieldByName('P_Date').AsString;
+    NodeNew('PackSlipDateTime').ValueAsString := FieldByName('P_OutFact').AsString;
+
+    NodeNew('TareVolume').ValueAsString := FieldByName('P_PValue').AsString;
+    NodeNew('PresetVolume').ValueAsString := FieldByName('P_Value').AsString;
+    NodeNew('GrossVolume').ValueAsString := FieldByName('P_MValue').AsString;
+  end;
+
+  Result := True;
+end;
+
+function TAXWorkerSaveOrdersInfo.DoAXWork(var nData: string): Boolean;
+var nIdx: Integer;
+    nNode: TXmlNode;
+begin
+  Result := False;
+  BuildDefaultXMLPack;
+
+  if not BuildBusinessXMLPack(nData) then Exit;
+
+  nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerSaveOrdersInfo --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerSaveOrdersInfo <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  if DefaultParseError(nData) then
+  begin
+    Result := True;
+    Exit;
+  end; //has any error
+
+  Result := True;
+  FOut.FBase.FResult := True;
+end;
+
+//Date: 2014-09-15
+//Parm: 命令;数据;参数;输出
+//Desc: 本地调用业务对象
+class function TAXWorkerSaveOrdersInfo.CallMe(const nData: string;
+    const nOut: PWorkerBusinessCommand): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FData := nData;
+    nIn.FBase.FMsgNO := sFlag_ForceDone;
+    nIn.FBase.FParam := sParam_NoHintOnError;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nPacker.InitData(@nIn, True, False);
+    //init
+    
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(FunctionName);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
 initialization
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadSalesInfo);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadOrdersInfo);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerSaveOrdersInfo);
 end.

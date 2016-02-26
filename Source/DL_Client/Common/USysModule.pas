@@ -13,11 +13,12 @@ uses
   UFrameLog, UFrameSysLog, UFormIncInfo, UFormBackupSQL, UFormRestoreSQL,
   UFormPassword, UFormBaseInfo, UFrameAuthorize, UFormAuthorize,
   UFramePMaterails, UFormPMaterails, UFramePProvider, UFormPProvider,
-  UFormGetProvider, UFormOrder, UFormOrdersAX,
+  UFormGetProvider, UFormOrder, UFrameOrder, UFormOrdersAX, UFormPurchasing,
   UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew,
+  UFormTransfer,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
   UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
-  UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery;
+  {UFormLadingDai, UFormLadingSan, }UFramePoundManual, UFramePoundQuery;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

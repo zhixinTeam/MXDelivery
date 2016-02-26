@@ -90,6 +90,8 @@ function LogoutBillCard(const nCard: string): Boolean;
 //注销指定磁卡
 function SetTruckRFIDCard(nTruck: string; var nRFIDCard: string;
   var nIsUse: string; nOldCard: string=''): Boolean;
+function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
+//短倒磁卡办理
 
 function GetLadingBills(const nCard,nPost: string;
  var nBills: TLadingBillItems): Boolean;
@@ -124,6 +126,11 @@ function LogoutOrderCard(const nCard: string): Boolean;
 //注销指定磁卡
 function ChangeOrderTruckNo(const nOrder,nTruck: string): Boolean;
 //修改车牌号
+
+function SaveDuanDaoCard(const nTruck, nCard: string): Boolean;
+//保存短倒磁卡
+function LogoutDuanDaoCard(const nCard: string): Boolean;
+//注销指定磁卡
 
 function LoadTruckQueue(var nLines: TZTLineItems; var nTrucks: TZTTruckItems;
  const nRefreshLine: Boolean = False): Boolean;
@@ -879,17 +886,22 @@ var nStr: string;
     nIdx: Integer;
     nOut: TWorkerBusinessCommand;
 begin
-  Result := False;
   SetLength(nBills, 0);
   nStr := GetCardUsed(nCard);
 
   if nStr = sFlag_Sale then //销售
   begin
     Result := CallBusinessSaleBill(cBC_GetPostBills, nCard, nPost, @nOut);
-    if Result then
-      AnalyseBillItems(nOut.FData, nBills);
-    //xxxxx
+  end else
+
+  //if nStr = sFlag_Provide then
+  begin
+    Result := CallBusinessPurchaseOrder(cBC_GetPostOrders, nCard, nPost, @nOut);
   end;
+
+  if Result then
+    AnalyseBillItems(nOut.FData, nBills);
+    //xxxxx
 
   for nIdx:=Low(nBills) to High(nBills) do
     nBills[nIdx].FCardUse := nStr;
@@ -908,30 +920,39 @@ var nStr: string;
 begin
   Result := False;
   if Length(nData) < 1 then Exit;
+
   nStr := nData[0].FCardUse;
 
   if nStr = sFlag_Sale then //销售
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessSaleBill(cBC_SavePostBills, nStr, nPost, @nOut);
-    if (not Result) or (nOut.FData = '') then Exit;
+  end else
 
-    if Assigned(nTunnel) then //过磅称重
-    begin
-      nList := TStringList.Create;
-      try
-        CapturePicture(nTunnel, nList);
-        //capture file
+  if nStr = sFlag_Provide then
+  begin
+    nStr := CombineBillItmes(nData);
+    Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut); 
+  end;
 
-        for nIdx:=0 to nList.Count - 1 do
-          SavePicture(nOut.FData, nData[0].FTruck,
-                                  nData[0].FStockName, nList[nIdx]);
-        //save file
-      finally
-        nList.Free;
-      end;
+  if (not Result) or (nOut.FData = '') then Exit;
+
+  if Assigned(nTunnel) then //过磅称重
+  begin
+    nList := TStringList.Create;
+    try
+      CapturePicture(nTunnel, nList);
+      //capture file
+
+      for nIdx:=0 to nList.Count - 1 do
+        SavePicture(nOut.FData, nData[0].FTruck,
+                                nData[0].FStockName, nList[nIdx]);
+      //save file
+    finally
+      nList.Free;
     end;
   end;
+
 end;
 
 //Date: 2014-09-17
@@ -1035,49 +1056,17 @@ begin
   Result := CallBusinessPurchaseOrder(cBC_ModifyBillTruck, nOrder, nTruck, @nOut);
 end;
 
-//Date: 2014-09-17
-//Parm: 磁卡号;岗位;交货单列表
-//Desc: 获取nPost岗位上磁卡为nCard的交货单列表
-function GetPurchaseOrders(const nCard,nPost: string;
- var nBills: TLadingBillItems): Boolean;
-var nOut: TWorkerBusinessCommand;
+//------------------------------------------------------------------------------
+//保存短倒磁卡
+function SaveDuanDaoCard(const nTruck, nCard: string): Boolean;
 begin
-  Result := CallBusinessPurchaseOrder(cBC_GetPostOrders, nCard, nPost, @nOut);
-  if Result then
-    AnalyseBillItems(nOut.FData, nBills);
-  //xxxxx
-end;
-
-//Date: 2014-09-18
-//Parm: 岗位;交货单列表;磅站通道
-//Desc: 保存nPost岗位上的交货单数据
-function SavePurchaseOrders(const nPost: string; const nData: TLadingBillItems;
- const nTunnel: PPTTunnelItem): Boolean;
-var nStr: string;
-    nIdx: Integer;
-    nList: TStrings;
-    nOut: TWorkerBusinessCommand;
+  Result := True;
+end;  
+//注销指定磁卡
+function LogoutDuanDaoCard(const nCard: string): Boolean;
 begin
-  nStr := CombineBillItmes(nData);
-  Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut);
-  if (not Result) or (nOut.FData = '') then Exit;
-
-  if Assigned(nTunnel) then //过磅称重
-  begin
-    nList := TStringList.Create;
-    try
-      CapturePicture(nTunnel, nList);
-      //capture file
-
-      for nIdx:=0 to nList.Count - 1 do
-        SavePicture(nOut.FData, nData[0].FTruck,
-                                nData[0].FStockName, nList[nIdx]);
-      //save file
-    finally
-      nList.Free;
-    end;
-  end;
-end;
+  Result := True;
+end;  
 
 //------------------------------------------------------------------------------
 //Desc: 打印标识为nID的销售合同
@@ -1320,6 +1309,22 @@ begin
   nIsUse    := nP.FParamC;
   Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
 end;
+
+function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
+var nP: TFormCommandParam;
+begin
+  with nP do
+  begin
+    FParamA := nTruck;
+    FParamB := nMateID;
+    FParamC := nMate;
+    FParamD := nSrcAddr;
+    FParamE := nDstAddr;
+
+    CreateBaseFormItem(cFI_FormTransfer, '', @nP);
+    Result  := (FCommand = cCmd_ModalResult) and (FParamA = mrOK);
+  end;
+end;  
 
 function GetProviderInfo(var nProID, nProName:string;
     const nSrc: string=''): Boolean;

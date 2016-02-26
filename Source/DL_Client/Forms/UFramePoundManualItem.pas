@@ -849,9 +849,7 @@ end;
 //------------------------------------------------------------------------------
 //Desc: 原材料或临时
 function TfFrameManualPoundItem.SavePoundData: Boolean;
-var nLimite: Boolean;
-    nNextStatus: string;
-    nMax, nWarn, nLim, nFreeze: Double;
+var nNextStatus: string;
 begin
   Result := False;
   //init
@@ -871,6 +869,8 @@ begin
     end;
   end;
 
+  if Length(FBillItems)>0 then nNextStatus := FBillItems[0].FNextStatus;
+
   SetLength(FBillItems, 1);
   FBillItems[0] := FUIData;
   //复制用户界面数据
@@ -885,7 +885,9 @@ begin
     else FMData.FStation := FPoundTunnel.FID;
   end;
 
-  Result := SaveTruckPoundItem(FPoundTunnel, FBillItems);
+  if Length(FBillItems)>0 then
+       Result := SaveLadingBills(nNextStatus, FBillItems, FPoundTunnel)
+  else Result := SaveTruckPoundItem(FPoundTunnel, FBillItems);
   //保存称重
 end;
 

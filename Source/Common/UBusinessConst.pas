@@ -167,6 +167,7 @@ resourcestring
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
   sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder';     //读取订单
+  sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder';     //读取订单
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态

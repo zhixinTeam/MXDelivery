@@ -160,7 +160,7 @@ begin
   for nIdx:=0 to nInt-1 do
   begin
     FListC.Text := PackerDecodeStr(FListB.Values['Data' + IntToStr(nIdx)]);
-    if CompareText(FIn.FData, FListC.Values['ItemID'])=0 then
+    if CompareText(FIn.FExtParam, FListC.Values['ItemID'])=0 then
     begin
       nVal := StrToFloat(FListC.Values['Qty']);
 
@@ -171,6 +171,7 @@ begin
   nVal := nVal - nFreezeVal;
   nVal := Float2Float(nVal, cPrecision, False);
 
+  FOut.FExtParam := FloatToStr(nFreezeVal);
   FOut.FData := FloatToStr(nVal);
   Result := True;
 end;
@@ -288,6 +289,7 @@ var nStr: string;
     nIdx: Integer;
     nOut: TWorkerBusinessCommand;
 begin
+  Result := False;
   FListA.Text := PackerDecodeStr(FIn.FData);
   if not VerifyBeforSave(nData) then Exit;
   //unpack Order
@@ -335,8 +337,8 @@ begin
 
     if gDBConnManager.WorkerExec(FDBConn, nStr)<1 then
     begin
-      nStr := 'Insert Into %s(C_Freeze, C_Count, C_ID, C_Stock) ' +
-              'Values(%s, 1, ''%s'', ''%s'')';
+      nStr := 'Insert Into %s(C_Freeze, C_Count, C_HasDone, C_ID, C_Stock) ' +
+              'Values(%s, 1, 0, ''%s'', ''%s'')';
       nStr := Format(nStr, [sTable_AX_OrderInfo, FListA.Values['Value'],
             FListA.Values['ProviderID'], FListA.Values['StockNo']]);
       gDBConnManager.WorkerExec(FDBConn, nStr);      
@@ -358,14 +360,17 @@ end;
 //Date: 2015-8-5
 //Desc: 保存采购单
 function TWorkerBusinessOrders.DeleteOrder(var nData: string): Boolean;
-var nStr,nP: string;
-    nIdx: Integer;
+var nStr,nP,nSN, nPN, nCard: string;
+    nOut: TWorkerBusinessCommand;
     nHasOut: Boolean;
+    nIdx: Integer;
+    nVal: Double;
 begin
   Result := False;
   //init
 
-  nStr := 'Select P_OutFact From %s Where P_ID=''%s''';
+  nStr := 'Select P_StockNo,P_Value,P_ProID,P_OutFact,P_Card ' +
+          'From %s Where P_ID=''%s''';
   nStr := Format(nStr, [sTable_PurchInfo, FIn.FData]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -386,10 +391,36 @@ begin
       nData := Format(nData, [FIn.FData]);
       Exit;
     end;
+
+    nCard := FieldByName('P_Card').AsString;
+    nVal:= FieldByName('P_Value').AsFloat;
+    nSN := FieldByName('P_StockNo').AsString;
+    nPN := FieldByName('P_ProID').AsString;
   end;
+
+  if not CallMe(cBC_LogOffOrderCard, nCard, '', @nOut) then
+  begin
+    nData := nOut.FData;
+    Exit;
+  end;  
 
   FDBConn.FConn.BeginTrans;
   try
+    if nHasOut then
+    begin
+      nStr := 'Update %s Set C_HasDone=C_HasDone-(%.2f) ' +
+              'Where C_ID=''%s'' and C_Stock=''%s''';
+      nStr := Format(nStr, [sTable_AX_OrderInfo, nVal, nPN, nSN]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+      //释放发货量
+    end else
+    begin
+      nStr := 'Update %s Set C_Freeze=C_Freeze-(%.2f), C_Count=C_Count-1 ' +
+              'Where C_ID=''%s'' and C_Stock=''%s''';
+      nStr := Format(nStr, [sTable_AX_OrderInfo, nVal, nPN, nSN]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+      //释放冻结量
+    end;
     //--------------------------------------------------------------------------
     nStr := Format('Select * From %s Where 1<>1', [sTable_PurchInfo]);
     //only for fields
@@ -549,7 +580,7 @@ begin
     nStr := Format(nStr, [sTable_PurchInfo, FIn.FData]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
 
-    nStr := 'Update %s Set C_Status=''%s'', C_Used=Null, C_TruckNo=Null' +
+    nStr := 'Update %s Set C_Status=''%s'', C_Used=Null, C_TruckNo=Null ' +
             'Where C_Card=''%s''';
     nStr := Format(nStr, [sTable_Card, sFlag_CardInvalid, FIn.FData]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
@@ -591,11 +622,11 @@ var nStr: string;
     nBills: TLadingBillItems;
 begin
   Result := False;
-  {nIsOrder := False;
+  nIsOrder := False;
 
   nStr := 'Select B_Prefix, B_IDLen From %s ' +
           'Where B_Group=''%s'' And B_Object=''%s''';
-  nStr := Format(nStr, [sTable_SerialBase, sFlag_BusGroup, sFlag_Order]);
+  nStr := Format(nStr, [sTable_SerialBase, sFlag_BusGroup, sFlag_PurchInfo]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
   if RecordCount > 0 then
@@ -621,30 +652,35 @@ begin
 
       if Fields[0].AsString <> sFlag_CardUsed then
       begin
-        nData := '磁卡[ %s ]当前状态为[ %s ],无法提货.';
+        nData := '磁卡[ %s ]当前状态为[ %s ],无法使用.';
         nData := Format(nData, [FIn.FData, CardStatusToStr(Fields[0].AsString)]);
         Exit;
       end;
 
       if Fields[1].AsString = sFlag_Yes then
       begin
-        nData := '磁卡[ %s ]已被冻结,无法提货.';
+        nData := '磁卡[ %s ]已被冻结,无法使用.';
         nData := Format(nData, [FIn.FData]);
         Exit;
       end;
     end;
   end;
 
-  nStr := 'Select O_ID,O_Card,O_ProType,O_ProID,O_ProName,O_Type,O_StockNo,' +
-          'O_StockName,O_Truck,O_Value ' +
-          'From $OO oo ';
+  nStr := 'Select b.P_ID,b.P_ProID,b.P_ProName,b.P_Type,b.P_StockNo,' +
+          'b.P_StockName,b.P_Truck,b.P_Value,b.P_Status,P_NextStatus,' +
+          'b.P_Memo, b.P_KZValue, b.P_YSResult,' +
+          'b.P_Card, b.P_PValue, b.P_MValue,' +
+          'p.P_PDate, p.P_PStation, p.P_PMan ' +
+          'From $Bill b ' +
+          'Left Join $Pound p on b.P_ID=p.P_Order ';
   //xxxxx
 
   if nIsOrder then
-       nStr := nStr + 'Where O_ID=''$CD'''
-  else nStr := nStr + 'Where O_Card=''$CD''';
+       nStr := nStr + 'Where b.P_ID=''$CD'''
+  else nStr := nStr + 'Where b.P_Card=''$CD''';
 
-  nStr := MacroValue(nStr, [MI('$OO', sTable_Order),MI('$CD', FIn.FData)]);
+  nStr := MacroValue(nStr, [MI('$Bill', sTable_PurchInfo),
+          MI('$Pound', sTable_PoundLog),MI('$CD', FIn.FData)]);
   //xxxxx
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -652,147 +688,90 @@ begin
     if RecordCount < 1 then
     begin
       if nIsOrder then
-           nData := '采购单[ %s ]已无效.'
-      else nData := '磁卡号[ %s ]无订单';
+           nData := '入厂单[ %s ]已无效.'
+      else nData := '磁卡号[ %s ]没有入厂单.';
 
       nData := Format(nData, [FIn.FData]);
       Exit;
-    end else
-    with FListA do
+    end;
+
+    SetLength(nBills, RecordCount);
+    nIdx := 0;
+    First;
+
+    while not Eof do
+    with nBills[nIdx] do
     begin
-      Clear;
+      FID         := FieldByName('P_ID').AsString;
+      FCusID      := FieldByName('P_ProID').AsString;
+      FCusName    := FieldByName('P_ProName').AsString;
+      FTruck      := FieldByName('P_Truck').AsString;
 
-      Values['O_ID']         := FieldByName('O_ID').AsString;
-      Values['O_ProType']    := FieldByName('O_ProType').AsString;
-      Values['O_ProID']      := FieldByName('O_ProID').AsString;
-      Values['O_ProName']    := FieldByName('O_ProName').AsString;
-      Values['O_Truck']      := FieldByName('O_Truck').AsString;
+      FType       := FieldByName('P_Type').AsString;
+      FStockNo    := FieldByName('P_StockNo').AsString;
+      FStockName  := FieldByName('P_StockName').AsString;
+      FValue      := FieldByName('P_Value').AsFloat;
 
-      Values['O_Type']       := FieldByName('O_Type').AsString;
-      Values['O_StockNo']    := FieldByName('O_StockNo').AsString;
-      Values['O_StockName']  := FieldByName('O_StockName').AsString;
+      FCard       := FieldByName('P_Card').AsString;
+      FStatus     := FieldByName('P_Status').AsString;
+      FNextStatus := FieldByName('P_NextStatus').AsString;
 
-      Values['O_Card']       := FieldByName('O_Card').AsString;
-      Values['O_Value']      := FloatToStr(FieldByName('O_Value').AsFloat);
+      if FStatus = sFlag_BillNew then
+      begin
+        FStatus     := sFlag_TruckNone;
+        FNextStatus := sFlag_TruckNone;
+      end;
+
+      with FPData do
+      begin
+        FDate   := FieldByName('P_PDate').AsDateTime;
+        FValue  := FieldByName('P_PValue').AsFloat;
+        FStation:= FieldByName('P_PStation').AsString;
+        FOperator := FieldByName('P_PMan').AsString;
+      end;
+
+      FMemo         := FieldByName('P_Memo').AsString;
+      FKZValue      := FieldByName('P_KZValue').AsFloat;
+      FYSValid      := FieldByName('P_YSResult').AsString;
+      FSelected := True;
+
+      Inc(nIdx);
+      Next;
     end;
   end;
 
-  nStr := 'Select D_ID,D_OID,D_PID,D_YLine,D_Status,D_NextStatus,' +
-          'D_KZValue,D_Memo,D_YSResult,' +
-          'P_PStation,P_PValue,P_PDate,P_PMan,' +
-          'P_MStation,P_MValue,P_MDate,P_MMan ' +
-          'From $OD od Left join $PD pd on pd.P_Order=od.D_ID ' +
-          'Where D_OutFact Is Null And D_OID=''$OID''';
-  //xxxxx
-
-  nStr := MacroValue(nStr, [MI('$OD', sTable_OrderDtl),
-                            MI('$PD', sTable_PoundLog),
-                            MI('$OID', FListA.Values['O_ID'])]);
-  //xxxxx
-
-  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
-  begin
-    if RecordCount<1 then
-    begin
-      SetLength(nBills, 1);
-
-      with nBills[0], FListA do
-      begin
-        FZhiKa      := Values['O_ID'];
-        FCusID      := Values['O_ProID'];
-        FCusName    := Values['O_ProName'];
-        FCusType    := Values['O_ProType'];
-        FTruck      := Values['O_Truck'];
-
-        FType       := Values['O_Type'];
-        FStockNo    := Values['O_StockNo'];
-        FStockName  := Values['O_StockName'];
-        FValue      := StrToFloat(Values['O_Value']);
-
-        FCard       := Values['O_Card'];
-        FStatus     := sFlag_TruckNone;
-        FNextStatus := sFlag_TruckNone;
-
-        FSelected := True;
-      end;  
-    end else
-    begin
-      SetLength(nBills, RecordCount);
-
-      nIdx := 0;
-
-      First; 
-      while not Eof do
-      with nBills[nIdx], FListA do
-      begin
-        FID         := FieldByName('D_ID').AsString;
-        FZhiKa      := FieldByName('D_OID').AsString;
-        FPoundID    := FieldByName('D_PID').AsString;
-
-        FCusID      := Values['O_ProID'];
-        FCusName    := Values['O_ProName'];
-        FCusType    := Values['O_ProType'];
-        FTruck      := Values['O_Truck'];
-
-        FType       := Values['O_Type'];
-        FStockNo    := Values['O_StockNo'];
-        FStockName  := Values['O_StockName'];
-        FValue      := StrToFloat(Values['O_Value']);
-
-        FCard       := Values['O_Card'];
-        FStatus     := FieldByName('D_Status').AsString;
-        FNextStatus := FieldByName('D_NextStatus').AsString;
-
-        if (FStatus = '') or (FStatus = sFlag_BillNew) then
-        begin
-          FStatus     := sFlag_TruckNone;
-          FNextStatus := sFlag_TruckNone;
-        end;
-
-        with FPData do
-        begin
-          FStation  := FieldByName('P_PStation').AsString;
-          FValue    := FieldByName('P_PValue').AsFloat;
-          FDate     := FieldByName('P_PDate').AsDateTime;
-          FOperator := FieldByName('P_PMan').AsString;
-        end;
-
-        with FMData do
-        begin
-          FStation  := FieldByName('P_MStation').AsString;
-          FValue    := FieldByName('P_MValue').AsFloat;
-          FDate     := FieldByName('P_MDate').AsDateTime;
-          FOperator := FieldByName('P_MMan').AsString;
-        end;
-
-        FKZValue  := FieldByName('D_KZValue').AsFloat;
-        FMemo     := FieldByName('D_Memo').AsString;
-        FYSValid  := FieldByName('D_YSResult').AsString;
-        FSelected := True;
-
-        Inc(nIdx);
-        Next;
-      end;
-    end;    
-  end;
-
   FOut.FData := CombineBillItmes(nBills);
-  Result := True;     }
+  Result := True;
 end;
 
 //Date: 2014-09-18
 //Parm: 交货单[FIn.FData];岗位[FIn.FExtParam]
 //Desc: 保存指定岗位提交的交货单列表
 function TWorkerBusinessOrders.SavePostOrderItems(var nData: string): Boolean;
-var nVal, nNet: Double;
-    nIdx: Integer;
-    nStr,nSQL: string;
+var nVal, f, m: Double;
+    nInt, nIdx: Integer;
+    nStr, nSQL: string;
     nPound: TLadingBillItems;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
-  {AnalyseBillItems(FIn.FData, nPound);
+  AnalyseBillItems(FIn.FData, nPound);
+  nInt := Length(nPound);
   //解析数据
+
+  if nInt < 1 then
+  begin
+    nData := '岗位[ %s ]提交的单据为空.';
+    nData := Format(nData, [PostTypeToStr(FIn.FExtParam)]);
+    Exit;
+  end;
+
+  if nInt > 1 then
+  begin
+    nData := '岗位[ %s ]提交了原材料合单,该业务系统暂时不支持.';
+    nData := Format(nData, [PostTypeToStr(FIn.FExtParam)]);
+    Exit;
+  end;
 
   FListA.Clear;
   //用于存储SQL列表
@@ -800,36 +779,15 @@ begin
   //----------------------------------------------------------------------------
   if FIn.FExtParam = sFlag_TruckIn then //进厂
   begin
-    FListC.Clear;
-    FListC.Values['Group'] := sFlag_BusGroup;
-    FListC.Values['Object'] := sFlag_OrderDtl;
-
-    if not TWorkerBusinessCommander.CallMe(cBC_GetSerialNO,
-        FListC.Text, sFlag_Yes, @nOut) then
-      raise Exception.Create(nOut.FData);
-    //xxxxx
-
     with nPound[0] do
     begin
+      nStr := SF('P_ID', FID);
       nSQL := MakeSQLByStr([
-            SF('D_ID', nOut.FData),
-            SF('D_Card', FCard),
-            SF('D_OID', FZhiKa),
-
-            SF('D_ProID', FCusID),
-            SF('D_ProName', FCusName),
-            SF('D_ProType', FCusType),
-
-            SF('D_Type', FType),
-            SF('D_StockNo', FStockNo),
-            SF('D_StockName', FStockName),
-
-            SF('D_Truck', FTruck),
-            SF('D_Status', sFlag_TruckIn),
-            SF('D_NextStatus', sFlag_TruckBFP),
-            SF('D_InMan', FIn.FBase.FFrom.FUser),
-            SF('D_InTime', sField_SQLServer_Now, sfVal)
-            ], sTable_OrderDtl, '', True);
+              SF('P_Status', sFlag_TruckIn),
+              SF('P_NextStatus', sFlag_TruckBFP),
+              SF('P_InTime', sField_SQLServer_Now, sfVal),
+              SF('P_InMan', FIn.FBase.FFrom.FUser)
+              ], sTable_PurchInfo, nStr, False);
       FListA.Add(nSQL);
     end;  
   end else
@@ -882,7 +840,7 @@ begin
             SF('P_MID', FStockNo),
             SF('P_MName', FStockName),
             SF('P_MType', FType),
-            SF('P_LimValue', 0),
+            SF('P_LimValue', FValue),
             SF('P_PValue', FPData.FValue, sfVal),
             SF('P_PDate', sField_SQLServer_Now, sfVal),
             SF('P_PMan', FIn.FBase.FFrom.FUser),
@@ -897,12 +855,12 @@ begin
       FListA.Add(nSQL);
 
       nSQL := MakeSQLByStr([
-              SF('D_Status', FStatus),
-              SF('D_NextStatus', FNextStatus),
-              SF('D_PValue', FPData.FValue, sfVal),
-              SF('D_PDate', sField_SQLServer_Now, sfVal),
-              SF('D_PMan', FIn.FBase.FFrom.FUser)
-              ], sTable_OrderDtl, SF('D_ID', FID), False);
+              SF('P_Status', FStatus),
+              SF('P_NextStatus', FNextStatus),
+              SF('P_PValue', FPData.FValue, sfVal),
+              SF('P_PDate', sField_SQLServer_Now, sfVal),
+              SF('P_PMan', FIn.FBase.FFrom.FUser)
+              ], sTable_PurchInfo, SF('P_ID', FID), False);
       FListA.Add(nSQL);
     end;  
 
@@ -925,14 +883,14 @@ begin
      FListA.Add(nSQL);
 
       nSQL := MakeSQLByStr([
-              SF('D_Status', FStatus),
-              SF('D_NextStatus', FNextStatus),
-              SF('D_YTime', sField_SQLServer_Now, sfVal),
-              SF('D_YMan', FIn.FBase.FFrom.FUser),
-              SF('D_KZValue', FKZValue, sfVal),
-              SF('D_YSResult', FYSValid),
-              SF('D_Memo', FMemo)
-              ], sTable_OrderDtl, SF('D_ID', FID), False);
+              SF('P_Status', FStatus),
+              SF('P_NextStatus', FNextStatus),
+              SF('P_YTime', sField_SQLServer_Now, sfVal),
+              SF('P_YMan', FIn.FBase.FFrom.FUser),
+              SF('P_KZValue', FKZValue, sfVal),
+              SF('P_YSResult', FYSValid),
+              SF('P_Memo', FMemo)
+              ], sTable_PurchInfo, SF('P_ID', FID), False);
       FListA.Add(nSQL);
     end;
   end else
@@ -941,72 +899,7 @@ begin
   if FIn.FExtParam = sFlag_TruckBFM then //称量毛重
   begin
     with nPound[0] do
-    begin
-      nStr := 'Select T_CGHZValue From %s Where T_Truck=''%s''';
-      nStr := Format(nStr, [sTable_Truck, FTruck]);
-      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
-      if RecordCount>0 then
-           nVal := FieldByName('T_CGHZValue').AsFloat
-      else nVal := 0;
-
-      if nVal > 0 then
-      begin
-        if (FMData.FValue > FPData.FValue) and (FMData.FValue > nVal) then
-          FMData.FValue := nVal
-        else if (FPData.FValue > FMData.FValue) and (FPData.FValue > nVal) then
-          FPData.FValue := nVal;
-      end;  
-
-      nStr := 'Select D_CusID,D_Value,D_Type From %s ' +
-              'Where D_Stock=''%s'' And D_Valid=''%s''';
-      nStr := Format(nStr, [sTable_Deduct, FStockNo, sFlag_Yes]);
-
-      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
-      if RecordCount > 0 then
-      begin
-        First;
-
-        while not Eof do
-        begin
-          if FieldByName('D_CusID').AsString = FCusID then
-            Break;
-          //客户+物料参数优先
-
-          Next;
-        end;
-
-        if Eof then First;
-        //使用第一条规则
-
-        if FMData.FValue > FPData.FValue then
-             nNet := FMData.FValue - FPData.FValue
-        else nNet := FPData.FValue - FMData.FValue;
-
-        nVal := 0;
-        //待扣减量
-        nStr := FieldByName('D_Type').AsString;
-
-        if nStr = sFlag_DeductFix then
-          nVal := FieldByName('D_Value').AsFloat;
-        //定值扣减
-
-        if nStr = sFlag_DeductPer then
-        begin
-          nVal := FieldByName('D_Value').AsFloat;
-          nVal := nNet * nVal;
-        end; //比例扣减
-
-        if (nVal > 0) and (nNet > nVal) then
-        begin
-          nVal := Float2Float(nVal, cPrecision, False);
-          //将暗扣量扣减为2位小数;
-
-          if FMData.FValue > FPData.FValue then
-               FMData.FValue := (FMData.FValue*1000 - nVal*1000) / 1000
-          else FPData.FValue := (FPData.FValue*1000 - nVal*1000) / 1000;
-        end;
-      end;
-
+    begin 
       nStr := SF('P_Order', FID);
       //where
 
@@ -1027,16 +920,15 @@ begin
         FListA.Add(nSQL);
 
         nSQL := MakeSQLByStr([
-                SF('D_Status', sFlag_TruckBFM),
-                SF('D_NextStatus', sFlag_TruckOut),
-                SF('D_PValue', FPData.FValue, sfVal),
-                SF('D_PDate', sField_SQLServer_Now, sfVal),
-                SF('D_PMan', FIn.FBase.FFrom.FUser),
-                SF('D_MValue', FMData.FValue, sfVal),
-                SF('D_MDate', DateTime2Str(FMData.FDate)),
-                SF('D_MMan', FMData.FOperator),
-                SF('D_Value', nVal, sfVal)
-                ], sTable_OrderDtl, SF('D_ID', FID), False);
+                SF('P_Status', sFlag_TruckBFM),
+                SF('P_NextStatus', sFlag_TruckOut),
+                SF('P_PValue', FPData.FValue, sfVal),
+                SF('P_PDate', sField_SQLServer_Now, sfVal),
+                SF('P_PMan', FIn.FBase.FFrom.FUser),
+                SF('P_MValue', FMData.FValue, sfVal),
+                SF('P_MDate', DateTime2Str(FMData.FDate)),
+                SF('P_MMan', FMData.FOperator)
+                ], sTable_PurchInfo, SF('P_ID', FID), False);
         FListA.Add(nSQL);
 
       end else
@@ -1051,35 +943,63 @@ begin
         FListA.Add(nSQL);
 
         nSQL := MakeSQLByStr([
-                SF('D_Status', sFlag_TruckBFM),
-                SF('D_NextStatus', sFlag_TruckOut),
-                SF('D_MValue', FMData.FValue, sfVal),
-                SF('D_MDate', sField_SQLServer_Now, sfVal),
-                SF('D_MMan', FMData.FOperator),
-                SF('D_Value', nVal, sfVal)
-                ], sTable_OrderDtl, SF('D_ID', FID), False);
+                SF('P_Status', sFlag_TruckBFM),
+                SF('P_NextStatus', sFlag_TruckOut),
+                SF('P_MValue', FMData.FValue, sfVal),
+                SF('P_MDate', sField_SQLServer_Now, sfVal),
+                SF('P_MMan', FMData.FOperator)
+                ], sTable_PurchInfo, SF('P_ID', FID), False);
         FListA.Add(nSQL);
       end;
 
-      if FYSValid <> sFlag_NO then  //验收成功，调整已收货量
+      f := Float2Float(nVal - FValue, cPrecision, True);
+      if FYSValid <> sFlag_No then
       begin
-        nSQL := 'Update $OrderBase Set B_SentValue=B_SentValue+$Val ' +
-                'Where B_ID = (select O_BID From $Order Where O_ID=''$ID'')';
-        nSQL := MacroValue(nSQL, [MI('$OrderBase', sTable_OrderBase),
-                MI('$Order', sTable_Order),MI('$ID', FZhiKa),
-                MI('$Val', FloatToStr(nVal))]);
-        FListA.Add(nSQL);
-        //调整已收货；
-      end;
+        if FloatRelation(f, 0, rtGreater) then //净重>票重
+        begin
+          if not CallMe(cBC_GetGYOrderValue, FCusID, FStockNo, @nOut) then
+             raise Exception.Create(nOut.FData);
 
-      nSQL := 'Update $OrderBase Set B_FreezeValue=B_FreezeValue-$KDVal ' +
-              'Where B_ID = (select O_BID From $Order Where O_ID=''$ID'''+
-              ' And O_CType= ''L'') and B_Value>0';
-      nSQL := MacroValue(nSQL, [MI('$OrderBase', sTable_OrderBase),
-              MI('$Order', sTable_Order),MI('$ID', FZhiKa),
-              MI('$KDVal', FloatToStr(FValue))]);
-      FListA.Add(nSQL);
-      //调整冻结量
+          m := StrToFloat(nOut.FData);
+          if FloatRelation(f, m, rtGreater) then
+          begin
+            nData := '入厂采购单超发, 详情如下:' + #13#10#13#10 +
+                     '*.供应商: %s ' + #13#10 +
+                     '*.供应商编号: %s ' + #13#10#13#10 +
+                     '*.原材料: %s ' + #13#10 +
+                     '*.原材料编号: %s ' + #13#10#13#10 +
+                     '*.净重: %.2f ' + #13#10 +
+                     '*.可发量: %.2f ' + #13#10 +
+                     '*.超发量: %.2f ' + #13#10#13#10 +
+                     '请联系管理员处理。';
+            nData := Format(nData, [FCusName, FCusID, FStockName, FStockNo,
+                     nVal, m+StrToFloat(nOut.FExtParam), f-m]);
+            Exit;
+          end;  
+        end;
+
+        nSQL := 'Update %s Set P_Value=P_Value+(%s) Where P_ID=''%s''';
+        nSQL := Format(nSQL, [sTable_PurchInfo, FloatToStr(f), FID]);
+        FListA.Add(nSQL);
+
+        nSQL := 'Update %s Set C_Freeze=C_Freeze+(%s) ' +
+                'Where C_ID=''%s'' And C_Stock=''%s''';
+        nSQL := Format(nSQL, [sTable_AX_OrderInfo, FloatToStr(f), FCusID, FStockNo]);
+        FListA.Add(nSQL);
+        //验收成功，验证物料采购量
+      end else
+
+      begin
+        nSQL := 'Update %s Set P_Value=P_Value-%s Where P_ID=''%s''';
+        nSQL := Format(nSQL, [sTable_PurchInfo, FloatToStr(FValue), FID]);
+        FListA.Add(nSQL);
+
+        nSQL := 'Update %s Set C_Freeze=C_Freeze-%s ' +
+                'Where C_ID=''%s'' And C_Stock=''%s''';
+        nSQL := Format(nSQL, [sTable_AX_OrderInfo, FloatToStr(FValue), FCusID, FStockNo]);
+        FListA.Add(nSQL);
+        //验收失败，释放冻结量
+      end;
     end;
 
     nSQL := 'Select P_ID From %s Where P_Order=''%s'' And P_MValue Is Null';
@@ -1098,30 +1018,20 @@ begin
   begin
     with nPound[0] do
     begin
-      nSQL := MakeSQLByStr([SF('D_Status', sFlag_TruckOut),
-              SF('D_NextStatus', ''),
-              SF('D_Card', ''),
-              SF('D_OutFact', sField_SQLServer_Now, sfVal),
-              SF('D_OutMan', FIn.FBase.FFrom.FUser)
-              ], sTable_OrderDtl, SF('D_ID', FID), False);
+      nSQL := MakeSQLByStr([SF('P_Status', sFlag_TruckOut),
+              SF('P_NextStatus', ''),
+              SF('P_Card', ''),
+              SF('P_OutFact', sField_SQLServer_Now, sfVal),
+              SF('P_OutMan', FIn.FBase.FFrom.FUser)
+              ], sTable_PurchInfo, SF('P_ID', FID), False);
       FListA.Add(nSQL); //更新采购单
-    end;    }
 
-    {nSQL := 'Select O_CType,O_Card From %s Where O_ID=''%s''';
-    nSQL := Format(nSQL, [sTable_Order, nPound[0].FZhiKa]);
-
-    with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
-    if RecordCount > 0 then
-    begin
-      nStr := FieldByName('O_Card').AsString;
-      if FieldByName('O_CType').AsString = sFlag_OrderCardL then
-      if not CallMe(cBC_LogOffOrderCard, nStr, '', @nOut) then
-      begin
-        nData := nOut.FData;
-        Exit;
-      end;
+      nSQL := 'Update %s Set C_Freeze=C_Freeze-%s, C_HasDone=C_HasDone+%s, ' +
+              'C_Count=C_Count-1 Where C_ID=''%s'' And C_Stock=''%s''';
+      nSQL := Format(nSQL, [sTable_AX_OrderInfo, FloatToStr(FValue),
+              FloatToStr(FValue), FCusID, FStockNo]);
+      FListA.Add(nSQL);
     end;
-    //如果是临时卡片，则注销卡片
   end;
 
   //----------------------------------------------------------------------------
@@ -1143,7 +1053,7 @@ begin
     if Assigned(gHardShareData) then
       gHardShareData('TruckOut:' + nPound[0].FCard);
     //磅房处理自动出厂
-  end;      }
+  end;
 end;
 
 //Date: 2014-09-15

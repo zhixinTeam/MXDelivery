@@ -74,8 +74,6 @@ const
   cFI_FrameProvideLog   = $0105;                     //供应日志
   cFI_FrameMaterails    = $0106;                     //原材料
   cFI_FrameOrder        = $0107;                     //采购订单
-  cFI_FrameOrderBase    = $0108;                     //采购申请单
-  cFI_FrameOrderDetail  = $0109;                     //采购明细
 
   cFI_FrameWXAccount    = $0110;                     //微信账户
   cFI_FrameWXSendLog    = $0111;                     //发送日志
@@ -95,6 +93,7 @@ const
   cFI_FormGetZhika      = $1012;                     //选择纸卡
   cFI_FormMakeCard      = $1013;                     //办理磁卡
   cFI_FormMakeRFIDCard  = $1014;                     //办理电子标签
+  cFI_FormTransfer      = $1015;                     //短倒业务
 
   cFI_FormBill          = $1016;                     //开提货单
   cFI_FormBillNew       = $1017;                     //读取订单
@@ -330,7 +329,6 @@ begin
   AddMenuModuleItem('MAIN_F01', cFI_FormLadDai, mtForm);
   AddMenuModuleItem('MAIN_F03', cFI_FrameZhanTaiQuery);
   AddMenuModuleItem('MAIN_F04', cFI_FrameZTDispatch);
-  AddMenuModuleItem('MAIN_F05', cFI_FormPurchase, mtForm);
 
   AddMenuModuleItem('MAIN_G01', cFI_FormLadSan, mtForm);
   AddMenuModuleItem('MAIN_G02', cFI_FrameFangHuiQuery);
@@ -362,8 +360,7 @@ begin
   AddMenuModuleItem('MAIN_M03', cFI_FrameMakeOCard); 
   AddMenuModuleItem('MAIN_M04', cFI_FrameOrder);
   AddMenuModuleItem('MAIN_M05', cFI_FormOrder, mtForm);
-  AddMenuModuleItem('MAIN_M08', cFI_FrameOrderDetail);
-  AddMenuModuleItem('MAIN_M09', cFI_FrameOrderBase);
+  AddMenuModuleItem('MAIN_M06', cFI_FormPurchase, mtForm);
 
   AddMenuModuleItem('MAIN_W01', cFI_FrameWXAccount);
   AddMenuModuleItem('MAIN_W02', cFI_FrameWXSendLog);

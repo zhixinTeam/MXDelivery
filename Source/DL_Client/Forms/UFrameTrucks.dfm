@@ -113,12 +113,17 @@ inherited fFrameTrucks: TfFrameTrucks
     OnPopup = PMenu1Popup
     Left = 6
     Top = 262
+    object N8: TMenuItem
+      Caption = #30701#20498#30913#21345
+      OnClick = N8Click
+    end
     object N1: TMenuItem
       Caption = '-'
       Enabled = False
     end
     object N2: TMenuItem
       Caption = #36710#36742#31614#21040
+      Visible = False
       OnClick = N2Click
     end
     object N3: TMenuItem
@@ -127,14 +132,17 @@ inherited fFrameTrucks: TfFrameTrucks
     end
     object N4: TMenuItem
       Caption = #21150#29702#30005#23376#26631#31614
+      Visible = False
       OnClick = N4Click
     end
     object N5: TMenuItem
       Caption = #21551#29992#30005#23376#26631#31614
+      Visible = False
       OnClick = N5Click
     end
     object N7: TMenuItem
       Caption = #20572#29992#30005#23376#26631#31614
+      Visible = False
       OnClick = N7Click
     end
     object N6: TMenuItem

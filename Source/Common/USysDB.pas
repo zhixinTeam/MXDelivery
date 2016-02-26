@@ -469,7 +469,10 @@ ResourceString
        'T_PValue $Float Default 0, T_PTime Integer Default 0,' +
        'T_PlateColor varChar(12),T_Type varChar(12), T_LastTime DateTime, ' +
        'T_Card varChar(32), T_CardUse Char(1), T_NoVerify Char(1),' +
-       'T_Valid Char(1), T_VIPTruck Char(1), T_HasGPS Char(1))';
+       'T_Valid Char(1), T_VIPTruck Char(1), T_HasGPS Char(1),' +
+       'T_MatePID varChar(15), T_MateID varChar(15), T_MateName varChar(80),' +
+       'T_SrcAddr varChar(150), T_DestAddr varChar(150)' +
+       ')';
   {-----------------------------------------------------------------------------
    车辆信息:Truck
    *.R_ID: 记录号
@@ -495,6 +498,14 @@ ResourceString
    *.T_Valid: 是否有效
    *.T_VIPTruck:是否VIP
    *.T_HasGPS:安装GPS(Y/N)
+
+   //---------------------------短倒业务数据信息--------------------------------
+   *.T_MatePID:上个物料编号
+   *.T_MateID:物料编号
+   *.T_MateName: 物料名称
+   *.T_SrcAddr:倒出地址
+   *.T_DestAddr:倒入地址
+   ---------------------------------------------------------------------------//
 
    有效平均皮重算法:
    T_PValue = (T_PValue * T_PTime + 新皮重) / (T_PTime + 1)
