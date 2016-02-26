@@ -18,7 +18,8 @@ uses
   UFormTransfer,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
   UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
-  {UFormLadingDai, UFormLadingSan, }UFramePoundManual, UFramePoundQuery;
+  UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery,
+  UFrameQuerySaleDetail;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

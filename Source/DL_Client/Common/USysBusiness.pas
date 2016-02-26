@@ -68,11 +68,12 @@ function LoadSysDictItem(const nItem: string; const nList: TStrings): TDataSet;
 //读取系统字典项
 function AXReadCardInfo(var nCard: string): Boolean;
 //读取AX卡片信息
-function GetStockBatcode(const nStock: string; const nVal: Double): string;
-//获取指定品种的批次编号
-
 function AXReadOrdersInfo(var nData: string): Boolean;
 //读取AX采购订单信息
+function AXSyncBill(var nData: string): Boolean;
+//同步交货单到AX
+function GetStockBatcode(const nStock: string; const nVal: Double): string;
+//获取指定品种的批次编号
 
 function SaveBill(const nBillData: string): string;
 //保存交货单
@@ -90,6 +91,7 @@ function LogoutBillCard(const nCard: string): Boolean;
 //注销指定磁卡
 function SetTruckRFIDCard(nTruck: string; var nRFIDCard: string;
   var nIsUse: string; nOldCard: string=''): Boolean;
+//设置车辆磁卡
 function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
 //短倒磁卡办理
 
@@ -606,6 +608,18 @@ begin
   end;
 end;
 
+//Date: 2016-02-26
+//Parm: 交货单号[in];提示信息[out]
+//Desc: 将指定单号同步到AX
+function AXSyncBill(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessSaleBill(cBC_AXSyncBill, nData, '', @nOut);
+  if Result then
+       nData := ''
+  else nData := nOut.FData;
+end;
+
 //Date: 2016-2-24
 //Parm: 物料编号;扣减量
 //Desc: 获取nStock当前有效的批次编号
@@ -886,6 +900,7 @@ var nStr: string;
     nIdx: Integer;
     nOut: TWorkerBusinessCommand;
 begin
+  Result := False;
   SetLength(nBills, 0);
   nStr := GetCardUsed(nCard);
 
@@ -894,7 +909,7 @@ begin
     Result := CallBusinessSaleBill(cBC_GetPostBills, nCard, nPost, @nOut);
   end else
 
-  //if nStr = sFlag_Provide then
+  if nStr = sFlag_Provide then
   begin
     Result := CallBusinessPurchaseOrder(cBC_GetPostOrders, nCard, nPost, @nOut);
   end;
@@ -920,23 +935,22 @@ var nStr: string;
 begin
   Result := False;
   if Length(nData) < 1 then Exit;
-
   nStr := nData[0].FCardUse;
 
   if nStr = sFlag_Sale then //销售
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessSaleBill(cBC_SavePostBills, nStr, nPost, @nOut);
+	  if (not Result) or (nOut.FData = '') then Exit;
   end else
 
   if nStr = sFlag_Provide then
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut); 
+	  if (not Result) or (nOut.FData = '') then Exit;
   end;
-
-  if (not Result) or (nOut.FData = '') then Exit;
-
+  
   if Assigned(nTunnel) then //过磅称重
   begin
     nList := TStringList.Create;

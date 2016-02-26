@@ -895,9 +895,12 @@ end;
 //Parm: 净重[in];超发量[out]
 //Desc: 计算净重比订单超发了多少,没超发为0.
 function TfFrameManualPoundItem.VerifySanValue(var nValue: Double): Boolean;
-var nStr: string;
+begin
+  Result := True;
+end;
+{var nStr: string;
     f,m: Double;
-begin         {
+begin         
   Result := False;
   nStr := FInnerData.FProject;
 
@@ -964,8 +967,8 @@ begin         {
   begin
     nValue := 0;
     Result := True;
-  end;   }
-end;
+  end;
+end;}
 
 //Desc: 保存销售
 function TfFrameManualPoundItem.SavePoundSale: Boolean;
@@ -1045,8 +1048,8 @@ begin
       FUIData.FKZValue := 0;
       //初始化补单数据
 
-      if (nVal > 0) and (FType = sFlag_San) and (not VerifySanValue(nNet)) then
-        Exit;
+      //if (nVal > 0) and (FType = sFlag_San) and (not VerifySanValue(nNet)) then
+      //  Exit;
       //散装净重超过开单量时,验证是否发超
     end;
   end;

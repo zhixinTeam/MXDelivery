@@ -10,8 +10,8 @@ interface
 uses
   Windows, Classes, Controls, DB, SysUtils, UBusinessWorker, UBusinessPacker,
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
-  UBusinessConst, UWorkerBusinessCommand, UMgrDBConn, UMgrParam, ZnMD5, ULibFun,
-  UFormCtrl, USysLoger, USysDB, UMITConst;
+  UBusinessConst, UWorkerBusinessCommand, UWorkerBusinessRemote, UMgrDBConn,
+  UMgrParam, ZnMD5, ULibFun, UFormCtrl, USysLoger, USysDB, UMITConst;
 
 type
   TStockMatchItem = record
@@ -71,6 +71,11 @@ type
     //获取岗位交货单
     function SavePostBillItems(var nData: string): Boolean;
     //保存岗位交货单
+    function PickupBill(const nBill,nOrder,nStock: string;
+     const nVal,nNet: Double; var nData: string): Boolean;
+    //拣配指定交货单
+    function AXSyncBill(var nData: string): Boolean;
+    //同步交货单到AX
   public
     constructor Create; override;
     destructor destroy; override;
@@ -142,47 +147,12 @@ begin
    cBC_LogoffCard          : Result := LogoffCard(nData);
    cBC_GetPostBills        : Result := GetPostBillItems(nData);
    cBC_SavePostBills       : Result := SavePostBillItems(nData);
+   cBC_AXSyncBill          : Result := AXSyncBill(nData);
    else
     begin
       Result := False;
       nData := '无效的业务代码(Invalid Command).';
     end;
-  end;
-end;
-
-//Date: 2014-09-15
-//Parm: 对象;命令;数据;参数;输出
-//Desc: 本地调用业务对象
-function CallRemoteWorker(const nWorkerName: string; const nData,nExt,nMsgNo: string;
- const nOut: PWorkerBusinessCommand; const nCmd: Integer = 0): Boolean;
-var nStr: string;
-    nIn: TWorkerBusinessCommand;
-    nPacker: TBusinessPackerBase;
-    nWorker: TBusinessWorkerBase;
-begin
-  nPacker := nil;
-  nWorker := nil;
-  try
-    nIn.FCommand := nCmd;
-    nIn.FData := nData;
-    nIn.FExtParam := nExt;
-    nIn.FBase.FMsgNO := nMsgNo;
-
-    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
-    nPacker.InitData(@nIn, True, False);
-    //init
-    
-    nStr := nPacker.PackIn(@nIn);
-    nWorker := gBusinessWorkerManager.LockWorker(nWorkerName);
-    //get worker
-
-    Result := nWorker.WorkActive(nStr);
-    if Result then
-         nPacker.UnPackOut(nStr, nOut)
-    else nOut.FData := nStr;
-  finally
-    gBusinessPackerManager.RelasePacker(nPacker);
-    gBusinessWorkerManager.RelaseWorker(nWorker);
   end;
 end;
 
@@ -1052,6 +1022,21 @@ begin
   end;
 end;
 
+//Date: 2016-02-26
+//Parm: 交货单号[FIn.FData]
+//Desc: 同步交货单到AX
+function TWorkerBusinessBills.AXSyncBill(var nData: string): Boolean;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := sFlag_FixedNo + 'U' + FIn.FData;
+  Result := CallRemoteWorker(sAX_SyncBill, FIn.FData, '', nStr, @nOut);
+
+  if not Result then
+    nData := nOut.FData;
+  //xxxxx
+end;
+
 //Date: 2014-09-17
 //Parm: 磁卡号[FIn.FData];岗位[FIn.FExtParam]
 //Desc: 获取特定岗位所需要的交货单列表
@@ -1108,7 +1093,7 @@ begin
 
   nStr := 'Select L_ID,L_ZhiKa,L_CusID,L_CusName,L_Type,L_StockNo,' +
           'L_StockName,L_Truck,L_Value,L_Price,L_ZKMoney,L_Status,' +
-          'L_NextStatus,L_Card,L_IsVIP,L_PValue,L_MValue From $Bill b ';
+          'L_NextStatus,L_Card,L_IsVIP,L_PValue,L_MValue,L_HYDan From $Bill b ';
   //xxxxx
 
   if nIsBill then
@@ -1151,6 +1136,7 @@ begin
 
       FCard       := FieldByName('L_Card').AsString;
       FIsVIP      := FieldByName('L_IsVIP').AsString;
+      FHYDan      := FieldByName('L_HYDan').AsString;
       FStatus     := FieldByName('L_Status').AsString;
       FNextStatus := FieldByName('L_NextStatus').AsString;
 
@@ -1179,12 +1165,49 @@ begin
   Result := True;
 end;
 
+//Date: 2016-02-26
+//Parm: 大卡号;品种;开单量;净重;错误提示[out]
+//Desc: 对Order执行拣配操作
+function TWorkerBusinessBills.PickupBill(const nBill,nOrder,nStock: string;
+  const nVal,nNet: Double; var nData: string): Boolean;
+var nStr,nMsg: string;
+    nV: Double;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := 'Select C_Freeze From %s Where C_Card=''%s'' And C_Stock=''%s''';
+  nStr := Format(nStr, [sTable_AX_CardInfo, nOrder, nStock]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+       nV := Fields[0].AsFloat
+  else nV := 0;
+
+  nV := nV + (nNet - nVal);
+  //总量=冻结 + 新增
+  FListC.Clear;
+
+  with FListC do
+  begin
+    Values['Order'] := nOrder;
+    Values['Stock'] := nStock;
+    Values['Value'] := FloatToStr(nV);
+  end;
+
+  nMsg := sFlag_ForceDone + 'P' + nBill;
+  nStr := PackerEncodeStr(FListC.Text);
+  Result := CallRemoteWorker(sAX_PickBill, nStr, '', nMsg, @nOut);
+
+  if not Result then
+    nData := nOut.FData;
+  //xxxxx
+end;
+
 //Date: 2014-09-18
 //Parm: 交货单[FIn.FData];岗位[FIn.FExtParam]
 //Desc: 保存指定岗位提交的交货单列表
 function TWorkerBusinessBills.SavePostBillItems(var nData: string): Boolean;
 var nStr,nSQL,nTmp: string;
-    f,m,nVal,nMVal: Double;
+    f,nVal,nMVal: Double;
     i,nIdx,nInt: Integer;
     nBills: TLadingBillItems;
     nOut: TWorkerBusinessCommand;
@@ -1394,7 +1417,7 @@ begin
   end else
 
   //----------------------------------------------------------------------------
-  {if FIn.FExtParam = sFlag_TruckBFM then //称量毛重
+  if FIn.FExtParam = sFlag_TruckBFM then //称量毛重
   begin
     nInt := -1;
     nMVal := 0;
@@ -1415,56 +1438,34 @@ begin
     end;
 
     with nBills[0] do
-    if FType = sFlag_San then //散装需交验资金额
+    if FType = sFlag_San then //散装业务
     begin
-      if not TWorkerBusinessCommander.CallMe(cBC_GetZhiKaMoney,
-             nBills[0].FZhiKa, '', @nOut) then
-      begin
-        nData := nOut.FData;
-        Exit;
-      end;
-
-      m := StrToFloat(nOut.FData);
-      m := m + Float2Float(FPrice * FValue, cPrecision, False);
-      //纸卡可用金
-
-      nVal := FValue;
-      FValue := nMVal - FPData.FValue;
+      nVal := nMVal - FPData.FValue;
+      nVal := Float2Float(nVal, cPrecision, True);
       //新净重,实际提货量
-      f := Float2Float(FPrice * FValue, cPrecision, True) - m;
-      //实际所需金额与可用金差额
+      
+      if not PickupBill(FID, FZhiKa, FStockNo, FValue, nVal, nData) then Exit;
+      //拣配不通过
 
-      if f > 0 then
-      begin
-        nData := '客户[ %s.%s ]资金余额不足,详情如下:' + #13#10#13#10 +
-                 '※.可用金额: %.2f元' + #13#10 +
-                 '※.提货金额: %.2f元' + #13#10 +
-                 '※.需 补 交: %.2f元' + #13#10+#13#10 +
-                 '请到财务室办理"补交货款"手续,然后再次称重.';
-        nData := Format(nData, [FCusID, FCusName, m, FPrice * FValue, f]);
-        Exit;
-      end;
+      f := nVal - FValue;
+      //新增量
+      FValue := nVal;
+      //新净重
 
-      m := Float2Float(FPrice * FValue, cPrecision, True);
-      m := m - Float2Float(FPrice * nVal, cPrecision, True);
-      //新增冻结金额
+      nSQL := 'Update %s Set C_Freeze=C_Freeze+(%.2f) ' +
+              'Where C_ID=''%s'' And C_Stock=''%s''';
+      nSQL := Format(nSQL, [sTable_AX_CardInfo, f, FZhiKa, FStockNo]);
+      FListA.Add(nSQL); //更新大卡冻结量
 
-      nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney+(%.2f) ' +
-              'Where A_CID=''%s''';
-      nSQL := Format(nSQL, [sTable_CusAccount, m, FCusID]);
-      FListA.Add(nSQL); //更新账户
+      nSQL := 'Update %s Set B_HasUse=B_HasUse+(%.2f),B_LastDate=%s ' +
+              'Where B_Stock=''%s'' and B_Batcode=''%s''';
+      nSQL := Format(nSQL, [sTable_Batcode, f,
+              sField_SQLServer_Now, FStockNo, FHYDan]);
+      FListA.Add(nSQL); //更新批次号使用量
 
       nSQL := MakeSQLByStr([SF('L_Value', FValue, sfVal)
               ], sTable_Bill, SF('L_ID', FID), False);
-      FListA.Add(nSQL); //更新提货量        
-
-      if nOut.FExtParam = sFlag_Yes then
-      begin
-        nSQL := 'Update %s Set Z_FixedMoney=Z_FixedMoney-(%.2f) ' +
-                'Where Z_ID=''%s''';
-        nSQL := Format(nSQL, [sTable_ZhiKa, m, FZhiKa]);
-        FListA.Add(nSQL); //更新纸卡限提金额
-      end;
+      FListA.Add(nSQL); //更新提货量
     end;
 
     nVal := 0;
@@ -1574,7 +1575,7 @@ begin
     begin
       FOut.FData := Fields[0].AsString;
     end;
-  end else }
+  end else 
 
   //----------------------------------------------------------------------------
   if FIn.FExtParam = sFlag_TruckOut then

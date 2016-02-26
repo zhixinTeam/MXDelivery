@@ -12,12 +12,12 @@ interface
 uses
   Windows, Forms, Classes, SysUtils, ULibFun, UBusinessWorker, UBusinessPacker,
   UTaskMonitor, USysShareMem, USysLoger, UMITConst, UMITPacker,
-  UWorkerBusinessCommand, UWorkerBusinessRemote,
-  UWorkerBusinessBill, UWorkerBusinessOrders,
+  UWorkerBusinessCommand, UWorkerBusinessBill, UWorkerBusinessRemote,
+  UWorkerBusinessOrders,
   {$IFDEF HardMon}UEventHardware, UWorkerHardware,{$ENDIF}
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
   UMgrDBConn, UMgrParam, UMgrPlug, UMgrChannel, UChannelChooser, USAPConnection,
-  UBaseObject, UMemDataPool;
+  UBaseObject, UMemDataPool, UAXUploader;
 
 procedure InitSystemObject(const nMainForm: THandle);
 procedure RunSystemObject;
@@ -98,6 +98,9 @@ begin
 
   gTaskMonitor.StartMon;
   //mon task start
+
+  gAXUploader.Start;
+  //auto upload start
 end;
 
 procedure TMainEventWorker.AfterStopServer;
@@ -105,6 +108,9 @@ begin
   inherited;
   gTaskMonitor.StopMon;
   //stop mon task
+
+  gAXUploader.Stop;
+  //auto upload close
 
   {$IFDEF AutoChannel}
   gChannelChoolser.StopRefresh;
@@ -191,6 +197,9 @@ begin
   {$IFDEF MicroMsg}
   gWXPlatFormHelper.LoadConfig(gPath + 'Hardware\MicroMsg.XML');
   {$ENDIF} //micro message
+
+  gAXUploader := TAXUploader.Create;
+  //数据自动上行
 
   with nParam do
   begin

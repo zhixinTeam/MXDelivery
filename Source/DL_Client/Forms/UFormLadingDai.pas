@@ -2,7 +2,7 @@
   作者: dmzn@163.com 2010-3-14
   描述: 车辆出厂
 *******************************************************************************}
-unit UFormTruckOut;
+unit UFormLadingDai;
 
 interface
 
@@ -13,7 +13,7 @@ uses
   cxListView, cxMCListBox, dxLayoutControl, StdCtrls;
 
 type
-  TfFormTruckOut = class(TfFormNormal)
+  TfFormLadingDai = class(TfFormNormal)
     dxGroup2: TdxLayoutGroup;
     ListInfo: TcxMCListBox;
     dxLayout1Item3: TdxLayoutItem;
@@ -44,67 +44,73 @@ implementation
 
 {$R *.dfm}
 uses
-  IniFiles, ULibFun, UMgrControl, UFormInputbox, USysGrid, UBusinessConst, 
+  IniFiles, ULibFun, UMgrControl, UFormInputbox, USysGrid, UBusinessConst,
   USysDB, USysConst;
 
 var
   gBills: TLadingBillItems;
   //提货单列表
 
-class function TfFormTruckOut.FormID: integer;
+class function TfFormLadingDai.FormID: integer;
 begin
-  Result := cFI_FormTruckOut;
+  Result := cFI_FormLadDai;
 end;
 
-class function TfFormTruckOut.CreateForm(const nPopedom: string;
+class function TfFormLadingDai.CreateForm(const nPopedom: string;
   const nParam: Pointer): TWinControl;
 var nStr,nHint: string;
-    nIdx: Integer;
-    nRet: Boolean;
+    nIdx,nInt: Integer;
 begin
   Result := nil;
   nStr := '';
 
   while True do
   begin
-    if not ShowInputBox('请输入提货磁卡号:', '出厂', nStr) then Exit;
+    if not ShowInputBox('请输入提货磁卡号:', '栈台', nStr) then Exit;
     nStr := Trim(nStr);
-    if nStr = '' then Continue;
 
-    nRet := GetLadingBills(nStr, sFlag_TruckOut, gBills);
-    if nRet and (Length(gBills)>0) then Break;
+    if nStr = '' then Continue;
+    if GetLadingBills(nStr, sFlag_TruckZT, gBills) then Break;
   end;
 
+  nInt := 0;
   nHint := '';
+
   for nIdx:=Low(gBills) to High(gBills) do
-  if gBills[nIdx].FNextStatus <> sFlag_TruckOut then
+  with gBills[nIdx] do
   begin
+    FSelected := FNextStatus = sFlag_TruckZT;
+    if FSelected then
+    begin
+      Inc(nInt);
+      Continue;
+    end;
+
     nStr := '※.单号:[ %s ] 状态:[ %-6s -> %-6s ]   ';
     if nIdx < High(gBills) then nStr := nStr + #13#10;
 
-    nStr := Format(nStr, [gBills[nIdx].FID,
-            TruckStatusToStr(gBills[nIdx].FStatus),
-            TruckStatusToStr(gBills[nIdx].FNextStatus)]);
+    nStr := Format(nStr, [FID,
+            TruckStatusToStr(FStatus), TruckStatusToStr(FNextStatus)]);
     nHint := nHint + nStr;
   end;
 
-  if nHint <> '' then
+  if (nHint <> '') and (nInt = 0) then
   begin
-    nHint := '该车辆当前不能出厂,详情如下: ' + #13#10#13#10 + nHint;
+    nHint := '该车辆当前不能栈台装车,详情如下: ' + #13#10#13#10 + nHint;
     ShowDlg(nHint, sHint);
     Exit;
   end;
 
-  with TfFormTruckOut.Create(Application) do
+  with TfFormLadingDai.Create(Application) do
   begin
-    Caption := '车辆出厂';
+    Caption := '袋装提货';
     InitFormData;
     ShowModal;
     Free;
   end;
 end;
 
-procedure TfFormTruckOut.FormCreate(Sender: TObject);
+procedure TfFormLadingDai.FormCreate(Sender: TObject);
 var nIni: TIniFile;
 begin
   dxGroup1.AlignVert := avClient;
@@ -121,7 +127,7 @@ begin
   end;
 end;
 
-procedure TfFormTruckOut.FormClose(Sender: TObject;
+procedure TfFormLadingDai.FormClose(Sender: TObject;
   var Action: TCloseAction);
 var nIni: TIniFile;
 begin
@@ -136,43 +142,50 @@ begin
 end;
 
 //------------------------------------------------------------------------------
-procedure TfFormTruckOut.InitFormData;
+procedure TfFormLadingDai.InitFormData;
 var nIdx: Integer;
 begin
   ListBill.Clear;
 
   for nIdx:=Low(gBills) to High(gBills) do
-  with ListBill.Items.Add,gBills[nIdx] do
+  with gBills[nIdx] do
   begin
-    Caption := FID;
-    SubItems.Add(Format('%.3f', [FValue]));
-    SubItems.Add(FStockName);
+    if not FSelected then Continue;
+    //ignor
 
-    ImageIndex := 11;
-    Data := Pointer(nIdx);
+    with ListBill.Items.Add do
+    begin
+      Caption := FID;
+      SubItems.Add(Format('%.3f', [FValue]));
+      SubItems.Add(FStockName);
+
+      ImageIndex := 11;
+      Data := Pointer(nIdx);
+    end;
   end;
 
   ListBill.ItemIndex := 0;
 end;
 
-procedure TfFormTruckOut.ListBillSelectItem(Sender: TObject;
+procedure TfFormLadingDai.ListBillSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 var nIdx: Integer;
 begin
   if Selected and Assigned(Item) then
   begin
     nIdx := Integer(Item.Data);
+    LoadBillItemToMC(gBills[nIdx], ListInfo.Items, ListInfo.Delimiter);
 
     with gBills[nIdx] do
     begin
+      LayItem1.Caption := '交货单号:';
       EditBill.Text := FID;
       EditCus.Text := FCusName;
-      LoadBillItemToMC(gBills[nIdx], ListInfo.Items, ListInfo.Delimiter); 
     end;
   end;
 end;
 
-procedure TfFormTruckOut.ListInfoClick(Sender: TObject);
+procedure TfFormLadingDai.ListInfoClick(Sender: TObject);
 var nStr: string;
     nPos: Integer;
 begin
@@ -190,17 +203,15 @@ begin
   end;
 end;
 
-procedure TfFormTruckOut.BtnOKClick(Sender: TObject);
-var nRet: Boolean;
+procedure TfFormLadingDai.BtnOKClick(Sender: TObject);
 begin
-  nRet := SaveLadingBills(sFlag_TruckOut, gBills);
-  if nRet then
+  if SaveLadingBills(sFlag_TruckZT, gBills) then
   begin
-    ShowMsg('车辆出厂成功', sHint);
+    ShowMsg('袋装提货成功', sHint);
     ModalResult := mrOk;
   end;
 end;
 
 initialization
-  gControlManager.RegCtrl(TfFormTruckOut, TfFormTruckOut.FormID);
+  gControlManager.RegCtrl(TfFormLadingDai, TfFormLadingDai.FormID);
 end.

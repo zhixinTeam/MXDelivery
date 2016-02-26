@@ -55,8 +55,31 @@ type
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
   public
+	function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+  end;
+
+  TAXWorkerPickBill = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override;
+  public
     function GetFlagStr(const nFlag: Integer): string; override;
     class function FunctionName: string; override;
+  end;
+
+  TAXWorkerSyncBill = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override; 
+  public                                       
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+    function DoAfterDBWork(var nData: string; nResult: Boolean): Boolean; override;
   end;
 
   TAXWorkerReadOrdersInfo = class(TAXWorkerBase)
@@ -89,12 +112,53 @@ type
     //local call
   end;
 
+function CallRemoteWorker(const nWorkerName: string; const nData,nExt,nMsgNo: string;
+ const nOut: PWorkerBusinessCommand; const nCmd: Integer = 0): Boolean;
+//入口函数
+
 implementation
 
 uses
   ULibFun, UMgrDBConn, UChannelChooser, UAXService, USysDB, UFormCtrl,
   USysLoger;
 
+//Date: 2014-09-15
+//Parm: 对象;命令;数据;参数;输出
+//Desc: 本地调用业务对象
+function CallRemoteWorker(const nWorkerName: string; const nData,nExt,nMsgNo: string;
+ const nOut: PWorkerBusinessCommand; const nCmd: Integer): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+    nIn.FBase.FMsgNO := nMsgNo;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nPacker.InitData(@nIn, True, False);
+    //init
+
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(nWorkerName);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
+//------------------------------------------------------------------------------
 constructor TAXWorkerBase.Create;
 begin
   inherited;
@@ -328,6 +392,7 @@ end;
 //Parm: 入参数据
 //Desc: 获取连接SAP时所需的资源
 function TAXWorkerBase.DoDBWork(var nData: string): Boolean;
+var nInit: Int64;
 begin
   FChannel := nil;
   try
@@ -354,10 +419,11 @@ begin
     begin
       if not Assigned(FChannel) then
         FChannel := CoWebService.Create(FMsg, FHttp);
-      //xxxxx
-
       FHttp.TargetURL := gChannelChoolser.ActiveURL;
+
+      nInit := GetTickCount;
       Result := DoAXWork(nData);
+      WriteLog(Format('对象: %s 执行: %d毫秒', [FunctionName, GetTickCount-nInit]));
     end;
   finally
     gChannelManager.ReleaseChannel(FChannel);
@@ -532,6 +598,175 @@ begin
 end;
 
 //------------------------------------------------------------------------------
+class function TAXWorkerPickBill.FunctionName: string;
+begin
+  Result := sAX_PickBill;
+end;
+
+function TAXWorkerPickBill.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerPickBill.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerPickBill.DoAXWork(var nData: string): Boolean;
+var nStr: string;
+    nNode: TXmlNode;
+begin
+  FListA.Text := PackerDecodeStr(FIn.FData);
+  BuildDefaultXMLPack;
+
+  with FXML.Root.NodeByName('HEAD'),FListA do
+  begin
+    NodeNew('InvoiceCardId').ValueAsString := Values['Order'];
+    NodeNew('ItemID').ValueAsString := Values['Stock'];
+    NodeNew('Qty').ValueAsString := Values['Value'];
+  end;
+
+  nData := IWebService(FChannel.FChannel).CheckPassByQtyAmount(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerPickBill --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerPickBill <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  nNode := FXML.Root.FindNode('HEAD');
+  nStr := nNode.NodeByName('MsgStatus').ValueAsString;
+  
+  Result := CompareText(nStr, 'E') <> 0;
+  //拣配错误标记为E.
+
+  if not Result then
+    if DefaultParseError(nData) then
+         nData := FOut.FBase.FErrDesc
+    else nData := '单据拣配失败,请联系管理员.';
+  //xxxxx
+end;
+
+//------------------------------------------------------------------------------
+class function TAXWorkerSyncBill.FunctionName: string;
+begin
+  Result := sAX_SyncBill;
+end;
+
+function TAXWorkerSyncBill.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerSyncBill.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerSyncBill.DoAXWork(var nData: string): Boolean;
+var nStr: string;
+    nNode,nTmp: TXmlNode;
+begin
+  Result := False;
+  BuildDefaultXMLPack;
+
+  nStr := 'Select * From %s Where L_ID=''%s''';
+  nStr := Format(nStr, [sTable_Bill, FIn.FData]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := Format('交货单[ %s ]已无效.', [FIn.FData]);
+      Exit;
+    end;
+            
+    with FXML.Root.NodeByName('HEAD') do
+    begin
+      NodeNew('BizID').ValueAsString := FieldByName('L_ID').AsString;
+      NodeNew('InvoiceCardId').ValueAsString := FieldByName('L_ZhiKa').AsString;
+      NodeNew('ItemID').ValueAsString := FieldByName('L_StockNo').AsString;
+      NodeNew('ItemType').ValueAsString := FieldByName('L_Type').AsString;
+      NodeNew('VehicleNum').ValueAsString := FieldByName('L_Truck').AsString;
+      NodeNew('PresetVolume').ValueAsString := FieldByName('L_Value').AsString;
+      NodeNew('CarSenderUnit').ValueAsString := FieldByName('L_SaleMan').AsString;
+      NodeNew('IssueCardDateTime').ValueAsString := FieldByName('L_Date').AsString;
+      NodeNew('TareDateTime').ValueAsString := FieldByName('L_PDate').AsString;
+      NodeNew('PacklistDateTime').ValueAsString := FieldByName('L_LadeTime').AsString;
+      NodeNew('GrossDateTime').ValueAsString := FieldByName('L_MDate').AsString;
+      NodeNew('PackSlipDateTime').ValueAsString := FieldByName('L_OutFact').AsString;
+      NodeNew('TareVolume').ValueAsString := FieldByName('L_PValue').AsString;
+      NodeNew('GrossVolume').ValueAsString := FieldByName('L_MValue').AsString;
+      NodeNew('BagQty').ValueAsString := FieldByName('L_DaiTotal').AsString;
+      NodeNew('BadBagQty').ValueAsString := FieldByName('L_DaiBuCha').AsString;
+      NodeNew('CheckBatchID').ValueAsString := FieldByName('L_HYDan').AsString;
+      NodeNew('ProportionID').ValueAsString := '?';
+      NodeNew('WrkCtrId').ValueAsString := FieldByName('L_LadeLine').AsString;
+    end;
+  end;
+
+  nData := IWebService(FChannel.FChannel).SetSalesPackingSlip(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerSyncBill --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerSyncBill <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  nNode := FXML.Root.FindNode('EXMG');
+  if not (Assigned(nNode) and Assigned(nNode.FindNode('Item'))) then
+  begin
+    nData := 'AX返回无效节点(EXMG.Item Null).';
+    Exit;
+  end;
+
+  nNode := nNode.NodeByName('Item');
+  Result := nNode.NodeByName('MsgType').ValueAsString = '1';
+  nTmp := nNode.FindNode('MsgTxt');
+
+  if Assigned(nTmp) then
+       nData := nTmp.ValueAsString
+  else nData := 'AX未描述的错误.';
+end;
+
+function TAXWorkerSyncBill.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
+var nStr: string;
+begin
+  Result := inherited DoAfterDBWork(nData, nResult);
+  //parent default
+
+  if nResult then //同步成功
+  begin
+    nStr := 'Update %s Set L_SyncNum=L_SyncNum+1,L_SyncDate=%s,L_SyncMemo=Null ' +
+            'Where L_ID=''%s''';
+    nStr := Format(nStr, [sTable_Bill, sField_SQLServer_Now, FIn.FData]);
+  end else
+  begin
+    nStr := 'Update %s Set L_SyncNum=L_SyncNum+1,L_SyncMemo=''%s'' ' +
+            'Where L_ID=''%s''';
+    nStr := Format(nStr, [sTable_Bill, nData, FIn.FData]);
+  end;
+
+  gDBConnManager.WorkerExec(FDBConn, nStr);
+  //write sync status
+end;
+
+//------------------------------------------------------------------------------
 class function TAXWorkerReadOrdersInfo.FunctionName: string;
 begin
   Result := sAX_ReadPuchaseOrder;
@@ -695,8 +930,6 @@ begin
 end;
 
 function TAXWorkerSaveOrdersInfo.DoAXWork(var nData: string): Boolean;
-var nIdx: Integer;
-    nNode: TXmlNode;
 begin
   Result := False;
   BuildDefaultXMLPack;
@@ -759,6 +992,8 @@ end;
 
 initialization
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadSalesInfo);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerPickBill);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncBill);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadOrdersInfo);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerSaveOrdersInfo);
 end.

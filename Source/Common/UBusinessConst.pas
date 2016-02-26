@@ -45,6 +45,7 @@ const
   cBC_GetPostBills            = $0030;   //获取岗位交货单
   cBC_SavePostBills           = $0031;   //保存岗位交货单
   cBC_GetBatcode              = $0032;   //获取批次编号
+  cBC_AXSyncBill              = $0033;   //同步交货单
 
   cBC_SaveOrder               = $0040;
   cBC_DeleteOrder             = $0041;
@@ -119,6 +120,7 @@ type
     FCard       : string;          //磁卡号
     FCardUse    : string;          //磁卡用途
     FIsVIP      : string;          //通道类型
+    FHYDan      : string;          //化验批次
     FStatus     : string;          //当前状态
     FNextStatus : string;          //下一状态
 
@@ -166,7 +168,9 @@ resourcestring
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
-  sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder';     //读取订单
+  sAX_PickBill                = 'AX_PickBill';          //提货减配
+  sAX_SyncBill                = 'AX_SyncBill';          //同步发货单
+  sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
   sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder';     //读取订单
 
   {*client function name*}
@@ -219,6 +223,7 @@ begin
         FCard       := Values['Card'];
         FCardUse    := Values['CardUse'];
         FIsVIP      := Values['IsVIP'];
+        FHYDan      := Values['HYDan'];
         FStatus     := Values['Status'];
         FNextStatus := Values['NextStatus'];
 
@@ -316,6 +321,7 @@ begin
         Values['Card']       := FCard;
         Values['CardUse']    := FCardUse;
         Values['IsVIP']      := FIsVIP;
+        Values['HYDan']      := FHYDan;
         Values['Status']     := FStatus;
         Values['NextStatus'] := FNextStatus;
 
