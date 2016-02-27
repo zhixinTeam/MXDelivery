@@ -72,6 +72,8 @@ function AXReadOrdersInfo(var nData: string): Boolean;
 //读取AX采购订单信息
 function AXSyncBill(var nData: string): Boolean;
 //同步交货单到AX
+function AXSyncDuanDao(var nData: string): Boolean;
+//同步短倒到AX
 function GetStockBatcode(const nStock: string; const nVal: Double): string;
 //获取指定品种的批次编号
 
@@ -81,8 +83,6 @@ function DeleteBill(const nBill: string): Boolean;
 //删除交货单
 function ChangeLadingTruckNo(const nBill,nTruck: string): Boolean;
 //更改提货车辆
-function BillSaleAdjust(const nBill, nNewZK: string): Boolean;
-//交货单调拨
 function SetBillCard(const nBill,nTruck: string; nVerify: Boolean): Boolean;
 //为交货单办理磁卡
 function SaveBillCard(const nBill, nCard: string): Boolean;
@@ -120,7 +120,7 @@ function SaveOrder(const nOrderData: string): string;
 //保存采购单
 function DeleteOrder(const nOrder: string): Boolean;
 //删除采购单
-function SetOrderCard(const nOrder,nTruck: string; nVerify: Boolean): Boolean;
+function SetOrderCard(const nOrder,nTruck: string): Boolean;
 //为采购单办理磁卡
 function SaveOrderCard(const nOrder, nCard: string): Boolean;
 //保存采购单磁卡
@@ -129,10 +129,25 @@ function LogoutOrderCard(const nCard: string): Boolean;
 function ChangeOrderTruckNo(const nOrder,nTruck: string): Boolean;
 //修改车牌号
 
+function SaveWaiXie(const nData: string): string;
+//保存采购单
+function DeleteWaiXie(const nID: string): Boolean;
+//删除交货单
+function SetWaiXieCard(const nID,nTruck: string): Boolean;
+//办理外协磁卡
+function AXSyncWaiXie(var nData: string): Boolean;
+//同步外协单到AX
+function ChangeWaiXieTruckNo(const nID,nTruck: string): Boolean;
+//修改外协车牌
+function SaveWaiXieCard(const nID,nCard: string): Boolean;
+//保存采购单磁卡
+
 function SaveDuanDaoCard(const nTruck, nCard: string): Boolean;
 //保存短倒磁卡
 function LogoutDuanDaoCard(const nCard: string): Boolean;
 //注销指定磁卡
+function GetProviderInfo(var nProID, nProName:string; const nSrc: string=''): Boolean;
+//获取供应商信息
 
 function LoadTruckQueue(var nLines: TZTLineItems; var nTrucks: TZTTruckItems;
  const nRefreshLine: Boolean = False): Boolean;
@@ -147,9 +162,8 @@ function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 //打印提货单
 function PrintPoundReport(const nPound: string; nAsk: Boolean): Boolean;
 //打印榜单
-
-function GetProviderInfo(var nProID, nProName:string; const nSrc: string=''): Boolean;
-//获取供应商信息
+function PrintWaiXieReport(nID: string; const nAsk: Boolean): Boolean;
+//打印外协单据
 
 implementation
 
@@ -654,6 +668,30 @@ begin
   else nData := nOut.FData;
 end;
 
+//Date: 2016-02-27
+//Parm: 外协单号[in];提示信息[out]
+//Desc: 将指定单号同步到AX
+function AXSyncWaiXie(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessSaleBill(cBC_AXSyncWaiXie, nData, '', @nOut);
+  if Result then
+       nData := ''
+  else nData := nOut.FData;
+end;
+
+//Date: 2016-02-27
+//Parm: 短倒单号[in];提示信息[out]
+//Desc: 将指定单号同步到AX
+function AXSyncDuanDao(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessSaleBill(cBC_AXSyncDuanDao, nData, '', @nOut);
+  if Result then
+       nData := ''
+  else nData := nOut.FData;
+end;
+
 //Date: 2016-2-24
 //Parm: 物料编号;扣减量
 //Desc: 获取nStock当前有效的批次编号
@@ -873,15 +911,6 @@ begin
   Result := CallBusinessSaleBill(cBC_ModifyBillTruck, nBill, nTruck, @nOut);
 end;
 
-//Date: 2014-09-30
-//Parm: 交货单;纸卡
-//Desc: 将nBill调拨给nNewZK的客户
-function BillSaleAdjust(const nBill, nNewZK: string): Boolean;
-var nOut: TWorkerBusinessCommand;
-begin
-  Result := CallBusinessSaleBill(cBC_SaleAdjust, nBill, nNewZK, @nOut);
-end;
-
 //Date: 2014-09-17
 //Parm: 交货单;车牌号;校验制卡开关
 //Desc: 为nBill交货单制卡
@@ -1044,6 +1073,58 @@ begin
 end;
 
 //------------------------------------------------------------------------------
+//Date: 2016-02-27
+//Parm: 外协单;新车牌
+//Desc: 修改nID的车牌为nTruck.
+function ChangeWaiXieTruckNo(const nID,nTruck: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessCommand(cBC_ModifyWaiXieTruck, nID, nTruck, @nOut);
+end;
+
+//Date: 2016-02-27
+//Parm: 开单数据
+//Desc: 保存外协单
+function SaveWaiXie(const nData: string): string;
+var nOut: TWorkerBusinessCommand;
+begin
+  if CallBusinessCommand(cBC_SaveWaiXie, nData, '', @nOut) then
+       Result := nOut.FData
+  else Result := '';
+end;
+
+//Date: 2016-02-27
+//Parm: 外协单
+//Desc: 删除nID.
+function DeleteWaiXie(const nID: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessCommand(cBC_DeleteWaiXie, nID, '', @nOut);
+end;
+
+//Date: 2016-02-27
+//Parm: 外协单;车牌号
+//Desc: 为nID绑定磁卡
+function SetWaiXieCard(const nID,nTruck: string): Boolean;
+var nP: TFormCommandParam;
+begin
+  nP.FParamA := nID;
+  nP.FParamB := nTruck;
+  nP.FParamC := sFlag_WaiXie;
+  CreateBaseFormItem(cFI_FormMakeCard, '', @nP);
+  Result := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+end;
+
+//Date: 2016-02-27
+//Parm: 外协单;磁卡
+//Desc: 关联nID的磁卡为nCard.
+function SaveWaiXieCard(const nID,nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessCommand(cBC_SaveWaiXieCard, nID, nCard, @nOut);
+end;
+
+//------------------------------------------------------------------------------
 //Date: 2014-09-15
 //Parm: 开单数据
 //Desc: 保存采购单,返回采购单号列表
@@ -1067,21 +1148,9 @@ end;
 //Date: 2014-09-17
 //Parm: 交货单;车牌号;校验制卡开关
 //Desc: 为nBill交货单制卡
-function SetOrderCard(const nOrder,nTruck: string; nVerify: Boolean): Boolean;
-var nStr: string;
-    nP: TFormCommandParam;
+function SetOrderCard(const nOrder,nTruck: string): Boolean;
+var nP: TFormCommandParam;
 begin
-  Result := True;
-  if nVerify then
-  begin
-    nStr := 'Select D_Value From %s Where D_Name=''%s'' And D_Memo=''%s''';
-    nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_ViaBillCard]);
-
-    with FDM.QueryTemp(nStr) do
-     if (RecordCount < 1) or (Fields[0].AsString <> sFlag_Yes) then Exit;
-    //no need do card
-  end;
-
   nP.FParamA := nOrder;
   nP.FParamB := nTruck;
   nP.FParamC := sFlag_Provide;
@@ -1116,6 +1185,53 @@ begin
   Result := CallBusinessPurchaseOrder(cBC_ModifyBillTruck, nOrder, nTruck, @nOut);
 end;
 
+//Date: 2015/1/18
+//Parm: 车牌号；电子标签；是否启用；旧电子标签
+//Desc: 读标签是否成功；新的电子标签
+function SetTruckRFIDCard(nTruck: string; var nRFIDCard: string;
+  var nIsUse: string; nOldCard: string=''): Boolean;
+var nP: TFormCommandParam;
+begin
+  nP.FParamA := nTruck;
+  nP.FParamB := nOldCard;
+  nP.FParamC := nIsUse;
+  CreateBaseFormItem(cFI_FormMakeRFIDCard, '', @nP);
+
+  nRFIDCard := nP.FParamB;
+  nIsUse    := nP.FParamC;
+  Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+end;
+
+function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
+var nP: TFormCommandParam;
+begin
+  with nP do
+  begin
+    FParamA := nTruck;
+    FParamB := nMateID;
+    FParamC := nMate;
+    FParamD := nSrcAddr;
+    FParamE := nDstAddr;
+
+    CreateBaseFormItem(cFI_FormTransfer, '', @nP);
+    Result  := (FCommand = cCmd_ModalResult) and (FParamA = mrOK);
+  end;
+end;  
+
+function GetProviderInfo(var nProID, nProName:string;
+    const nSrc: string=''): Boolean;
+var nP: TFormCommandParam;
+begin
+  nP.FParamA := nSrc;
+  CreateBaseFormItem(cFI_FormGetProvider, '', @nP);
+  Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
+  if not Result then Exit;
+
+  nProID   := nP.FParamB;
+  nProName := nP.FParamC;
+end;
+
+
 //------------------------------------------------------------------------------
 //保存短倒磁卡
 function SaveDuanDaoCard(const nTruck, nCard: string): Boolean;
@@ -1132,109 +1248,6 @@ begin
 end;
 
 //------------------------------------------------------------------------------
-//Desc: 打印标识为nID的销售合同
-procedure PrintSaleContractReport(const nID: string; const nAsk: Boolean);
-var nStr: string;
-    nParam: TReportParamItem;
-begin
-  if nAsk then
-  begin
-    nStr := '是否要打印销售合同?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end;
-
-  nStr := 'Select sc.*,S_Name,C_Name From $SC sc ' +
-          '  Left Join $SM sm On sm.S_ID=sc.C_SaleMan ' +
-          '  Left Join $Cus cus On cus.C_ID=sc.C_Customer ' +
-          'Where sc.C_ID=''$ID''';
-
-  nStr := MacroValue(nStr, [MI('$SC', sTable_SaleContract),
-          MI('$SM', sTable_Salesman), MI('$Cus', sTable_Customer),
-          MI('$ID', nID)]);
-
-  if FDM.QueryTemp(nStr).RecordCount < 1 then
-  begin
-    nStr := '编号为[ %s] 的销售合同已无效!!';
-    nStr := Format(nStr, [nID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := 'Select * From %s Where E_CID=''%s''';
-  nStr := Format(nStr, [sTable_SContractExt, nID]);
-  FDM.QuerySQL(nStr);
-
-  nStr := gPath + sReportDir + 'SaleContract.fr3';
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nParam.FName := 'UserName';
-  nParam.FValue := gSysParam.FUserID;
-  FDR.AddParamItem(nParam);
-
-  nParam.FName := 'Company';
-  nParam.FValue := gSysParam.FHintText;
-  FDR.AddParamItem(nParam);
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.Dataset2.DataSet := FDM.SqlQuery;
-  FDR.ShowReport;
-end;
-
-//Desc: 打印纸卡
-function PrintZhiKaReport(const nZID: string; const nAsk: Boolean): Boolean;
-var nStr: string;
-    nParam: TReportParamItem;
-begin
-  Result := False;
-
-  if nAsk then
-  begin
-    nStr := '是否要打印纸卡?';
-    if not QueryDlg(nStr, sAsk) then Exit;
-  end;
-
-  nStr := 'Select zk.*,C_Name,S_Name From %s zk ' +
-          ' Left Join %s cus on cus.C_ID=zk.Z_Customer' +
-          ' Left Join %s sm on sm.S_ID=zk.Z_SaleMan ' +
-          'Where Z_ID=''%s''';
-  nStr := Format(nStr, [sTable_ZhiKa, sTable_Customer, sTable_Salesman, nZID]);
-  
-  if FDM.QueryTemp(nStr).RecordCount < 1 then
-  begin
-    nStr := '纸卡号为[ %s ] 的记录已无效';
-    nStr := Format(nStr, [nZID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := 'Select * From %s Where D_ZID=''%s''';
-  nStr := Format(nStr, [sTable_ZhiKaDtl, nZID]);
-  if FDM.QuerySQL(nStr).RecordCount < 1 then
-  begin
-    nStr := '编号为[ %s ] 的纸卡无明细';
-    nStr := Format(nStr, [nZID]);
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nStr := gPath + sReportDir + 'ZhiKa.fr3';
-  if not FDR.LoadReportFile(nStr) then
-  begin
-    nStr := '无法正确加载报表文件';
-    ShowMsg(nStr, sHint); Exit;
-  end;
-
-  nParam.FName := 'Company';
-  nParam.FValue := gSysParam.FHintText;
-  FDR.AddParamItem(nParam);
-
-  FDR.Dataset1.DataSet := FDM.SqlTemp;
-  FDR.Dataset2.DataSet := FDM.SqlQuery;
-  FDR.ShowReport;
-  Result := FDR.PrintSuccess;
-end;
-
 //Desc: 打印提货单
 function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 var nStr: string;
@@ -1334,73 +1347,50 @@ begin
   end;
 end;
 
-//Desc: 获取nStock品种的报表文件
-function GetReportFileByStock(const nStock: string): string;
+//Date: 2016-02-27
+//Parm: 外协单据;是否询问
+//Desc: 打印nID对应的外协单据
+function PrintWaiXieReport(nID: string; const nAsk: Boolean): Boolean;
+var nStr: string;
+    nParam: TReportParamItem;
 begin
-  Result := GetPinYinOfStr(nStock);
+  Result := False;
 
-  if Pos('dj', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42_DJ.fr3'
-  else if Pos('gsysl', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_gsl.fr3'
-  else if Pos('kzf', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_kzf.fr3'
-  else if Pos('qz', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_qz.fr3'
-  else if Pos('32', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan32.fr3'
-  else if Pos('42', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42.fr3'
-  else if Pos('52', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42.fr3'
-  else Result := '';
-end;
-
-//Date: 2015/1/18
-//Parm: 车牌号；电子标签；是否启用；旧电子标签
-//Desc: 读标签是否成功；新的电子标签
-function SetTruckRFIDCard(nTruck: string; var nRFIDCard: string;
-  var nIsUse: string; nOldCard: string=''): Boolean;
-var nP: TFormCommandParam;
-begin
-  nP.FParamA := nTruck;
-  nP.FParamB := nOldCard;
-  nP.FParamC := nIsUse;
-  CreateBaseFormItem(cFI_FormMakeRFIDCard, '', @nP);
-
-  nRFIDCard := nP.FParamB;
-  nIsUse    := nP.FParamC;
-  Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
-end;
-
-function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
-var nP: TFormCommandParam;
-begin
-  with nP do
+  if nAsk then
   begin
-    FParamA := nTruck;
-    FParamB := nMateID;
-    FParamC := nMate;
-    FParamD := nSrcAddr;
-    FParamE := nDstAddr;
-
-    CreateBaseFormItem(cFI_FormTransfer, '', @nP);
-    Result  := (FCommand = cCmd_ModalResult) and (FParamA = mrOK);
+    nStr := '是否要打印外协称重榜单?';
+    if not QueryDlg(nStr, sAsk) then Exit;
   end;
-end;  
 
-function GetProviderInfo(var nProID, nProName:string;
-    const nSrc: string=''): Boolean;
-var nP: TFormCommandParam;
-begin
-  nP.FParamA := nSrc;
-  CreateBaseFormItem(cFI_FormGetProvider, '', @nP);
-  Result    := (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOK);
-  if not Result then Exit;
+  nStr := 'Select * From %s b Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, nID]);
+  //xxxxx
 
-  nProID   := nP.FParamB;
-  nProName := nP.FParamC;
+  if FDM.QueryTemp(nStr).RecordCount < 1 then
+  begin
+    nStr := '编号为[ %s ] 的记录已无效!!';
+    nStr := Format(nStr, [nID]);
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nStr := gPath + sReportDir + 'WaiXie.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nStr := '无法正确加载报表文件';
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nParam.FName := 'UserName';
+  nParam.FValue := gSysParam.FUserID;
+  FDR.AddParamItem(nParam);
+
+  nParam.FName := 'Company';
+  nParam.FValue := gSysParam.FHintText;
+  FDR.AddParamItem(nParam);
+
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.ShowReport;
+  Result := FDR.PrintSuccess;
 end;
-
 
 end.

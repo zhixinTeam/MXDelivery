@@ -70,18 +70,12 @@ uses
   ULibFun, DB, IniFiles, UMgrControl, UAdjustForm, UFormBase, UBusinessPacker,
   UDataModule, USysBusiness, USysDB, USysGrid, USysConst;
 
-var
-  gForm: TfFormOrder = nil;
-  //全局使用
-
 class function TfFormOrder.CreateForm(const nPopedom: string;
   const nParam: Pointer): TWinControl;
 var nStr, nFreeV, nFreeC: string;
     nP: PFormCommandParam;
 begin
   Result := nil;
-  if GetSysValidDate < 1 then Exit;
-
   if not Assigned(nParam) then
   begin
     New(nP);
@@ -248,9 +242,7 @@ begin
 
   nOrder := SaveOrder(PackerEncodeStr(FListA.Text));
   if nOrder='' then Exit;
-
-  SetOrderCard(nOrder, FListA.Values['Truck'], True);
-  //办理磁卡
+  SetOrderCard(nOrder, FListA.Values['Truck']);
 
   ModalResult := mrOK;
   ShowMsg('采购入厂单保存成功', sHint);

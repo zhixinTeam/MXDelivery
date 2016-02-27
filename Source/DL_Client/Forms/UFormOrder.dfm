@@ -82,6 +82,7 @@ inherited fFormOrder: TfFormOrder
       Left = 81
       Top = 111
       Enabled = False
+      ParentFont = False
       TabOrder = 11
       Text = '0.00'
       Width = 121
@@ -90,6 +91,7 @@ inherited fFormOrder: TfFormOrder
       Left = 81
       Top = 136
       Enabled = False
+      ParentFont = False
       TabOrder = 12
       Text = '0.00'
       Width = 121
@@ -98,6 +100,7 @@ inherited fFormOrder: TfFormOrder
       Left = 281
       Top = 111
       Enabled = False
+      ParentFont = False
       TabOrder = 13
       Width = 121
     end
@@ -105,6 +108,7 @@ inherited fFormOrder: TfFormOrder
       Left = 281
       Top = 136
       Enabled = False
+      ParentFont = False
       TabOrder = 14
       Text = '0.00'
       Width = 121

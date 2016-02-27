@@ -46,7 +46,14 @@ const
   cBC_SavePostBills           = $0031;   //保存岗位交货单
   cBC_GetBatcode              = $0032;   //获取批次编号
   cBC_AXSyncBill              = $0033;   //同步交货单
+  cBC_AXSyncDuanDao           = $0034;   //同步短倒
 
+  cBC_SaveWaiXie              = $0035;   //保存外协
+  cBC_DeleteWaiXie            = $0036;   //删除外协单
+  cBC_SaveWaiXieCard          = $0037;   //外协磁卡
+  cBC_AXSyncWaiXie            = $0038;   //同步外协
+  cBC_ModifyWaiXieTruck       = $0039;   //修改外协车牌号
+                                                         
   cBC_SaveOrder               = $0040;
   cBC_DeleteOrder             = $0041;
   cBC_SaveOrderCard           = $0042;
@@ -175,6 +182,8 @@ resourcestring
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
   sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
+  sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder'; //读取订单
+
   sAX_PickBill                = 'AX_PickBill';          //提货减配
   sAX_SyncBill                = 'AX_SyncBill';          //同步发货单
   sAX_SyncOrder               = 'AX_SyncOrder';         //同步入厂单

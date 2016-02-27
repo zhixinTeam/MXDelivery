@@ -75,6 +75,7 @@ const
   cFI_FrameProvideLog   = $0105;                     //供应日志
   cFI_FrameMaterails    = $0106;                     //原材料
   cFI_FrameOrder        = $0107;                     //采购订单
+  cFI_FrameWaiXie       = $0108;                     //外协称重
 
   cFI_FrameWXAccount    = $0110;                     //微信账户
   cFI_FrameWXSendLog    = $0111;                     //发送日志
@@ -132,10 +133,12 @@ const
   cFI_FormProvider      = $1051;                     //供应商
   cFI_FormMaterails     = $1052;                     //原材料
   cFI_FormOrder         = $1053;                     //采购订单
-  cFI_FormOrdersAX      = $1057;                     //采购订单
-  cFI_FormOrderBase     = $1054;                     //采购订单
-  cFI_FormPurchase      = $1055;                     //采购验收
-  cFI_FormGetPOrderBase  = $1056;                     //采购订单
+  cFI_FormOrdersAX      = $1054;                     //采购订单
+  cFI_FormOrderBase     = $1055;                     //采购订单
+  cFI_FormPurchase      = $1056;                     //采购验收
+  cFI_FormGetPOrderBase  = $1057;                    //采购订单
+  
+  cFI_FormWaiXie        = $1060;                     //外协称重
 
   cFI_FormStockParam    = $1065;                     //品种管理
   cFI_FormStockHuaYan   = $1066;                     //开化验单
@@ -363,6 +366,8 @@ begin
   AddMenuModuleItem('MAIN_M04', cFI_FrameOrder);
   AddMenuModuleItem('MAIN_M05', cFI_FormOrder, mtForm);
   AddMenuModuleItem('MAIN_M06', cFI_FormPurchase, mtForm);
+  AddMenuModuleItem('MAIN_M08', cFI_FormWaiXie, mtForm);
+  AddMenuModuleItem('MAIN_M09', cFI_FrameWaiXie);
 
   AddMenuModuleItem('MAIN_W01', cFI_FrameWXAccount);
   AddMenuModuleItem('MAIN_W02', cFI_FrameWXSendLog);

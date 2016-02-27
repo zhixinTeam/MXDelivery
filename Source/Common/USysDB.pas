@@ -194,6 +194,7 @@ ResourceString
 
   sFlag_BusGroup      = 'BusFunction';               //业务编码组
   sFlag_BillNo        = 'Bus_Bill';                  //交货单号
+  sFlag_WaiXieNo      = 'Bus_WaiXie';                //外协编号
   sFlag_PoundID       = 'Bus_Pound';                 //称重记录
   sFlag_Customer      = 'Bus_Customer';              //客户编号
   sFlag_SaleMan       = 'Bus_SaleMan';               //业务员编号
@@ -223,16 +224,8 @@ ResourceString
   sTable_SerialBase   = 'Sys_SerialBase';            //编码种子
   sTable_SerialStatus = 'Sys_SerialStatus';          //编号状态
   sTable_WorkePC      = 'Sys_WorkePC';               //验证授权
-  
-  sTable_Customer     = 'S_Customer';                //客户信息
-  sTable_Salesman     = 'S_Salesman';                //业务人员
-  sTable_SaleContract = 'S_Contract';                //销售合同
-  sTable_SContractExt = 'S_ContractExt';             //合同扩展
 
-  sTable_ZhiKa        = 'S_ZhiKa';                   //纸卡数据
-  sTable_ZhiKaDtl     = 'S_ZhiKaDtl';                //纸卡明细
   sTable_Card         = 'S_Card';                    //销售磁卡
-  sTable_CardExt      = 'S_CardExt';                 //其它磁卡
   sTable_Bill         = 'S_Bill';                    //提货单
   sTable_BillBak      = 'S_BillBak';                 //已删交货单
 
@@ -247,8 +240,10 @@ ResourceString
 
   sTable_Provider     = 'P_Provider';                //客户表
   sTable_Materails    = 'P_Materails';               //物料表
-  sTable_PurchInfo    = 'P_PurchInfo';               //采购单
+  sTable_PurchInfo    = 'P_PurchInfo';
   sTable_PurchInfoBak = 'P_PurchInfoBak';            //采购单
+  sTable_WaiXieInfo   = 'P_WaiXieInfo';
+  sTable_WaiXieBak    = 'P_WaiXieBak';               //外协单
 
   sTable_Transfer     = 'P_Transfer';                //短倒明细单
   sTable_TransferBak  = 'P_TransferBak';             //短倒明细单
@@ -707,8 +702,8 @@ ResourceString
        'P_Value $Float,P_KZValue $Float, P_AKValue $Float,' +
        'P_YSResult Char(1), P_YLine varChar(15), P_YLineName varChar(32),' +
        'P_Man varChar(32), P_Date DateTime,' +
-       'P_DelMan varChar(32), P_DelDate DateTime,' +
-       'P_Memo varChar(500))';
+       'P_DelMan varChar(32), P_DelDate DateTime, P_Memo varChar(500),' +
+       'P_SyncNum Integer Default 0, P_SyncDate DateTime, P_SyncMemo varChar(500))';
   {-----------------------------------------------------------------------------
    入厂表: PurchInfo
    *.R_ID: 编号
@@ -731,6 +726,9 @@ ResourceString
    *.P_OutFact,P_OutMan: 出厂放行
    *.P_Man,P_Date: 删除信息
    *.P_DelMan,P_DelDate: 删除信息
+   *.P_SyncNum: 提交次数
+   *.P_SyncDate: 提交成功时间
+   *.P_SyncMemo: 提交错误描述
   -----------------------------------------------------------------------------}
 
   sSQL_NewTransfer = 'Create Table $Table(R_ID $Inc, T_ID varChar(20),' +
@@ -743,7 +741,7 @@ ResourceString
        'T_DelMan varChar(32), T_DelDate DateTime, T_Memo varChar(500),' +
        'T_SyncNum Integer Default 0, T_SyncDate DateTime, T_SyncMemo varChar(500))';
   {-----------------------------------------------------------------------------
-   入厂表: PurchInfo
+   入厂表: Transfer
    *.R_ID: 编号
    *.T_ID: 短倒业务号
    *.T_PID: 磅单编号
@@ -760,6 +758,44 @@ ResourceString
    *.T_Man,T_Date: 单据信息
    *.T_DelMan,T_DelDate: 删除信息
    *.T_SyncNum, T_SyncDate, T_SyncMemo: 同步次数; 同步完成时间; 同步信息
+  -----------------------------------------------------------------------------}
+
+  sSQL_NewWaiXieInfo = 'Create Table $Table(R_ID $Inc, W_ID varChar(20),' +
+       'W_Card varChar(16), W_Truck varChar(15),' +
+       'W_ProID varChar(15), W_ProName varChar(160), W_ProPY varChar(160),' +
+       'W_TransID varChar(15), W_TransName varChar(160), W_TransPY varChar(160),' +
+       'W_Type Char(1), W_StockNo varChar(32), W_StockName varChar(160),' +
+       'W_Status Char(1), W_NextStatus Char(1),' +
+       'W_InTime1 DateTime, W_InMan1 varChar(32),' +
+       'W_InTime2 DateTime, W_InMan2 varChar(32),' +
+       'W_PValue $Float, W_PDate DateTime, W_PMan varChar(32),' +
+       'W_MValue $Float, W_MDate DateTime, W_MMan varChar(32),' +
+       'W_OutFact1 DateTime, W_OutMan1 varChar(32), ' +
+       'W_OutFact2 DateTime, W_OutMan2 varChar(32), ' +
+       'W_Man varChar(32), W_Date DateTime,' +
+       'W_DelMan varChar(32), W_DelDate DateTime,' +
+       'W_SyncNum Integer Default 0, W_SyncDate DateTime, W_SyncMemo varChar(500))';
+  {-----------------------------------------------------------------------------
+   外协表: WaiXieInfo
+   *.R_ID: 编号
+   *.W_ID: 入厂号
+   *.W_Card: 磁卡号
+   *.W_Truck: 车牌号
+   *.W_ProID,W_ProName,W_ProPY:客户
+   *.W_TransID,W_TransName, W_TransPY:运输单位
+   *.W_Type: 类型(袋,散)
+   *.W_StockNo: 物料编号
+   *.W_StockName: 物料描述
+   *.W_Status,W_NextStatus: 状态
+   *.W_InTime1,W_InTime2: 进厂
+   *.W_PValue,W_PDate,W_PMan: 称皮重
+   *.W_MValue,W_MDate,W_MMan: 称毛重
+   *.W_OutFact1,W_OutFact2: 出厂
+   *.W_Man,W_Date: 开单人
+   *.W_DelMan,W_DelDate: 删除信息
+   *.W_SyncNum: 提交次数
+   *.W_SyncDate: 提交成功时间
+   *.W_SyncMemo: 提交错误描述
   -----------------------------------------------------------------------------}
 
   sSQL_NewBatcode = 'Create Table $Table(R_ID $Inc, B_Stock varChar(32),' +
@@ -940,6 +976,8 @@ begin
   AddSysTableItem(sTable_PurchInfoBak, sSQL_NewPurchInfo);
   AddSysTableItem(sTable_Transfer, sSQL_NewTransfer);
   AddSysTableItem(sTable_TransferBak, sSQL_NewTransfer);
+  AddSysTableItem(sTable_WaiXieInfo, sSQL_NewWaiXieInfo);
+  AddSysTableItem(sTable_WaiXieBak, sSQL_NewWaiXieInfo);
 end;
 
 //Desc: 清理系统表

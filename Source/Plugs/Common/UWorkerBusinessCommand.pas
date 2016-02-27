@@ -86,6 +86,14 @@ type
     //获取批次编号
     function GetPurchFreeze(var nData: string): Boolean;
     //获取物料冻结量
+    function SaveWaiXie(var nData: string): Boolean;
+    //保存外协单
+    function SaveWaiXieCard(var nData: string): Boolean;
+    //保存外协磁卡
+    function ChangeWaiXieTruck(var nData: string): Boolean;
+    //修改外协车牌
+    function DeleteWaiXie(var nData: string): Boolean;
+    //删除外协单
   public
     constructor Create; override;
     destructor destroy; override;
@@ -319,6 +327,10 @@ begin
    cBC_GetStockItemInfo    : Result := GetStockItem(nData);
    cBC_GetBatcode          : Result := GetStockBatcode(nData);
    cBC_GetPurchFreeze      : Result := GetPurchFreeze(nData);
+   cBC_SaveWaiXie          : Result := SaveWaiXie(nData);
+   cBC_SaveWaiXieCard      : Result := SaveWaiXieCard(nData);
+   cBC_ModifyWaiXieTruck   : Result := ChangeWaiXieTruck(nData);
+   cBC_DeleteWaiXie        : Result := DeleteWaiXie(nData);
    else
     begin
       Result := False;
@@ -860,6 +872,7 @@ begin
     Result := True;
   end;
 end;
+
 //Date: 2016/2/25
 //Parm: 
 //Desc: 获取供应商对应物料编号的冻结量
@@ -887,6 +900,255 @@ begin
 
   FOut.FData := nFreezeV;
   FOut.FExtParam := nFreezeC;
+end;
+
+//------------------------------------------------------------------------------
+//Date: 2016-02-27
+//Desc: 生成外协单
+function TWorkerBusinessCommander.SaveWaiXie(var nData: string): Boolean;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  Result := False;
+  FListA.Text := PackerDecodeStr(FIn.FData);
+
+  nStr := 'Select W_ID From %s Where W_Truck=''%s'' And W_OutFact2 Is Null';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FListA.Values['Truck']]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    nData := '车辆[ %s ]有未完成的外协单据[ %s ],请先处理.';
+    nData := Format(nData, [FListA.Values['Truck'], Fields[0].AsString]);
+    Exit;
+  end;
+
+  with FListC do
+  begin
+    Clear;
+    Values['Group'] :=sFlag_BusGroup;
+    Values['Object'] := sFlag_WaiXieNo;
+  end;
+
+  if not TWorkerBusinessCommander.CallMe(cBC_GetSerialNO,
+        FListC.Text, sFlag_Yes, @nOut) then  //to get serial no
+  begin
+    nData := nOut.FData;
+    Exit;
+  end;
+
+  FOut.FData := nOut.FData;
+  //id
+
+  with FListA do
+  begin
+    nStr := MakeSQLByStr([SF('W_ID', nOut.FData),
+            SF('W_Truck', Values['Truck']),
+            SF('W_ProID', Values['CusID']),
+            SF('W_ProName', Values['CusName']),
+            SF('W_ProPY', GetPinYinOfStr(Values['CusName'])),
+            SF('W_TransID', Values['Sender']),
+            SF('W_TransName', Values['SenderName']),
+            SF('W_TransPY', GetPinYinOfStr(Values['SenderName'])),
+            SF('W_StockNo', Values['Stock']),
+            SF('W_StockName', Values['StockName']),
+
+            SF('W_Status', sFlag_BillNew),
+            SF('W_Man', FIn.FBase.FFrom.FUser),
+            SF('W_Date', sField_SQLServer_Now, sfVal)
+            ], sTable_WaiXieInfo, '', True);
+    //xxxxx
+
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+    Result := True;
+  end;
+end;
+
+//Date: 2016-02-27
+//Parm: 单据[FIn.FData];磁卡[FIn.FExtParam]
+//Desc: 保存外协单磁卡
+function TWorkerBusinessCommander.SaveWaiXieCard(var nData: string): Boolean;
+var nStr,nTruck: string;
+    nIdx: Integer;
+begin
+  Result := False;
+  nStr := 'Select W_Card,W_Truck From %s Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FData]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '外协单据[ %s ]已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    FListA.Clear;
+    nTruck := Fields[1].AsString;
+    
+    if Fields[0].AsString <> '' then
+    begin
+      nStr := 'Update %s set C_TruckNo=Null,C_Status=''%s'' Where C_Card=''%s''';
+      nStr := Format(nStr, [sTable_Card, sFlag_CardIdle, Fields[0].AsString]);
+      FListA.Add(nStr); //磁卡状态
+    end;
+  end;
+
+  nStr := 'Update %s Set W_Card=''%s'' Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FExtParam, FIn.FData]);
+  FListA.Add(nStr);
+
+  nStr := 'Select Count(*) From %s Where C_Card=''%s''';
+  nStr := Format(nStr, [sTable_Card, FIn.FExtParam]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if Fields[0].AsInteger < 1 then
+  begin
+    nStr := MakeSQLByStr([SF('C_Card', FIn.FExtParam),
+            SF('C_Status', sFlag_CardUsed),
+            SF('C_Used', sFlag_WaiXie),
+            SF('C_TruckNo', nTruck),
+            SF('C_Freeze', sFlag_No),
+            SF('C_Man', FIn.FBase.FFrom.FUser),
+            SF('C_Date', sField_SQLServer_Now, sfVal)
+            ], sTable_Card, '', True);
+    FListA.Add(nStr);
+  end else
+  begin
+    nStr := Format('C_Card=''%s''', [FIn.FExtParam]);
+    nStr := MakeSQLByStr([SF('C_Status', sFlag_CardUsed),
+            SF('C_Used', sFlag_WaiXie),
+            SF('C_TruckNo', nTruck),
+            SF('C_Freeze', sFlag_No),
+            SF('C_Man', FIn.FBase.FFrom.FUser),
+            SF('C_Date', sField_SQLServer_Now, sfVal)
+            ], sTable_Card, nStr, False);
+    FListA.Add(nStr);
+  end;
+
+  FDBConn.FConn.BeginTrans;
+  try
+    for nIdx:=FListA.Count - 1 downto 0 do
+      gDBConnManager.WorkerExec(FDBConn, FListA[nIdx]);
+    //xxxxx
+
+    FDBConn.FConn.CommitTrans;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      FDBConn.FConn.RollbackTrans;
+      nData := E.Message;
+    end;
+  end;
+end;
+
+//Date: 2016-02-27
+//Parm: 外协单[FIn.FData];车牌号[FIn.FExtParm]
+//Desc: 修改单据的车牌
+function TWorkerBusinessCommander.ChangeWaiXieTruck(var nData: string): Boolean;
+var nStr: string;
+    nIdx: Integer;
+begin
+  Result := False;
+  nStr := 'Select W_PDate,W_MDate,W_Card From %s Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FData]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '外协单据[ %s ]已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    FListA.Clear;
+    if (Fields[0].AsFloat > 0) or (Fields[1].AsFloat > 0) then
+    begin
+      nStr := 'Update %s set P_Truck=''%s'' Where P_Bill=''%s''';
+      nStr := Format(nStr, [sTable_PoundLog, FIn.FExtParam, FIn.FData]);
+      FListA.Add(nStr); //称重记录
+    end;
+
+    if Fields[2].AsString <> '' then
+    begin
+      nStr := 'Update %s set C_TruckNo=''%s'' Where C_Card=''%s''';
+      nStr := Format(nStr, [sTable_Card, FIn.FExtParam, Fields[2].AsString]);
+      FListA.Add(nStr); //磁卡记录
+    end;
+  end;
+
+  nStr := 'Update %s set W_Truck=''%s'' Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FExtParam, FIn.FData]);
+  FListA.Add(nStr);
+
+  FDBConn.FConn.BeginTrans;
+  try
+    for nIdx:=FListA.Count - 1 downto 0 do
+      gDBConnManager.WorkerExec(FDBConn, FListA[nIdx]);
+    //xxxxx
+
+    FDBConn.FConn.CommitTrans;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      FDBConn.FConn.RollbackTrans;
+      nData := E.Message;
+    end;
+  end;
+end;
+
+//Date: 2016-02-27
+//Parm: 外协单[FIn.FData]
+//Desc: 删除外协单
+function TWorkerBusinessCommander.DeleteWaiXie(var nData: string): Boolean;
+var nStr: string;
+    nIdx: Integer;
+begin
+  Result := False;
+  nStr := 'Select W_Card From %s Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FData]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '外协单据[ %s ]已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    FListA.Clear;
+    if Fields[0].AsString <> '' then
+    begin
+      nStr := 'Update %s set C_TruckNo=Null,C_Status=''%s'' Where C_Card=''%s''';
+      nStr := Format(nStr, [sTable_Card, sFlag_CardIdle, Fields[0].AsString]);
+      FListA.Add(nStr); //磁卡状态
+    end; 
+  end;
+
+  nStr := 'Delete From %s Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, FIn.FData]);
+  FListA.Add(nStr);
+
+  FDBConn.FConn.BeginTrans;
+  try
+    for nIdx:=FListA.Count - 1 downto 0 do
+      gDBConnManager.WorkerExec(FDBConn, FListA[nIdx]);
+    //xxxxx
+
+    FDBConn.FConn.CommitTrans;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      FDBConn.FConn.RollbackTrans;
+      nData := E.Message;
+    end;
+  end;
 end;
 
 initialization

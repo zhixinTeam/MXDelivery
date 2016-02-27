@@ -1039,7 +1039,7 @@ begin
   nID := UpperCase(FIn.FData);
 
   nSQL := 'Select * From %s Where W_ID=''%s''';
-  nSQL := Format(nSQL, [sTable_WaiXie, nID]);
+  nSQL := Format(nSQL, [sTable_WaiXieInfo, nID]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nSQL),FXML.Root.NodeByName('HEAD') do
   begin
@@ -1108,12 +1108,12 @@ begin
   begin
     nStr := 'Update %s Set W_SyncNum=W_SyncNum+1,W_SyncDate=%s,W_SyncMemo=Null ' +
             'Where W_ID=''%s''';
-    nStr := Format(nStr, [sTable_WaiXie, sField_SQLServer_Now, FIn.FData]);
+    nStr := Format(nStr, [sTable_WaiXieInfo, sField_SQLServer_Now, FIn.FData]);
   end else
   begin
     nStr := 'Update %s Set W_SyncNum=W_SyncNum+1,W_SyncMemo=''%s'' ' +
             'Where W_ID=''%s''';
-    nStr := Format(nStr, [sTable_WaiXie, nData, FIn.FData]);
+    nStr := Format(nStr, [sTable_WaiXieInfo, nData, FIn.FData]);
   end;
 
   gDBConnManager.WorkerExec(FDBConn, nStr);

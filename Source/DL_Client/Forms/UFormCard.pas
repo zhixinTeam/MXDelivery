@@ -80,11 +80,13 @@ begin
     FParam := nParam;
 
     if FParam.FParamC=sFlag_Provide then
-      dxLayout1Item3.Caption := '采购单号'
-    else if FParam.FParamC=sFlag_Sale then
-      dxLayout1Item3.Caption := '交货单号'
-    else if FParam.FParamC=sFlag_DuanDao then
-      dxLayout1Item3.Caption := '短倒原料';
+      dxLayout1Item3.Caption := '采购单号:' else
+    if FParam.FParamC=sFlag_Sale then
+      dxLayout1Item3.Caption := '交货单号:' else
+    if FParam.FParamC=sFlag_DuanDao then
+      dxLayout1Item3.Caption := '短倒原料:' else
+    if FParam.FParamC=sFlag_WaiXie then
+      dxLayout1Item3.Caption := '外协单号:';
 
     InitFormData;
     ActionComPort(False);
@@ -210,11 +212,13 @@ begin
   end;
 
   if FParam.FParamC=sFlag_Provide then
-    nRet := SaveOrderCard(EditBill.Text, EditCard.Text)
-  else if FParam.FParamC=sFlag_Sale then
-    nRet := SaveBillCard(EditBill.Text, EditCard.Text)
-  else if FParam.FParamC=sFlag_DuanDao then
-    nRet := SaveDuanDaoCard(EditTruck.Text, EditCard.Text)
+    nRet := SaveOrderCard(EditBill.Text, EditCard.Text) else
+  if FParam.FParamC=sFlag_Sale then
+    nRet := SaveBillCard(EditBill.Text, EditCard.Text) else
+  if FParam.FParamC=sFlag_DuanDao then
+    nRet := SaveDuanDaoCard(EditTruck.Text, EditCard.Text) else
+  if FParam.FParamC=sFlag_WaiXie then
+       nRet := SaveWaiXieCard(EditBill.Text, EditCard.Text)
   else nRet := False;
   
   if nRet then
