@@ -93,7 +93,7 @@ begin
   nP.FParamB := Trim(EditTruck.Text);
   nP.FParamC := sFlag_DuanDao;
   CreateBaseFormItem(cFI_FormMakeCard, '', @nP);
-  if (nP.FCommand <> cCmd_ModalResult) or (nP.FParamA = mrOK) then Exit;
+  if (nP.FCommand <> cCmd_ModalResult) or (nP.FParamA <> mrOK) then Exit;
 
   nStr := 'Update %s Set T_MatePID=T_MateID,T_MateID=''%s'',T_MateName=''%s'','+
           'T_SrcAddr=''%s'',T_DestAddr=''%s'' Where T_Truck=''%s''';

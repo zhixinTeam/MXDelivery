@@ -157,6 +157,19 @@ begin
        nStr := ''
   else nStr := SF('R_ID', FTruckID, sfVal);
 
+  if FTruckID='' then
+  begin
+    nStr := 'Select * From %s Where T_Truck=''%s''';
+    nStr := Format(nStr, [sTable_Truck, nTruck]);
+
+    if FDM.QueryTemp(nStr).RecordCount>0 then
+    begin
+      nStr := Format('³µÁ¾[%s]ÒÑ´æÔÚ', [nTruck]);
+      ShowMsg(nStr, sHint);
+      Exit;
+    end;  
+  end;  
+
   nStr := MakeSQLByStr([SF('T_Truck', nTruck),
           SF('T_Owner', EditOwner.Text),
           SF('T_Phone', EditPhone.Text),

@@ -1,5 +1,5 @@
 inherited fFrameManualPoundItem: TfFrameManualPoundItem
-  Width = 1019
+  Width = 1041
   Height = 309
   VertScrollBar.Visible = False
   Font.Height = -15
@@ -190,8 +190,8 @@ inherited fFrameManualPoundItem: TfFrameManualPoundItem
     Properties.LabelStyle = cxlsRaised
     OnClick = HintLabelClick
     Height = 27
-    Width = 1019
-    AnchorX = 510
+    Width = 1041
+    AnchorX = 521
     AnchorY = 14
   end
   object EditTruck: TcxComboBox
@@ -671,6 +671,15 @@ inherited fFrameManualPoundItem: TfFrameManualPoundItem
     Transparent = True
     OnClick = CheckZDClick
     Width = 80
+  end
+  object CheckLock: TcxCheckBox
+    Left = 992
+    Top = 88
+    Caption = #38145#23450
+    ParentFont = False
+    Properties.OnEditValueChanged = CheckLockPropertiesEditValueChanged
+    TabOrder = 30
+    Width = 49
   end
   object Timer1: TTimer
     OnTimer = Timer1Timer

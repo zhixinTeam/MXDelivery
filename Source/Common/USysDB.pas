@@ -201,7 +201,8 @@ ResourceString
   sFlag_WeiXin        = 'Bus_WeiXin';                //微信映射编号
   sFlag_HYDan         = 'Bus_HYDan';                 //化验单号
   sFlag_ForceHint     = 'Bus_HintMsg';               //强制提示
-  sFlag_PurchInfo     = 'Bus_PurchID';               //业务员编号
+  sFlag_PurchInfo     = 'Bus_PurchID';               //采购单号
+  sFlag_Transfer      = 'Bus_Transfer';              //短倒单号
 
   sFlag_SerialAX      = 'AXFunction';                //AX编码组
   sFlag_AXMsgNo       = 'AX_MsgNo';                  //AX消息号
@@ -248,6 +249,9 @@ ResourceString
   sTable_Materails    = 'P_Materails';               //物料表
   sTable_PurchInfo    = 'P_PurchInfo';               //采购单
   sTable_PurchInfoBak = 'P_PurchInfoBak';            //采购单
+
+  sTable_Transfer     = 'P_Transfer';                //短倒明细单
+  sTable_TransferBak  = 'P_TransferBak';             //短倒明细单
 
   sTable_WeixinLog    = 'Sys_WeixinLog';             //微信日志
   sTable_WeixinMatch  = 'Sys_WeixinMatch';           //账号匹配
@@ -729,6 +733,35 @@ ResourceString
    *.P_DelMan,P_DelDate: 删除信息
   -----------------------------------------------------------------------------}
 
+  sSQL_NewTransfer = 'Create Table $Table(R_ID $Inc, T_ID varChar(20),' +
+       'T_Card varChar(16), T_Truck varChar(15), T_PID varChar(15),' +
+       'T_SrcAddr varChar(160), T_DestAddr varChar(160),' +
+       'T_Type Char(1), T_StockNo varChar(32), T_StockName varChar(160),' +
+       'T_PValue $Float, T_PDate DateTime, T_PMan varChar(32),' +
+       'T_MValue $Float, T_MDate DateTime, T_MMan varChar(32),' +
+       'T_Value $Float, T_Man varChar(32), T_Date DateTime,' +
+       'T_DelMan varChar(32), T_DelDate DateTime, T_Memo varChar(500),' +
+       'T_SyncNum Integer Default 0, T_SyncDate DateTime, T_SyncMemo varChar(500))';
+  {-----------------------------------------------------------------------------
+   入厂表: PurchInfo
+   *.R_ID: 编号
+   *.T_ID: 短倒业务号
+   *.T_PID: 磅单编号
+   *.T_Card: 磁卡号
+   *.T_Truck: 车牌号
+   *.T_SrcAddr:倒出地点
+   *.T_DestAddr:倒入地点
+   *.T_Type: 类型(袋,散)
+   *.T_StockNo: 物料编号
+   *.T_StockName: 物料描述
+   *.T_PValue,T_PDate,T_PMan: 称皮重
+   *.T_MValue,T_MDate,T_MMan: 称毛重
+   *.T_Value: 收货量
+   *.T_Man,T_Date: 单据信息
+   *.T_DelMan,T_DelDate: 删除信息
+   *.T_SyncNum, T_SyncDate, T_SyncMemo: 同步次数; 同步完成时间; 同步信息
+  -----------------------------------------------------------------------------}
+
   sSQL_NewBatcode = 'Create Table $Table(R_ID $Inc, B_Stock varChar(32),' +
        'B_Name varChar(80), B_Prefix varChar(5), B_Base Integer,' +
        'B_Incement Integer, B_Length Integer, ' +
@@ -905,6 +938,8 @@ begin
   AddSysTableItem(sTable_Materails, sSQL_NewMaterails);
   AddSysTableItem(sTable_PurchInfo, sSQL_NewPurchInfo);
   AddSysTableItem(sTable_PurchInfoBak, sSQL_NewPurchInfo);
+  AddSysTableItem(sTable_Transfer, sSQL_NewTransfer);
+  AddSysTableItem(sTable_TransferBak, sSQL_NewTransfer);
 end;
 
 //Desc: 清理系统表

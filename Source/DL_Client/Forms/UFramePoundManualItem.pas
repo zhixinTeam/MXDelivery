@@ -65,6 +65,7 @@ type
     CheckZD: TcxCheckBox;
     CheckSound: TcxCheckBox;
     Timer_Savefail: TTimer;
+    CheckLock: TcxCheckBox;
     procedure Timer1Timer(Sender: TObject);
     procedure N1Click(Sender: TObject);
     procedure N3Click(Sender: TObject);
@@ -82,6 +83,7 @@ type
     procedure HintLabelClick(Sender: TObject);
     procedure CheckZDClick(Sender: TObject);
     procedure Timer_SavefailTimer(Sender: TObject);
+    procedure CheckLockPropertiesEditValueChanged(Sender: TObject);
   private
     { Private declarations }
     FPoundTunnel: PPTTunnelItem;
@@ -117,6 +119,7 @@ type
     //矫正散装净重
     function SavePoundSale: Boolean;
     function SavePoundData: Boolean;
+    function SavePoundDuanDao: Boolean;
     //保存称重     
     procedure PlayVoice(const nStrtext: string);
     //播发语音
@@ -278,6 +281,9 @@ begin
     FInnerData := nItem;
     if nOnlyData then Exit;
 
+    CheckLock.Checked := False;
+    CheckLock.Visible := False;
+
     SetLength(FBillItems, 0);
     EditValue.Text := '0.00';
     EditBill.Properties.Items.Clear;
@@ -308,6 +314,8 @@ begin
       EditWValue.Text := '0.00';
     end;
 
+    CheckLock.Visible := FCardUse = sFlag_DuanDao;
+    CheckLock.Enabled := (FCardUse = sFlag_DuanDao) and (not CheckLock.Checked);
     RadioPD.Checked := FPModel = sFlag_PoundPD;
     RadioCC.Checked := FPModel = sFlag_PoundCC;
     RadioLS.Checked := FPModel = sFlag_PoundLS;
@@ -355,7 +363,10 @@ begin
     if FUIData.FNextStatus = sFlag_TruckBFP then
     begin
       RadioCC.Enabled := False;
-      EditMemo.Text := nStr + '称皮重';
+
+      if CheckLock.Checked then
+           EditMemo.Text := nStr + '预置皮重'
+      else EditMemo.Text := nStr + '称皮重';
     end else
     begin
       RadioCC.Enabled := True;
@@ -1084,6 +1095,47 @@ begin
   end;
 end;
 
+//------------------------------------------------------------------------------
+//Desc: 短倒业务
+function TfFrameManualPoundItem.SavePoundDuanDao: Boolean;
+var nNextStatus: string;
+begin
+  Result := False;
+  //init
+
+  if (FUIData.FPData.FValue <= 0) and (FUIData.FMData.FValue <= 0) then
+  begin
+    ShowMsg('请先称重', sHint);
+    Exit;
+  end;
+
+  if (FUIData.FPData.FValue > 0) and (FUIData.FMData.FValue > 0) then
+  begin
+    if FUIData.FPData.FValue > FUIData.FMData.FValue then
+    begin
+      ShowMsg('皮重应小于毛重', sHint);
+      Exit;
+    end;
+  end;
+
+  SetLength(FBillItems, 1);
+  FBillItems[0] := FUIData;
+  //复制用户界面数据
+
+  with FBillItems[0] do
+  begin
+    FFactory := gSysParam.FFactNum;
+    //xxxxx
+    
+    if FNextStatus = sFlag_TruckBFP then
+         FPData.FStation := FPoundTunnel.FID
+    else FMData.FStation := FPoundTunnel.FID;
+  end;
+
+  Result := SaveLadingBills(FBillItems[0].FNextStatus, FBillItems, FPoundTunnel);
+  //保存称重
+end;
+
 //Desc: 保存称重
 procedure TfFrameManualPoundItem.BtnSaveClick(Sender: TObject);
 var nBool: Boolean;
@@ -1099,8 +1151,8 @@ begin
     BtnSave.Enabled := False;
     ShowWaitForm(ParentForm, '正在保存称重', True);
     
-    if (Length(FBillItems) > 0) and (FBillItems[0].FCardUse=sFlag_Sale) then
-         nBool := SavePoundSale
+    if FUIData.FCardUse = sFlag_Sale then      nBool := SavePoundSale
+    else if FUIData.FCardUse = sFlag_DuanDao then nBool := SavePoundDuanDao
     else nBool := SavePoundData;
 
     if nBool then
@@ -1192,6 +1244,18 @@ begin
   except
     raise;
   end;
+end;
+
+procedure TfFrameManualPoundItem.CheckLockPropertiesEditValueChanged(
+  Sender: TObject);
+begin
+  inherited;
+  if not CheckLock.IsFocused then Exit;
+  if CheckLock.Checked then
+       FUIData.FNextStatus := sFlag_TruckBFP
+  else FUIData.FNextStatus := sFlag_TruckBFM;
+
+  SetUIData(False);
 end;
 
 end.

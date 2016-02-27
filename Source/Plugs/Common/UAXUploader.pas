@@ -255,18 +255,69 @@ begin
 end;
 
 procedure TAXUploadThread.DoUploadProvide;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
 begin
+  nStr := 'Select T_ID From %s Where T_OutFact Is Not null And ' +
+          'T_SyncDate Is Null And T_SyncNum<=3';
+  nStr := Format(nStr, [sTable_Transfer]);
 
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      nStr := Fields[0].AsString;
+      CallRemoteWorker(sAX_SyncOrder, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      Next;
+    end;
+  end;
 end;
 
 procedure TAXUploadThread.DoUploadWaiXie;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
 begin
+  {nStr := 'Select W_ID From %s Where W_OutFact2 Is Not null And ' +
+          'W_SyncDate Is Null And W_SyncNum<=3';
+  nStr := Format(nStr, [sTable_WaiXie]);
 
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      nStr := Fields[0].AsString;
+      CallRemoteWorker(sAX_SyncOrder, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      Next;
+    end;
+  end;}
 end;
 
 procedure TAXUploadThread.DoUploadDuanDao;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
 begin
+  nStr := 'Select T_ID From %s Where ' +
+          'T_SyncDate Is Null And T_SyncNum<=3';
+  nStr := Format(nStr, [sTable_Transfer]);
 
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      nStr := Fields[0].AsString;
+      CallRemoteWorker(sAX_SyncDuanDao, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      Next;
+    end;
+  end;
 end;
 
 initialization

@@ -288,6 +288,40 @@ begin
   end;
 end;
 
+//Date: 2014-09-05
+//Parm: 命令;数据;参数;输出
+//Desc: 调用中间件上的短倒单据对象
+function CallBusinessDuanDao(const nCmd: Integer; const nData,nExt: string;
+  const nOut: PWorkerBusinessCommand; const nWarn: Boolean = True): Boolean;
+var nIn: TWorkerBusinessCommand;
+    nWorker: TBusinessWorkerBase;
+begin
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    if nWarn then
+         nIn.FBase.FParam := ''
+    else nIn.FBase.FParam := sParam_NoHintOnError;
+
+    if gSysParam.FAutoPound and (not gSysParam.FIsManual) then
+      nIn.FBase.FParam := sParam_NoHintOnError;
+    //自动称重时不提示
+
+    nWorker := gBusinessWorkerManager.LockWorker(sCLI_BusinessDuanDao);
+    //get worker
+    Result := nWorker.WorkActive(@nIn, nOut);
+
+    if not Result then
+      WriteLog(nOut.FBase.FErrDesc);
+    //xxxxx
+  finally
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
 //Date: 2014-10-01
 //Parm: 命令;数据;参数;输出
 //Desc: 调用中间件上的销售单据对象
@@ -912,6 +946,11 @@ begin
   if nStr = sFlag_Provide then
   begin
     Result := CallBusinessPurchaseOrder(cBC_GetPostOrders, nCard, nPost, @nOut);
+  end else
+
+  if nStr = sFlag_DuanDao then
+  begin
+    Result := CallBusinessDuanDao(cBC_GetPostDDs, nCard, nPost, @nOut);
   end;
 
   if Result then
@@ -948,6 +987,13 @@ begin
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut); 
+	  if (not Result) or (nOut.FData = '') then Exit;
+  end else
+
+  if nStr = sFlag_DuanDao then
+  begin
+    nStr := CombineBillItmes(nData);
+    Result := CallBusinessDuanDao(cBC_SavePostDDs, nStr, nPost, @nOut); 
 	  if (not Result) or (nOut.FData = '') then Exit;
   end;
   
@@ -1073,14 +1119,17 @@ end;
 //------------------------------------------------------------------------------
 //保存短倒磁卡
 function SaveDuanDaoCard(const nTruck, nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
 begin
-  Result := True;
-end;  
+  Result := CallBusinessDuanDao(cBC_SaveDDCard, nTruck, nCard, @nOut);
+end;
+
 //注销指定磁卡
 function LogoutDuanDaoCard(const nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
 begin
-  Result := True;
-end;  
+  Result := CallBusinessDuanDao(cBC_LogOffDDCard, nCard, '', @nOut);
+end;
 
 //------------------------------------------------------------------------------
 //Desc: 打印标识为nID的销售合同

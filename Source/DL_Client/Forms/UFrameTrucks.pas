@@ -33,6 +33,7 @@ type
     VIP2: TMenuItem;
     N1: TMenuItem;
     N8: TMenuItem;
+    N9: TMenuItem;
     procedure EditNamePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure BtnAddClick(Sender: TObject);
@@ -46,6 +47,7 @@ type
     procedure VIP1Click(Sender: TObject);
     procedure VIP2Click(Sender: TObject);
     procedure N8Click(Sender: TObject);
+    procedure N9Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -275,10 +277,18 @@ begin
     nMate := SQLQuery.FieldByName('T_MateName').AsString;
 
     if SaveTransferInfo(nTruck, nMID, nMate, nSrc, nDst) then
-         nTruck := '短倒业务磁卡保存成功'
-    else nTruck := '短倒业务磁卡保存成功';
+      ShowMsg('短倒业务磁卡保存成功', sHint);
 
-    ShowMsg(nTruck, sHint);
+    InitFormData(FWhere);
+  end;
+end;
+
+procedure TfFrameTrucks.N9Click(Sender: TObject);
+begin
+  inherited;
+  if cxView1.DataController.GetSelectedCount > 0 then
+  begin
+    LogoutDuanDaoCard(SQLQuery.FieldByName('T_Card').AsString);
     InitFormData(FWhere);
   end;
 end;

@@ -55,6 +55,11 @@ const
   cBC_SavePostOrders          = $0045;   //保存岗位采购单
   cBC_GetGYOrderValue         = $0046;   //获取已收货量
 
+  cBC_SaveDDCard           = $0047;
+  cBC_LogOffDDCard         = $0048;
+  cBC_GetPostDDs           = $0049;   //获取岗位采购单
+  cBC_SavePostDDs          = $0050;   //保存岗位采购单
+
   cBC_ChangeDispatchMode      = $0053;   //切换调度模式
   cBC_GetPoundCard            = $0054;   //获取磅站卡号
   cBC_GetQueueData            = $0055;   //获取队列数据
@@ -166,12 +171,15 @@ resourcestring
   sBus_BusinessCommand        = 'Bus_BusinessCommand';  //业务指令
   sBus_HardwareCommand        = 'Bus_HardwareCommand';  //硬件指令
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
+  sBus_BusinessDuanDao        = 'Bus_BusinessDuanDao';  //短倒业务相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
+  sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
   sAX_PickBill                = 'AX_PickBill';          //提货减配
   sAX_SyncBill                = 'AX_SyncBill';          //同步发货单
-  sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
-  sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder';     //读取订单
+  sAX_SyncOrder               = 'AX_SyncOrder';         //同步入厂单
+  sAX_SyncWaiXie              = 'AX_SyncWaiXie';        //同步外协单
+  sAX_SyncDuanDao             = 'AX_SyncDuanDao';       //同步短倒单
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
@@ -184,6 +192,7 @@ resourcestring
   sCLI_BusinessCommand        = 'CLI_BusinessCommand';  //业务指令
   sCLI_HardwareCommand        = 'CLI_HardwareCommand';  //硬件指令
   sCLI_BusinessPurchaseOrder  = 'CLI_BusinessPurchaseOrder'; //采购单相关
+  sCLI_BusinessDuanDao        = 'CLI_BusinessDuanDao';  //短倒业务相关
 
 implementation
 
