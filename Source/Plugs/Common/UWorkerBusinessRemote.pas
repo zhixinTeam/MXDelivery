@@ -1052,9 +1052,9 @@ begin
 
     NodeNew('BizID').ValueAsString := FieldByName('W_ID').AsString;
     NodeNew('ItemName').ValueAsString := FieldByName('W_StockName').AsString;
-    NodeNew('VehicleNum').ValueAsString  := FieldByName('P_Truck').AsString;
-    NodeNew('OutSourceUnit').ValueAsString := FieldByName('P_ProID').AsString;
-    NodeNew('CarSenderUnit').ValueAsString := FieldByName('P_TransID').AsString;
+    NodeNew('VehicleNum').ValueAsString  := FieldByName('W_Truck').AsString;
+    NodeNew('OutSourceUnit').ValueAsString := FieldByName('W_ProName').AsString;
+    NodeNew('CarSenderUnit').ValueAsString := FieldByName('W_TransName').AsString;
 
     NodeNew('TareDateTime').ValueAsString := FieldByName('W_PDate').AsString;
     NodeNew('GrossDateTime').ValueAsString := FieldByName('W_MDate').AsString;
