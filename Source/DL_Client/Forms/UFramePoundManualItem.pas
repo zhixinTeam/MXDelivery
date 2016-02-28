@@ -697,9 +697,10 @@ begin
     Exit;
   end;
 
-  if (Length(FBillItems) > 0) and (FBillItems[0].FCardUse <> sFlag_Provide) then
+  if (Length(FBillItems) > 0) and
+    ((FUIData.FCardUse=sFlag_Sale) or (FUIData.FCardUse=sFlag_DuanDao))then
   begin
-    if FBillItems[0].FNextStatus = sFlag_TruckBFP then
+    if FUIData.FNextStatus = sFlag_TruckBFP then
          FUIData.FPData.FValue := nVal
     else FUIData.FMData.FValue := nVal;
   end else
@@ -880,7 +881,9 @@ begin
     end;
   end;
 
-  if Length(FBillItems)>0 then nNextStatus := FBillItems[0].FNextStatus;
+  if Length(FBillItems) < 1 then
+       nNextStatus := ''
+  else nNextStatus := FBillItems[0].FNextStatus;
 
   SetLength(FBillItems, 1);
   FBillItems[0] := FUIData;
@@ -896,7 +899,7 @@ begin
     else FMData.FStation := FPoundTunnel.FID;
   end;
 
-  if Length(FBillItems)>0 then
+  if Length(nNextStatus)>0 then
        Result := SaveLadingBills(nNextStatus, FBillItems, FPoundTunnel)
   else Result := SaveTruckPoundItem(FPoundTunnel, FBillItems);
   //保存称重
@@ -1102,10 +1105,20 @@ begin
   Result := False;
   //init
 
-  if (FUIData.FPData.FValue <= 0) and (FUIData.FMData.FValue <= 0) then
+  if FUIData.FNextStatus = sFlag_TruckBFP then
   begin
-    ShowMsg('请先称重', sHint);
-    Exit;
+    if FUIData.FPData.FValue <= 0 then
+    begin
+      ShowMsg('请先称量皮重', sHint);
+      Exit;
+    end;
+  end else
+  begin
+    if FUIData.FMData.FValue <= 0 then
+    begin
+      ShowMsg('请先称量毛重', sHint);
+      Exit;
+    end;
   end;
 
   if (FUIData.FPData.FValue > 0) and (FUIData.FMData.FValue > 0) then

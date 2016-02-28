@@ -165,7 +165,7 @@ begin
   try  
     ShowWaitForm(ParentForm, '正在同步');
     nStr := SQLQuery.FieldByName('T_ID').AsString;
-    nRes := AXSyncBill(nStr);
+    nRes := AXSyncDuanDao(nStr);
   finally
     CloseWaitForm;
     if nRes then

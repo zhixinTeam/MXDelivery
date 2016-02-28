@@ -826,8 +826,9 @@ begin
   if not CallHardwareCommand(cBC_PrintCode, nBill, nTunnel, @nOut) then
   begin
     nStr := '向通道[ %s ]发送防违流码失败,描述: %s';
-    nStr := Format(nStr, [nTunnel, nOut.FData]);  
+    nStr := Format(nStr, [nTunnel, nOut.FData]);
     WriteNearReaderLog(nStr);
+    Result:= False;
   end;
 
   gTaskMonitor.DelTask(nTask, True);
