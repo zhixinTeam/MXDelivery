@@ -45,13 +45,10 @@ const
   cBC_GetPostBills            = $0030;   //获取岗位交货单
   cBC_SavePostBills           = $0031;   //保存岗位交货单
   cBC_GetBatcode              = $0032;   //获取批次编号
-  cBC_AXSyncBill              = $0033;   //同步交货单
-  cBC_AXSyncDuanDao           = $0034;   //同步短倒
 
   cBC_SaveWaiXie              = $0035;   //保存外协
   cBC_DeleteWaiXie            = $0036;   //删除外协单
   cBC_SaveWaiXieCard          = $0037;   //外协磁卡
-  cBC_AXSyncWaiXie            = $0038;   //同步外协
   cBC_ModifyWaiXieTruck       = $0039;   //修改外协车牌号
                                                          
   cBC_SaveOrder               = $0040;
@@ -62,10 +59,10 @@ const
   cBC_SavePostOrders          = $0045;   //保存岗位采购单
   cBC_GetGYOrderValue         = $0046;   //获取已收货量
 
-  cBC_SaveDDCard           = $0047;
-  cBC_LogOffDDCard         = $0048;
-  cBC_GetPostDDs           = $0049;   //获取岗位采购单
-  cBC_SavePostDDs          = $0050;   //保存岗位采购单
+  cBC_SaveDDCard              = $0047;
+  cBC_LogOffDDCard            = $0048;
+  cBC_GetPostDDs              = $0049;   //获取岗位采购单
+  cBC_SavePostDDs             = $0050;   //保存岗位采购单
 
   cBC_ChangeDispatchMode      = $0053;   //切换调度模式
   cBC_GetPoundCard            = $0054;   //获取磅站卡号
@@ -91,6 +88,12 @@ const
   cBC_SyncStockOrder          = $0084;   //同步采购单据到远程
   cBC_SyncProvider            = $0085;   //远程同步供应商
   cBC_SyncMaterails           = $0086;   //远程同步原材料
+
+  cBC_AXSyncBill              = $0100;   //同步交货单
+  cBC_AXSyncDuanDao           = $0101;   //同步短倒
+  cBC_AXSyncOrder             = $0102;   //同步采购
+  cBC_AXSyncWaiXie            = $0103;   //同步外协
+
 
 type
   PWorkerQueryFieldData = ^TWorkerQueryFieldData;
@@ -179,6 +182,7 @@ resourcestring
   sBus_HardwareCommand        = 'Bus_HardwareCommand';  //硬件指令
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
   sBus_BusinessDuanDao        = 'Bus_BusinessDuanDao';  //短倒业务相关
+  sBus_BusinessWaiXie         = 'Bus_BusinessWaiXie';   //外协业务相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
   sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
@@ -187,8 +191,8 @@ resourcestring
   sAX_PickBill                = 'AX_PickBill';          //提货减配
   sAX_SyncBill                = 'AX_SyncBill';          //同步发货单
   sAX_SyncOrder               = 'AX_SyncOrder';         //同步入厂单
-  sAX_SyncWaiXie              = 'AX_SyncWaiXie';        //同步外协单
   sAX_SyncDuanDao             = 'AX_SyncDuanDao';       //同步短倒单
+  sAX_SyncWaiXie              = 'AX_SyncWaiXie';        //同步外协单
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
@@ -202,6 +206,7 @@ resourcestring
   sCLI_HardwareCommand        = 'CLI_HardwareCommand';  //硬件指令
   sCLI_BusinessPurchaseOrder  = 'CLI_BusinessPurchaseOrder'; //采购单相关
   sCLI_BusinessDuanDao        = 'CLI_BusinessDuanDao';  //短倒业务相关
+  sCLI_BusinessWaiXie         = 'CLI_BusinessWaiXie';   //外协业务相关
 
 implementation
 

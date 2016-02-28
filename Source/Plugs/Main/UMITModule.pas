@@ -13,7 +13,7 @@ uses
   Windows, Forms, Classes, SysUtils, ULibFun, UBusinessWorker, UBusinessPacker,
   UTaskMonitor, USysShareMem, USysLoger, UMITConst, UMITPacker,
   UWorkerBusinessCommand, UWorkerBusinessBill, UWorkerBusinessRemote,
-  UWorkerBusinessOrders, UWorkerBusinessDuanDao,
+  UWorkerBusinessOrders, UWorkerBusinessDuanDao, UWorkerBusinessWaiXie,
   {$IFDEF HardMon}UEventHardware, UWorkerHardware,{$ENDIF}
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
   UMgrDBConn, UMgrParam, UMgrPlug, UMgrChannel, UChannelChooser, USAPConnection,

@@ -959,8 +959,7 @@ function TAXWorkerSyncOrder.DoAXWork(var nData: string): Boolean;
 var nNode, nTmp: TXmlNode;
 begin
   Result := False;
-  BuildDefaultXMLPack;
-
+  BuildDefaultXMLPack;  
   if not BuildBusinessXMLPack(nData) then Exit;
 
   nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);
@@ -1069,8 +1068,7 @@ function TAXWorkerSyncWaiXie.DoAXWork(var nData: string): Boolean;
 var nNode, nTmp: TXmlNode;
 begin
   Result := False;
-  BuildDefaultXMLPack;
-
+  BuildDefaultXMLPack;    
   if not BuildBusinessXMLPack(nData) then Exit;
 
   nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);
@@ -1180,7 +1178,6 @@ var nNode, nTmp: TXmlNode;
 begin
   Result := False;
   BuildDefaultXMLPack;
-
   if not BuildBusinessXMLPack(nData) then Exit;
 
   nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);

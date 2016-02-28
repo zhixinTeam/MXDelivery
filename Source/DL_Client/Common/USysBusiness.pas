@@ -336,6 +336,40 @@ begin
   end;
 end;
 
+//Date: 2016-02-28
+//Parm: 命令;数据;参数;输出
+//Desc: 调用中间件上的外协业务对象
+function CallBusinessWaiXie(const nCmd: Integer; const nData,nExt: string;
+  const nOut: PWorkerBusinessCommand; const nWarn: Boolean = True): Boolean;
+var nIn: TWorkerBusinessCommand;
+    nWorker: TBusinessWorkerBase;
+begin
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    if nWarn then
+         nIn.FBase.FParam := ''
+    else nIn.FBase.FParam := sParam_NoHintOnError;
+
+    if gSysParam.FAutoPound and (not gSysParam.FIsManual) then
+      nIn.FBase.FParam := sParam_NoHintOnError;
+    //自动称重时不提示
+
+    nWorker := gBusinessWorkerManager.LockWorker(sCLI_BusinessWaiXie);
+    //get worker
+    Result := nWorker.WorkActive(@nIn, nOut);
+
+    if not Result then
+      WriteLog(nOut.FBase.FErrDesc);
+    //xxxxx
+  finally
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
 //Date: 2014-10-01
 //Parm: 命令;数据;参数;输出
 //Desc: 调用中间件上的销售单据对象
@@ -674,7 +708,7 @@ end;
 function AXSyncWaiXie(var nData: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessSaleBill(cBC_AXSyncWaiXie, nData, '', @nOut);
+  Result := CallBusinessWaiXie(cBC_AXSyncWaiXie, nData, '', @nOut);
   if Result then
        nData := ''
   else nData := nOut.FData;
@@ -686,7 +720,7 @@ end;
 function AXSyncDuanDao(var nData: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessSaleBill(cBC_AXSyncDuanDao, nData, '', @nOut);
+  Result := CallBusinessDuanDao(cBC_AXSyncDuanDao, nData, '', @nOut);
   if Result then
        nData := ''
   else nData := nOut.FData;
@@ -980,6 +1014,11 @@ begin
   if nStr = sFlag_DuanDao then
   begin
     Result := CallBusinessDuanDao(cBC_GetPostDDs, nCard, nPost, @nOut);
+  end else
+
+  if nStr = sFlag_WaiXie then
+  begin
+    Result := CallBusinessWaiXie(cBC_GetPostBills, nCard, nPost, @nOut);
   end;
 
   if Result then
@@ -1023,6 +1062,13 @@ begin
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessDuanDao(cBC_SavePostDDs, nStr, nPost, @nOut); 
+	  if (not Result) or (nOut.FData = '') then Exit;
+  end else
+
+  if nStr = sFlag_WaiXie then
+  begin
+    nStr := CombineBillItmes(nData);
+    Result := CallBusinessWaiXie(cBC_SavePostBills, nStr, nPost, @nOut); 
 	  if (not Result) or (nOut.FData = '') then Exit;
   end;
   
@@ -1079,7 +1125,7 @@ end;
 function ChangeWaiXieTruckNo(const nID,nTruck: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessCommand(cBC_ModifyWaiXieTruck, nID, nTruck, @nOut);
+  Result := CallBusinessWaiXie(cBC_ModifyWaiXieTruck, nID, nTruck, @nOut);
 end;
 
 //Date: 2016-02-27
@@ -1088,7 +1134,7 @@ end;
 function SaveWaiXie(const nData: string): string;
 var nOut: TWorkerBusinessCommand;
 begin
-  if CallBusinessCommand(cBC_SaveWaiXie, nData, '', @nOut) then
+  if CallBusinessWaiXie(cBC_SaveWaiXie, nData, '', @nOut) then
        Result := nOut.FData
   else Result := '';
 end;
@@ -1099,7 +1145,7 @@ end;
 function DeleteWaiXie(const nID: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessCommand(cBC_DeleteWaiXie, nID, '', @nOut);
+  Result := CallBusinessWaiXie(cBC_DeleteWaiXie, nID, '', @nOut);
 end;
 
 //Date: 2016-02-27
@@ -1121,7 +1167,7 @@ end;
 function SaveWaiXieCard(const nID,nCard: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessCommand(cBC_SaveWaiXieCard, nID, nCard, @nOut);
+  Result := CallBusinessWaiXie(cBC_SaveWaiXieCard, nID, nCard, @nOut);
 end;
 
 //------------------------------------------------------------------------------

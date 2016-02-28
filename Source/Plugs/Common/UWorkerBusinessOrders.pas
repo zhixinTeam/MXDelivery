@@ -23,7 +23,6 @@ type
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoDBWork(var nData: string): Boolean; override;
     //base funciton
-
     function VerifyBeforSave(var nData: string): Boolean;
     function SaveOrder(var nData: string):Boolean;
     function DeleteOrder(var nData: string): Boolean;
@@ -33,11 +32,12 @@ type
     //修改车牌号
     function GetGYOrderValue(var nData: string): Boolean;
     //获取供应可收货量
-
     function GetPostOrderItems(var nData: string): Boolean;
     //获取岗位采购单
     function SavePostOrderItems(var nData: string): Boolean;
     //保存岗位采购单
+    function AXSyncOrder(var nData: string): Boolean;
+    //同步单据到AX
   public
     constructor Create; override;
     destructor destroy; override;
@@ -53,6 +53,41 @@ type
   end;
 
 implementation
+
+//Date: 2016-02-28
+//Parm: 命令;数据;参数;输出
+//Desc: 本地调用业务对象
+class function TWorkerBusinessOrders.CallMe(const nCmd: Integer;
+  const nData, nExt: string; const nOut: PWorkerBusinessCommand): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nPacker.InitData(@nIn, True, False);
+    //init
+    
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(FunctionName);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
 
 //------------------------------------------------------------------------------
 class function TWorkerBusinessOrders.FunctionName: string;
@@ -113,6 +148,7 @@ begin
    cBC_GetPostOrders        : Result := GetPostOrderItems(nData);
    cBC_SavePostOrders       : Result := SavePostOrderItems(nData);
    cBC_GetGYOrderValue      : Result := GetGYOrderValue(nData);
+   cBC_AXSyncOrder          : Result := AXSyncOrder(nData);
    else
     begin
       Result := False;
@@ -122,6 +158,21 @@ begin
 end;
 
 //------------------------------------------------------------------------------
+//Date: 2016-02-27
+//Parm: 采购单号[FIn.FData]
+//Desc: 同步采购单到AX
+function TWorkerBusinessOrders.AXSyncOrder(var nData: string): Boolean;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := sFlag_FixedNo + 'SO' + FIn.FData;
+  Result := CallRemoteWorker(sAX_SyncOrder, FIn.FData, '', nStr, @nOut);
+
+  if not Result then
+    nData := nOut.FData;
+  //xxxxx
+end;
+
 //Date: 2015/9/20
 //Parm: 供应商编号(FIn.FData); 物料编号(FIn.FExtParam);
 //Desc: 获取供应可收货量
@@ -421,6 +472,7 @@ begin
       gDBConnManager.WorkerExec(FDBConn, nStr);
       //释放冻结量
     end;
+    
     //--------------------------------------------------------------------------
     nStr := Format('Select * From %s Where 1<>1', [sTable_PurchInfo]);
     //only for fields
@@ -1046,48 +1098,6 @@ begin
   except
     FDBConn.FConn.RollbackTrans;
     raise;
-  end;
-
-  if FIn.FExtParam = sFlag_TruckBFM then //称量毛重
-  begin
-    if Assigned(gHardShareData) then
-      gHardShareData('TruckOut:' + nPound[0].FCard);
-    //磅房处理自动出厂
-  end;
-end;
-
-//Date: 2014-09-15
-//Parm: 命令;数据;参数;输出
-//Desc: 本地调用业务对象
-class function TWorkerBusinessOrders.CallMe(const nCmd: Integer;
-  const nData, nExt: string; const nOut: PWorkerBusinessCommand): Boolean;
-var nStr: string;
-    nIn: TWorkerBusinessCommand;
-    nPacker: TBusinessPackerBase;
-    nWorker: TBusinessWorkerBase;
-begin
-  nPacker := nil;
-  nWorker := nil;
-  try
-    nIn.FCommand := nCmd;
-    nIn.FData := nData;
-    nIn.FExtParam := nExt;
-
-    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
-    nPacker.InitData(@nIn, True, False);
-    //init
-    
-    nStr := nPacker.PackIn(@nIn);
-    nWorker := gBusinessWorkerManager.LockWorker(FunctionName);
-    //get worker
-
-    Result := nWorker.WorkActive(nStr);
-    if Result then
-         nPacker.UnPackOut(nStr, nOut)
-    else nOut.FData := nStr;
-  finally
-    gBusinessPackerManager.RelasePacker(nPacker);
-    gBusinessWorkerManager.RelaseWorker(nWorker);
   end;
 end;
 

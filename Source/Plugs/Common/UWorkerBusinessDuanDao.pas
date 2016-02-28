@@ -10,7 +10,7 @@ interface
 uses
   Windows, Classes, Controls, DB, SysUtils, UBusinessWorker, UBusinessPacker,
   UBusinessConst, UMgrDBConn, UMgrParam, ZnMD5, ULibFun, UFormCtrl, USysLoger,
-  USysDB, UMITConst, UWorkerBusinessCommand;
+  USysDB, UMITConst, UWorkerBusinessCommand, UWorkerBusinessRemote;
 
 type
   TWorkerBusinessDuanDao = class(TMITDBWorker)
@@ -31,6 +31,8 @@ type
     //获取岗位短倒单
     function SavePostDDItems(var nData: string): Boolean;
     //保存岗位短倒单
+    function AXSyncDuanDao(var nData: string): Boolean;
+    //同步单据
   public
     constructor Create; override;
     destructor destroy; override;
@@ -100,12 +102,29 @@ begin
    cBC_LogoffDDCard      : Result := LogoffDDCard(nData);
    cBC_GetPostDDs        : Result := GetPostDDItems(nData);
    cBC_SavePostDDs       : Result := SavePostDDItems(nData);
+   cBC_AXSyncDuanDao     : Result := AXSyncDuanDao(nData);
    else
     begin
       Result := False;
       nData := '无效的业务代码(Invalid Command).';
     end;
   end;
+end;
+
+//------------------------------------------------------------------------------ 
+//Date: 2016-02-27
+//Parm: 短倒单号[FIn.FData]
+//Desc: 同步短倒单到AX
+function TWorkerBusinessDuanDao.AXSyncDuanDao(var nData: string): Boolean;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := sFlag_FixedNo + 'SD' + FIn.FData;
+  Result := CallRemoteWorker(sAX_SyncDuanDao, FIn.FData, '', nStr, @nOut);
+
+  if not Result then
+    nData := nOut.FData;
+  //xxxxx
 end;
 
 //Date: 2016/2/27

@@ -75,8 +75,6 @@ type
      const nVal,nNet: Double; var nData: string): Boolean;
     //拣配指定交货单
     function AXSyncBill(var nData: string): Boolean;
-    function AXSyncWaiXie(var nData: string): Boolean;
-    function AXSyncDuanDao(var nData: string): Boolean;
     //同步单据到AX
   public
     constructor Create; override;
@@ -1039,36 +1037,6 @@ begin
   //xxxxx
 end;
 
-//Date: 2016-02-27
-//Parm: 外协单号[FIn.FData]
-//Desc: 同步外协单到AX
-function TWorkerBusinessBills.AXSyncWaiXie(var nData: string): Boolean;
-var nStr: string;
-    nOut: TWorkerBusinessCommand;
-begin
-  nStr := sFlag_FixedNo + 'SW' + FIn.FData;
-  Result := CallRemoteWorker(sAX_SyncWaiXie, FIn.FData, '', nStr, @nOut);
-
-  if not Result then
-    nData := nOut.FData;
-  //xxxxx
-end;
-
-//Date: 2016-02-27
-//Parm: 短倒单号[FIn.FData]
-//Desc: 同步短倒单到AX
-function TWorkerBusinessBills.AXSyncDuanDao(var nData: string): Boolean;
-var nStr: string;
-    nOut: TWorkerBusinessCommand;
-begin
-  nStr := sFlag_FixedNo + 'SD' + FIn.FData;
-  Result := CallRemoteWorker(sAX_SyncDuanDao, FIn.FData, '', nStr, @nOut);
-
-  if not Result then
-    nData := nOut.FData;
-  //xxxxx
-end;
-
 //Date: 2014-09-17
 //Parm: 磁卡号[FIn.FData];岗位[FIn.FExtParam]
 //Desc: 获取特定岗位所需要的交货单列表
@@ -1764,14 +1732,7 @@ begin
     FDBConn.FConn.RollbackTrans;
     raise;
   end;
-
-  if FIn.FExtParam = sFlag_TruckBFM then //称量毛重
-  begin
-    if Assigned(gHardShareData) then
-      gHardShareData('TruckOut:' + nBills[0].FCard);
-    //磅房处理自动出厂
-  end;
-
+  
   {$IFDEF MicroMsg}
   nStr := '';
   for nIdx:=Low(nBills) to High(nBills) do

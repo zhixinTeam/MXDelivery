@@ -108,7 +108,9 @@ begin
 
   if (nWhere = '') or FUseDate then
   begin
-    Result := Result + 'Where (W_Date>=''$ST'' and W_Date <''$End'')';
+    if CheckDelete.Checked then
+         Result := Result + 'Where (W_DelDate>=''$ST'' and W_DelDate <''$End'')'
+    else Result := Result + 'Where (W_Date>=''$ST'' and W_Date <''$End'')';
     nStr := ' And ';
   end else nStr := ' Where ';
 

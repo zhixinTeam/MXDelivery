@@ -248,7 +248,7 @@ begin
     while not Eof do
     begin
       nStr := Fields[0].AsString;
-      CallRemoteWorker(sAX_SyncBill, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      CallRemoteWorker(sAX_SyncBill, nStr, '', sFlag_FixedNo+'SL'+nStr, @nOut);
       Next;
     end;
   end;
@@ -270,7 +270,7 @@ begin
     while not Eof do
     begin
       nStr := Fields[0].AsString;
-      CallRemoteWorker(sAX_SyncOrder, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      CallRemoteWorker(sAX_SyncOrder, nStr, '', sFlag_FixedNo+'SO'+nStr, @nOut);
       Next;
     end;
   end;
@@ -292,7 +292,7 @@ begin
     while not Eof do
     begin
       nStr := Fields[0].AsString;
-      CallRemoteWorker(sAX_SyncWaiXie, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      CallRemoteWorker(sAX_SyncWaiXie, nStr, '', sFlag_FixedNo+'SW'+nStr, @nOut);
       Next;
     end;
   end;
@@ -314,7 +314,7 @@ begin
     while not Eof do
     begin
       nStr := Fields[0].AsString;
-      CallRemoteWorker(sAX_SyncDuanDao, nStr, '', sFlag_FixedNo+'U'+nStr, @nOut);
+      CallRemoteWorker(sAX_SyncDuanDao, nStr, '', sFlag_FixedNo+'SD'+nStr, @nOut);
       Next;
     end;
   end;
