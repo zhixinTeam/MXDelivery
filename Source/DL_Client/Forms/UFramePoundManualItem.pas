@@ -1098,7 +1098,6 @@ end;
 //------------------------------------------------------------------------------
 //Desc: ¶Ìµ¹ÒµÎñ
 function TfFrameManualPoundItem.SavePoundDuanDao: Boolean;
-var nNextStatus: string;
 begin
   Result := False;
   //init

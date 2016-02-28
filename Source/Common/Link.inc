@@ -23,7 +23,7 @@
 {.$DEFINE ClientMon}
 //进程守护客户端
 
-{.$DEFINE HardMon}
+{$DEFINE HardMon}
 //编译硬件守护
 
 {.$DEFINE GenRODL}
@@ -47,8 +47,14 @@
 {$ENDIF}
 
 //--------------------------------- 特定系统 -----------------------------------
-{$DEFINE COMMON}
+{.$DEFINE COMMON}
 //通用版本
 
-{.$DEFINE BTMX}
+{$DEFINE BTMX}
 //特定系统
+
+//包头蒙西
+{$IFDEF BTMX}
+  {$DEFINE AppAtTaskBar}
+  //状态栏显示
+{$ENDIF}

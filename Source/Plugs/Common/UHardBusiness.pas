@@ -130,6 +130,38 @@ begin
   end;
 end;
 
+//Date: 2016-02-28
+//Parm: 命令;数据;参数;输出
+//Desc: 调用中间件上的外协业务对象
+function CallBusinessWaiXie(const nCmd: Integer;
+  const nData, nExt: string; const nOut: PWorkerBusinessCommand): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(sBus_BusinessWaiXie);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
 //Date: 2014-10-16
 //Parm: 命令;数据;参数;输出
 //Desc: 调用硬件守护上的业务对象
@@ -231,7 +263,35 @@ begin
     gSysLoger.AddLog(TBusinessWorkerManager, '业务对象', nOut.FData);
   //xxxxx
 end;
-                                                             
+
+//Date: 2016-02-28
+//Parm: 磁卡号;岗位;外协单列表
+//Desc: 获取nPost岗位上磁卡为nCard的外协单列表
+function GetWaiXiePostBills(const nCard,nPost: string;
+ var nData: TLadingBillItems): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessWaiXie(cBC_SavePostBills, nCard, nPost, @nOut);
+  if Result then
+       AnalyseBillItems(nOut.FData, nData)
+  else gSysLoger.AddLog(TBusinessWorkerManager, '业务对象', nOut.FData);
+end;
+
+//Date: 2016-02-28
+//Parm: 岗位;外协单列表
+//Desc: 保存nPost岗位上的外协单数据
+function SaveWaiXiePostBills(const nPost: string; nData: TLadingBillItems): Boolean;
+var nStr: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := CombineBillItmes(nData);
+  Result := CallBusinessWaiXie(cBC_SavePostBills, nStr, nPost, @nOut);
+
+  if not Result then
+    gSysLoger.AddLog(TBusinessWorkerManager, '业务对象', nOut.FData);
+  //xxxxx
+end;
+
 //------------------------------------------------------------------------------
 //Date: 2013-07-21
 //Parm: 事件描述;岗位标识
@@ -262,10 +322,15 @@ begin
 
   nCardType := '';
   if not GetCardUsed(nCard, nCardType) then Exit;
+  nRet := False;
 
+  if nCardType = sFlag_Sale then
+    nRet := GetLadingBills(nCard, sFlag_TruckIn, nTrucks) else
   if nCardType = sFlag_Provide then
-        nRet := GetLadingOrders(nCard, sFlag_TruckIn, nTrucks)
-  else  nRet := GetLadingBills(nCard, sFlag_TruckIn, nTrucks);
+    nRet := GetLadingOrders(nCard, sFlag_TruckIn, nTrucks) else
+  if nCardType = sFlag_WaiXie then
+    nRet := GetWaiXiePostBills(nCard, sFlag_TruckIn, nTrucks);
+  //xxxxx
 
   if not nRet then
   begin
@@ -320,9 +385,16 @@ begin
     Exit;
   end;
 
-  if nCardType = sFlag_Provide then
+  //----------------------------------------------------------------------------
+  if nCardType <> sFlag_Sale then //非销售业务,不使用队列
   begin
-    if not SaveLadingOrders(sFlag_TruckIn, nTrucks) then
+    if nCardType = sFlag_Provide then
+      nRet := SaveLadingOrders(sFlag_TruckIn, nTrucks) else
+    if nCardType = sFlag_WaiXie then
+      nRet := SaveWaiXiePostBills(sFlag_TruckIn, nTrucks) else nRet := False;
+    //xxxxx
+
+    if not nRet then
     begin
       nStr := '车辆[ %s ]进厂放行失败.';
       nStr := Format(nStr, [nTrucks[0].FTruck]);
@@ -341,13 +413,13 @@ begin
       //抬杆
     end;
 
-    nStr := '原材料卡[%s]进厂抬杆成功';
-    nStr := Format(nStr, [nCard]);
+    nStr := '%s磁卡[%s]进厂抬杆成功';
+    nStr := Format(nStr, [BusinessToStr(nCardType), nCard]);
     WriteHardHelperLog(nStr, sPost_In);
     Exit;
   end;
-  //采购磁卡直接抬杆
 
+  //----------------------------------------------------------------------------
   nPLine := nil;
   //nPTruck := nil;
 
@@ -440,10 +512,15 @@ var nStr,nCardType: string;
 begin
   nCardType := '';
   if not GetCardUsed(nCard, nCardType) then Exit;
+  nRet := False;
 
+  if nCardType = sFlag_Sale then
+    nRet := GetLadingBills(nCard, sFlag_TruckOut, nTrucks) else
   if nCardType = sFlag_Provide then
-        nRet := GetLadingOrders(nCard, sFlag_TruckOut, nTrucks)
-  else  nRet := GetLadingBills(nCard, sFlag_TruckOut, nTrucks);
+    nRet := GetLadingOrders(nCard, sFlag_TruckOut, nTrucks) else
+  if nCardType = sFlag_WaiXie then
+    nRet := GetWaiXiePostBills(nCard, sFlag_TruckOut, nTrucks);
+  //xxxxx
 
   if not nRet then
   begin
@@ -474,9 +551,13 @@ begin
     Exit;
   end;
 
+  if nCardType = sFlag_Sale then
+    nRet := SaveLadingBills(sFlag_TruckOut, nTrucks) else
   if nCardType = sFlag_Provide then
-        nRet := SaveLadingOrders(sFlag_TruckOut, nTrucks)
-  else  nRet := SaveLadingBills(sFlag_TruckOut, nTrucks);
+    nRet := SaveLadingOrders(sFlag_TruckOut, nTrucks) else
+  if nCardType = sFlag_WaiXie then
+    nRet := SaveWaiXiePostBills(sFlag_TruckOut, nTrucks) else nRet := False;
+  //xxxxx
 
   if not nRet then
   begin
