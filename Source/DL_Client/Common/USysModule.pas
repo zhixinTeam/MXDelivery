@@ -19,7 +19,7 @@ uses
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
   UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
   UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery,
-  UFrameQuerySaleDetail, UFormWaiXie, UFrameWaiXie;
+  UFrameQuerySaleDetail, UFormWaiXie, UFrameWaiXie, UFrameZTDispatch;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

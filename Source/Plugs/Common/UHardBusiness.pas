@@ -271,7 +271,7 @@ function GetWaiXiePostBills(const nCard,nPost: string;
  var nData: TLadingBillItems): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
-  Result := CallBusinessWaiXie(cBC_SavePostBills, nCard, nPost, @nOut);
+  Result := CallBusinessWaiXie(cBC_GetPostBills, nCard, nPost, @nOut);
   if Result then
        AnalyseBillItems(nOut.FData, nData)
   else gSysLoger.AddLog(TBusinessWorkerManager, '业务对象', nOut.FData);
