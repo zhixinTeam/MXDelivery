@@ -171,10 +171,10 @@ begin
         SubItems.Add(FRestValue);
         ImageIndex := cItemIconIndex;
       end;
-    end;  
-  end;
+    end;
+    ListQuery.ItemIndex := 0;
+  end;   
 
-  ListQuery.ItemIndex := 0;
   Result := True;
 end;
 

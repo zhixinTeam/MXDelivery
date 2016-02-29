@@ -389,8 +389,7 @@ end;
 //Parm: 通道号;交货单;提示
 //Desc: 向nTunnel的喷码机发送打印nBill请求
 function PrintBillCode(const nTunnel,nBill: string; var nHint: string): Boolean;
-var nList: TStrings;
-    nIn: TWorkerBusinessCommand;
+var nIn: TWorkerBusinessCommand;
     nOut: TWorkerBusinessCommand;
     nWorker: TBusinessWorkerBase;
 begin

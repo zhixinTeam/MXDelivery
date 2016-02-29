@@ -291,8 +291,8 @@ var nStr: string;
     nDS: TDataSet;
 begin
   Result := False;
-  nStr := 'Select * From %s oo Inner Join %s od on oo.O_ID=od.D_OID Where D_ID=''%s''';
-  nStr := Format(nStr, [sTable_Order, sTable_OrderDtl, nOrder]);
+  nStr := 'Select * From %s Where P_ID=''%s''';
+  nStr := Format(nStr, [sTable_PurchInfo, nOrder]);
 
   nDS := FDM.SQLQuery(nStr, FDM.SQLQuery1);
   if not Assigned(nDS) then Exit;
@@ -305,6 +305,82 @@ begin
   end;
 
   nStr := gPath + 'Report\PurchaseOrder.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nHint := '无法正确加载报表文件';
+    Exit;
+  end;
+
+  if nPrinter = '' then
+       FDR.Report1.PrintOptions.Printer := 'My_Default_Printer'
+  else FDR.Report1.PrintOptions.Printer := nPrinter;
+
+  FDR.Dataset1.DataSet := FDM.SQLQuery1;
+  FDR.PrintReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//Date: 2012-4-1
+//Parm: 外协单号;提示;数据对象;打印机
+//Desc: 打印nWaiXie外协单号
+function PrintWaiXieReport(const nWaiXie: string; var nHint: string;
+ const nPrinter: string = ''; const nMoney: string = '0'): Boolean;
+var nStr: string;
+    nDS: TDataSet;
+begin
+  Result := False;
+  nStr := 'Select * From %s Where W_ID=''%s''';
+  nStr := Format(nStr, [sTable_WaiXieInfo, nWaiXie]);
+
+  nDS := FDM.SQLQuery(nStr, FDM.SQLQuery1);
+  if not Assigned(nDS) then Exit;
+
+  if nDS.RecordCount < 1 then
+  begin
+    nHint := '外协单[ %s ] 已无效!!';
+    nHint := Format(nHint, [nWaiXie]);
+    Exit;
+  end;
+
+  nStr := gPath + 'Report\WaiXie.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nHint := '无法正确加载报表文件';
+    Exit;
+  end;
+
+  if nPrinter = '' then
+       FDR.Report1.PrintOptions.Printer := 'My_Default_Printer'
+  else FDR.Report1.PrintOptions.Printer := nPrinter;
+
+  FDR.Dataset1.DataSet := FDM.SQLQuery1;
+  FDR.PrintReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//Date: 2012-4-1
+//Parm: 短倒单号;提示;数据对象;打印机
+//Desc: 打印nDuanDao短倒单号
+function PrintDuanDaoReport(const nDuanDao: string; var nHint: string;
+ const nPrinter: string = ''; const nMoney: string = '0'): Boolean;
+var nStr: string;
+    nDS: TDataSet;
+begin
+  Result := False;
+  nStr := 'Select * From %s Where T_ID=''%s''';
+  nStr := Format(nStr, [sTable_Transfer, nDuanDao]);
+
+  nDS := FDM.SQLQuery(nStr, FDM.SQLQuery1);
+  if not Assigned(nDS) then Exit;
+
+  if nDS.RecordCount < 1 then
+  begin
+    nHint := '采购单[ %s ] 已无效!!';
+    nHint := Format(nHint, [nDuanDao]);
+    Exit;
+  end;
+
+  nStr := gPath + 'Report\DuanDao.fr3';
   if not FDR.LoadReportFile(nStr) then
   begin
     nHint := '无法正确加载报表文件';
@@ -384,9 +460,16 @@ begin
     end else nPrinter := '';
 
     WriteLog('开始打印: ' + nBill);
-    if nType = 'P' then
-         PrintOrderReport(nBill, nHint, nPrinter)
-    else PrintBillReport(nBill, nHint, nPrinter, nMoney);
+
+    if nType = sFlag_Provide then
+      PrintOrderReport(nBill, nHint, nPrinter)
+    else if nType = sFlag_Sale then
+      PrintBillReport(nBill, nHint, nPrinter, nMoney)
+    else if nType = sFlag_WaiXie then
+      PrintWaiXieReport(nBill, nHint, nPrinter)
+    else if nType = sFlag_DuanDao then
+      PrintDuanDaoReport(nBill, nHint, nPrinter);
+
     WriteLog('打印结束.' + nHint);
   end;
 end;

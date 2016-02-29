@@ -469,11 +469,13 @@ end;
 
 //Desc: 语音播发未进厂车辆
 procedure TTruckQueueManager.SendTruckQueueVoice(const nLocked: Boolean);
-var nStr: string;
+var nStr, n: string;
 begin
   if nLocked then SyncLock.Enter;
   try
-    nStr := #9 + GetVoiceTruck(#9, False) + #9;
+    nStr := GetVoiceTruck(#9, False);
+    if Length(nStr) < 1 then Exit;
+    nStr := #9 + nStr + #9;
     //truck flag
 
     if nStr <> FLastQueueVoice then
