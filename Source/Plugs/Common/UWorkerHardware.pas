@@ -293,9 +293,26 @@ end;
 //Parm: °õÕ¾ºÅ[FIn.FData]
 //Desc: »ñÈ¡Ö¸¶¨°õÕ¾¶Á¿¨Æ÷ÉÏµÄ´Å¿¨ºÅ
 function THardwareCommander.PoundCardNo(var nData: string): Boolean;
-var nStr: string;
+var nStr, nPoundID: string;
+    nIdx: Integer;
 begin
   Result := True;
+  if FIn.FExtParam = sFlag_Yes then
+  begin
+    FListA.Clear;
+    FListB.Clear;
+    if not SplitStr(FIn.FData, FListA, 0, ',') then Exit;
+
+    for nIdx:=0 to FListA.Count - 1 do
+    begin
+      nPoundID := FListA[nIdx];
+      FListB.Values[nPoundID] := gHardwareHelper.GetPoundCard(nPoundID);
+    end;
+
+    FOut.FData := FListB.Text;
+    Exit;
+  end;
+
   FOut.FData := gHardwareHelper.GetPoundCard(FIn.FData);
   if FOut.FData = '' then Exit;
 
