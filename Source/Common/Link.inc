@@ -1,5 +1,5 @@
 //----------------------------------- 通用 -------------------------------------
-{$DEFINE DEBUG}
+{.$DEFINE DEBUG}
 //调试模式
 
 {.$DEFINE TrialVersion}
@@ -23,7 +23,7 @@
 {.$DEFINE ClientMon}
 //进程守护客户端
 
-{.$DEFINE HardMon}
+{$DEFINE HardMon}
 //编译硬件守护
 
 {.$DEFINE GenRODL}

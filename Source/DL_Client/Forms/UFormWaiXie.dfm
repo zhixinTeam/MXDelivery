@@ -127,6 +127,15 @@ inherited fFormWaiXie: TfFormWaiXie
       TabOrder = 12
       Width = 357
     end
+    object Check1: TcxCheckBox [13]
+      Left = 11
+      Top = 379
+      Caption = #36710#36742#21378#22806#21368#36135#27169#24335'.'
+      ParentFont = False
+      TabOrder = 13
+      Transparent = True
+      Width = 150
+    end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxLayout1Item11: TdxLayoutItem
@@ -179,6 +188,14 @@ inherited fFormWaiXie: TfFormWaiXie
         object dxlytmLayout1Item12: TdxLayoutItem
           Caption = #25552#36135#36710#36742':'
           Control = EditTruck
+          ControlOptions.ShowBorder = False
+        end
+      end
+      inherited dxLayout1Group1: TdxLayoutGroup
+        object dxLayout1Item13: TdxLayoutItem [0]
+          Caption = 'cxCheckBox1'
+          ShowCaption = False
+          Control = Check1
           ControlOptions.ShowBorder = False
         end
       end

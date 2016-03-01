@@ -216,6 +216,7 @@ begin
             SF('W_TransName', Values['SenderName']),
             SF('W_TransPY', GetPinYinOfStr(Values['SenderName'])),
             SF('W_ProductLine', Values['ProductLine']),
+            SF('W_OutXH', Values['OutXH']),
             SF('W_StockNo', Values['Stock']),
             SF('W_StockName', Values['StockName']),
 
@@ -516,6 +517,8 @@ begin
       FCard       := FieldByName('W_Card').AsString;
       FStatus     := FieldByName('W_Status').AsString;
       FNextStatus := FieldByName('W_NextStatus').AsString;
+
+      FYSValid    := FieldByName('W_OutXH').AsString;
       FPoundID    := FieldByName('P_ID').AsString;
 
       if FStatus = sFlag_BillNew then
@@ -574,10 +577,10 @@ begin
   //用于存储SQL列表
   //----------------------------------------------------------------------------
   if FIn.FExtParam = sFlag_TruckIn then //进厂
+  with nBills[0] do
   begin
-    with nBills[0] do
+    if FYSValid = sFlag_Yes then //厂外卸货模式,两进两出
     begin
-      nStr := SF('W_ID', FID);
       if FPoundID = '' then //首次进厂
       begin
         nSQL := MakeSQLByStr([
@@ -585,7 +588,7 @@ begin
                 SF('W_NextStatus', sFlag_TruckBFP),
                 SF('W_InTime1', sField_SQLServer_Now, sfVal),
                 SF('W_InMan1', FIn.FBase.FFrom.FUser)
-                ], sTable_WaiXieInfo, nStr, False);
+                ], sTable_WaiXieInfo, SF('W_ID', FID), False);
         FListA.Add(nSQL);
       end else
       begin
@@ -594,10 +597,23 @@ begin
                 SF('W_NextStatus', sFlag_TruckBFM),
                 SF('W_InTime2', sField_SQLServer_Now, sfVal),
                 SF('W_InMan2', FIn.FBase.FFrom.FUser)
-                ], sTable_WaiXieInfo, nStr, False);
+                ], sTable_WaiXieInfo, SF('W_ID', FID), False);
         FListA.Add(nSQL);
       end;
-    end;  
+    end else
+
+    //厂内卸货模式,单进单出
+    begin
+      nSQL := MakeSQLByStr([
+              SF('W_Status', sFlag_TruckIn),
+              SF('W_NextStatus', sFlag_TruckBFP),
+              SF('W_InTime1', sField_SQLServer_Now, sfVal),
+              SF('W_InMan1', FIn.FBase.FFrom.FUser),
+              SF('W_InTime2', sField_SQLServer_Now, sfVal),
+              SF('W_InMan2', FIn.FBase.FFrom.FUser)
+              ], sTable_WaiXieInfo, SF('W_ID', FID), False);
+      FListA.Add(nSQL);
+    end;
   end else
 
   //----------------------------------------------------------------------------
@@ -617,7 +633,9 @@ begin
     with nBills[0] do
     begin
       FStatus := sFlag_TruckBFP;
-      FNextStatus := sFlag_TruckOut;
+      if FYSValid = sFlag_Yes then //厂外卸货
+           FNextStatus := sFlag_TruckOut
+      else FNextStatus := sFlag_TruckBFM;
 
       nSQL := MakeSQLByStr([
             SF('P_ID', nOut.FData),
@@ -701,7 +719,7 @@ begin
                 SF('W_NextStatus', sFlag_TruckOut),
                 SF('W_MValue', FMData.FValue, sfVal),
                 SF('W_MDate', sField_SQLServer_Now, sfVal),
-                SF('W_MMan', FMData.FOperator)
+                SF('W_MMan', FIn.FBase.FFrom.FUser)
                 ], sTable_WaiXieInfo, SF('W_ID', FID), False);
         FListA.Add(nSQL);
       end;
@@ -720,8 +738,9 @@ begin
 
   //----------------------------------------------------------------------------
   if FIn.FExtParam = sFlag_TruckOut then
+  with nBills[0] do
   begin
-    with nBills[0] do
+    if FYSValid = sFlag_Yes then //厂外卸货模式,两进两出
     begin
       if FStatus = sFlag_TruckBFP then //首次出厂
       begin
@@ -745,6 +764,23 @@ begin
         nSQL := Format(nSQL, [sTable_Card, sFlag_CardIdle, nBills[0].FCard]);
         FListA.Add(nSQL); //磁卡
       end;
+    end else
+
+    //厂内卸货模式,
+    begin
+      nSQL := MakeSQLByStr([SF('W_Status', sFlag_TruckOut),
+              SF('W_NextStatus', ''),
+              SF('W_Card', ''),
+              SF('W_OutFact1', sField_SQLServer_Now, sfVal),
+              SF('W_OutMan1', FIn.FBase.FFrom.FUser),
+              SF('W_OutFact2', sField_SQLServer_Now, sfVal),
+              SF('W_OutMan2', FIn.FBase.FFrom.FUser)
+              ], sTable_WaiXieInfo, SF('W_ID', FID), False);
+      FListA.Add(nSQL);
+
+      nSQL := 'Update %s Set C_Status=''%s'',C_TruckNo=Null Where C_Card=''%s''';
+      nSQL := Format(nSQL, [sTable_Card, sFlag_CardIdle, nBills[0].FCard]);
+      FListA.Add(nSQL); //磁卡
     end;
   end;
 

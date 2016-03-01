@@ -10,8 +10,9 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   UFormNormal, cxGraphics, cxControls, cxLookAndFeels,
-  cxLookAndFeelPainters, cxContainer, cxEdit, cxMaskEdit, cxButtonEdit,
-  cxTextEdit, dxLayoutControl, StdCtrls, cxDropDownEdit, cxLabel, ExtCtrls;
+  cxLookAndFeelPainters, cxContainer, cxEdit, cxCheckBox, cxTextEdit,
+  cxDropDownEdit, cxMaskEdit, cxButtonEdit, ExtCtrls, dxLayoutControl,
+  StdCtrls;
 
 type
   TfFormWaiXie = class(TfFormNormal)
@@ -37,6 +38,8 @@ type
     Bevel3: TBevel;
     dxLayout1Item10: TdxLayoutItem;
     EditLine: TcxComboBox;
+    Check1: TcxCheckBox;
+    dxLayout1Item13: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -256,6 +259,11 @@ begin
     Values['Stock'] := GetCtrlData(EditStock);
     Values['StockName'] := EditStockName.Text;
     Values['Truck'] := EditTruck.Text;
+
+    if Check1.Checked then
+         nID := sFlag_Yes
+    else nID := sFlag_No;
+    Values['OutXH'] := nID;
   end;
 
   nID := SaveWaiXie(PackerEncodeStr(FListA.Text));

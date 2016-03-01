@@ -766,7 +766,7 @@ ResourceString
        'W_Card varChar(16), W_Truck varChar(15),' +
        'W_ProID varChar(15), W_ProName varChar(160), W_ProPY varChar(160),' +
        'W_TransID varChar(15), W_TransName varChar(160), W_TransPY varChar(160),' +
-       'W_ProductLine varchar(160),' +
+       'W_ProductLine varchar(160), W_OutXH Char(1),' +
        'W_Type Char(1), W_StockNo varChar(32), W_StockName varChar(160),' +
        'W_Status Char(1), W_NextStatus Char(1),' +
        'W_InTime1 DateTime, W_InMan1 varChar(32),' +
@@ -787,6 +787,7 @@ ResourceString
    *.W_ProID,W_ProName,W_ProPY:客户
    *.W_TransID,W_TransName, W_TransPY:运输单位
    *.W_ProductLine: 产品线
+   *.W_OutXH: 厂外卸货模式
    *.W_Type: 类型(袋,散)
    *.W_StockNo: 物料编号
    *.W_StockName: 物料描述
