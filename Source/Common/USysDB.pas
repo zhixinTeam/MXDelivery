@@ -165,9 +165,7 @@ ResourceString
   sFlag_UserLogItem   = 'UserLogItem';               //用户登录项
 
   sFlag_StockItem     = 'StockItem';                 //水泥信息项
-  sFlag_ContractItem  = 'ContractItem';              //合同信息项
-  sFlag_SalesmanItem  = 'SalesmanItem';              //业务员信息项
-  sFlag_ZhiKaItem     = 'ZhiKaItem';                 //纸卡信息项
+  sFlag_PackerItem    = 'PackerItem';                //包机信息项
   sFlag_BillItem      = 'BillItem';                  //提单信息项
   sFlag_TruckQueue    = 'TruckQueue';                //车辆队列
                                                                
@@ -388,31 +386,31 @@ ResourceString
   -----------------------------------------------------------------------------}
 
   sSQL_NewBill = 'Create Table $Table(R_ID $Inc, L_ID varChar(20),' +
-       'L_Card varChar(16), L_ZhiKa varChar(15), L_Project varChar(100),' +
-       'L_Area varChar(50),' +
-       'L_CusID varChar(15), L_CusName varChar(80), L_CusPY varChar(80),' +
-       'L_SaleID varChar(15), L_SaleMan varChar(32),' +
-       'L_Type Char(1), L_StockNo varChar(20), L_StockName varChar(80),' +
-       'L_Value $Float, L_Price $Float, L_ZKMoney Char(1),' +
-       'L_Truck varChar(15), L_Status Char(1), L_NextStatus Char(1),' +
-       'L_InTime DateTime, L_InMan varChar(32),' +
-       'L_PValue $Float, L_PDate DateTime, L_PMan varChar(32),' +
-       'L_MValue $Float, L_MDate DateTime, L_MMan varChar(32),' +
-       'L_LadeTime DateTime, L_LadeMan varChar(32), ' +
-       'L_LadeLine varChar(15), L_LineName varChar(32), ' +
-       'L_DaiTotal Integer , L_DaiNormal Integer, L_DaiBuCha Integer,' +
-       'L_OutFact DateTime, L_OutMan varChar(32),' +
-       'L_Lading Char(1), L_IsVIP varChar(1), L_Seal varChar(100),' +
-       'L_HYDan varChar(15), L_Man varChar(32), L_Date DateTime,' +
-       'L_DelMan varChar(32), L_DelDate DateTime, ' +
-       'L_SyncNum Integer Default 0, L_SyncDate DateTime, L_SyncMemo varChar(500))';
+       'L_Card varChar(16),L_ZhiKa varChar(15),L_Project varChar(100),' +
+       'L_CusID varChar(15),L_CusName varChar(80),L_CusPY varChar(80),' +
+       'L_SaleID varChar(15),L_SaleMan varChar(32),' +
+       'L_Type Char(1),L_StockNo varChar(20),L_StockName varChar(80),' +
+       'L_Value $Float,L_Price $Float,' +
+       'L_Truck varChar(15),L_Status Char(1),L_NextStatus Char(1),' +
+       'L_InTime DateTime,L_InMan varChar(32),' +
+       'L_PValue $Float,L_PDate DateTime,L_PMan varChar(32),' +
+       'L_MValue $Float,L_MDate DateTime,L_MMan varChar(32),' +
+       'L_LadeTime DateTime,L_LadeMan varChar(32), ' +
+       'L_LadeLine varChar(15),L_LineName varChar(32),' +
+       'L_PackerNo varChar(32),L_PeiBi varChar(16),' +
+       'L_DaiTotal Integer,L_DaiNormal Integer,L_DaiBuCha Integer,' +
+       'L_OutFact DateTime,L_OutMan varChar(32),' +
+       'L_Lading Char(1),L_IsVIP varChar(1),L_Seal varChar(100),' +
+       'L_HYDan varChar(16),L_District varChar(16),L_PrintCode varChar(32),' +
+       'L_Man varChar(32),L_Date DateTime,' +
+       'L_DelMan varChar(32),L_DelDate DateTime, ' +
+       'L_SyncNum Integer Default 0,L_SyncDate DateTime,L_SyncMemo varChar(500))';
   {-----------------------------------------------------------------------------
    交货单表: Bill
    *.R_ID: 编号
    *.L_ID: 提单号
    *.L_Card: 磁卡号
    *.L_ZhiKa: 纸卡号
-   *.L_Area: 区域
    *.L_CusID,L_CusName,L_CusPY:客户
    *.L_SaleID,L_SaleMan:业务员
    *.L_Type: 类型(袋,散)
@@ -420,7 +418,6 @@ ResourceString
    *.L_StockName: 物料描述 
    *.L_Value: 提货量
    *.L_Price: 提货单价
-   *.L_ZKMoney: 占用纸卡限提(Y/N)
    *.L_Truck: 车船号
    *.L_Status,L_NextStatus:状态控制
    *.L_InTime,L_InMan: 进厂放行
@@ -428,12 +425,16 @@ ResourceString
    *.L_MValue,L_MDate,L_MMan: 称毛重
    *.L_LadeTime,L_LadeMan: 发货时间,发货人
    *.L_LadeLine,L_LineName: 发货通道
+   *.L_PackerNo: 包装机号
+   *.L_PeiBi: 配比编号
    *.L_DaiTotal,L_DaiNormal,L_DaiBuCha:总装,正常,补差
    *.L_OutFact,L_OutMan: 出厂放行
    *.L_Lading: 提货方式(自提,送货)
    *.L_IsVIP:VIP单
    *.L_Seal: 封签号
    *.L_HYDan: 化验单
+   *.L_District: 区域码
+   *.L_PrintCode: 喷码号
    *.L_Man:操作人
    *.L_Date:创建时间
    *.L_DelMan: 交货单删除人员
@@ -563,7 +564,7 @@ ResourceString
 
   sSQL_NewZTLines = 'Create Table $Table(R_ID $Inc, Z_ID varChar(15),' +
        'Z_Name varChar(32), Z_StockNo varChar(20), Z_Stock varChar(80),' +
-       'Z_StockType Char(1), Z_PeerWeight Integer,' +
+       'Z_StockType Char(1), Z_PeerWeight Integer, Z_PackerNo varChar(32),' +
        'Z_QueueMax Integer, Z_VIPLine Char(1), Z_Valid Char(1), Z_Index Integer)';
   {-----------------------------------------------------------------------------
    装车线配置: ZTLines
@@ -574,6 +575,7 @@ ResourceString
    *.Z_Stock: 品名
    *.Z_StockType: 类型(袋,散)
    *.Z_PeerWeight: 袋重
+   *.Z_PackerNo: 包机编号
    *.Z_QueueMax: 队列大小
    *.Z_VIPLine: VIP通道
    *.Z_Valid: 是否有效
@@ -764,6 +766,7 @@ ResourceString
        'W_Card varChar(16), W_Truck varChar(15),' +
        'W_ProID varChar(15), W_ProName varChar(160), W_ProPY varChar(160),' +
        'W_TransID varChar(15), W_TransName varChar(160), W_TransPY varChar(160),' +
+       'W_ProductLine varchar(160),' +
        'W_Type Char(1), W_StockNo varChar(32), W_StockName varChar(160),' +
        'W_Status Char(1), W_NextStatus Char(1),' +
        'W_InTime1 DateTime, W_InMan1 varChar(32),' +
@@ -783,6 +786,7 @@ ResourceString
    *.W_Truck: 车牌号
    *.W_ProID,W_ProName,W_ProPY:客户
    *.W_TransID,W_TransName, W_TransPY:运输单位
+   *.W_ProductLine: 产品线
    *.W_Type: 类型(袋,散)
    *.W_StockNo: 物料编号
    *.W_StockName: 物料描述

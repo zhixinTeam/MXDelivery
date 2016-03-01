@@ -42,6 +42,13 @@ type
     cxLabel5: TcxLabel;
     dxLayout1Group10: TdxLayoutGroup;
     dxLayout1Group12: TdxLayoutGroup;
+    cxLabel1: TcxLabel;
+    dxLayout1Item6: TdxLayoutItem;
+    dxLayout1Item9: TdxLayoutItem;
+    EditPacker: TcxComboBox;
+    dxLayout1Item11: TdxLayoutItem;
+    cxLabel3: TcxLabel;
+    dxLayout1Group5: TdxLayoutGroup;
     procedure BtnOKClick(Sender: TObject);
     procedure EditStockIDPropertiesChange(Sender: TObject);
   protected
@@ -170,6 +177,23 @@ begin
       Next;
     end;
   end;
+
+  //----------------------------------------------------------------------------
+  EditPacker.Properties.Items.Clear;
+  nStr := 'Select D_Value From %s Where D_Name=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_PackerItem]);
+                                    
+  with FDM.QueryTemp(nStr) do
+  begin
+    if RecordCount < 1 then Exit;
+    First;
+
+    while not Eof do
+    begin
+      EditPacker.Properties.Items.Add(Fields[0].AsString);
+      Next;
+    end;
+  end;
 end;
 
 procedure TfFormZTLine.EditStockIDPropertiesChange(Sender: TObject);
@@ -252,6 +276,12 @@ begin
   begin
     Result := EditStockID.ItemIndex >= 0;
     nHint := '请选择品种';
+  end else
+
+  if Sender = EditPacker then
+  begin
+    Result := EditPacker.ItemIndex >= 0;
+    nHint := '请选择包装机号';
   end else
 
   if Sender = EditMax then

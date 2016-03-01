@@ -24,6 +24,7 @@ type
     FBill: string;          //交货单
     FLine: string;          //装车线
     FName: string;          //线名称
+    FPacker: string;        //包装机
     FPerW: Integer;         //袋重
     FTotal: Integer;        //总袋数
     FNormal: Integer;       //正常
@@ -405,6 +406,7 @@ begin
     Values['CusID'] := FListC.Values['CustAccount'];;
     Values['CusName'] := FListC.Values['CustName'];
     Values['CusPY'] := GetPinYinOfStr(FListC.Values['CustName']);
+    Values['District'] := FListC.Values['District'];
 
     Values['SaleID'] := FListC.Values['DealerAccount'];
     Values['SaleMan'] := FListC.Values['DealerName'];
@@ -449,6 +451,7 @@ begin
             SF('L_CusID', FListA.Values['CusID']),
             SF('L_CusName', FListA.Values['CusName']),
             SF('L_CusPY', FListA.Values['CusPY']),
+            SF('L_District', FListA.Values['District']),
             SF('L_SaleID', FListA.Values['SaleID']),
             SF('L_SaleMan', FListA.Values['SaleMan']),
 
@@ -1092,7 +1095,7 @@ begin
   end;
 
   nStr := 'Select L_ID,L_ZhiKa,L_CusID,L_CusName,L_Type,L_StockNo,' +
-          'L_StockName,L_Truck,L_Value,L_Price,L_ZKMoney,L_Status,' +
+          'L_StockName,L_Truck,L_Value,L_Price,L_Status,' +
           'L_NextStatus,L_Card,L_IsVIP,L_PValue,L_MValue,L_HYDan From $Bill b ';
   //xxxxx
 
@@ -1600,21 +1603,31 @@ begin
       nSQL := Format(nSQL, [sTable_AX_CardInfo, FValue, FValue, FZhiKa, FStockNo]);
       FListA.Add(nSQL); //更新订单
     end;
-    {
-    if not TWorkerBusinessCommander.CallMe(cBC_SyncME25,
-          FListB.Text, '', @nOut) then
-      raise Exception.Create(nOut.FData);
-    //同步销售到NC榜单
-    }
+
     nSQL := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';
     nSQL := Format(nSQL, [sTable_Card, sFlag_CardIdle, nBills[0].FCard]);
     FListA.Add(nSQL); //更新磁卡状态
 
+    nStr := 'Select Top 1 D_Value From %s Where D_Name=''%s'' ' +
+            'Order By D_Memo DESC';
+    nStr := Format(nStr, [sTable_SysDict, sFlag_PackerItem]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        nData := '字典表未配置默认的包装机.';
+        Exit;
+      end;
+
+      nTmp := Fields[0].AsString;
+    end;
+
     nStr := AdjustListStrFormat2(FListB, '''', True, ',', False);
     //交货单列表
 
-    nSQL := 'Select T_Line,Z_Name as T_Name,T_Bill,T_PeerWeight,T_Total,' +
-            'T_Normal,T_BuCha,T_HKBills From %s ' +
+    nSQL := 'Select T_Line,Z_Name as T_Name,Z_PackerNo as T_Packer,T_Bill,' +
+            'T_PeerWeight,T_Total,T_Normal,T_BuCha,T_HKBills From %s ' +
             ' Left Join %s On Z_ID = T_Line ' +
             'Where T_Bill In (%s)';
     nSQL := Format(nSQL, [sTable_ZTTrucks, sTable_ZTLines, nStr]);
@@ -1636,6 +1649,12 @@ begin
             FBill    := FieldByName('T_Bill').AsString;
             FLine    := FieldByName('T_Line').AsString;
             FName    := FieldByName('T_Name').AsString;
+            FPacker  := FieldByName('T_Packer').AsString;
+            
+            if Trim(FPacker) = '' then
+              FPacker := nTmp;
+            //xxxxx
+
             FPerW    := FieldByName('T_PeerWeight').AsInteger;
             FTotal   := FieldByName('T_Total').AsInteger;
             FNormal  := FieldByName('T_Normal').AsInteger;
@@ -1675,6 +1694,7 @@ begin
 
         nSQL := MakeSQLByStr([SF('L_LadeLine', FLine),
                 SF('L_LineName', FName),
+                SF('L_PackerNo', FPacker),
                 SF('L_DaiTotal', i, sfVal),
                 SF('L_DaiNormal', i, sfVal),
                 SF('L_DaiBuCha', 0, sfVal)
@@ -1706,6 +1726,7 @@ begin
       begin
         nSQL := MakeSQLByStr([SF('L_LadeLine', FLine),
                 SF('L_LineName', FName),
+                SF('L_PackerNo', FPacker),
                 SF('L_DaiTotal', FTotal, sfVal),
                 SF('L_DaiNormal', FNormal, sfVal),
                 SF('L_DaiBuCha', FBuCha, sfVal)

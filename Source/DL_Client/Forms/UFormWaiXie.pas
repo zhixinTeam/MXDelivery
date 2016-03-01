@@ -35,6 +35,8 @@ type
     Bevel2: TBevel;
     dxLayout1Item9: TdxLayoutItem;
     Bevel3: TBevel;
+    dxLayout1Item10: TdxLayoutItem;
+    EditLine: TcxComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -97,10 +99,20 @@ begin
 end;
 
 procedure TfFormWaiXie.FormClose(Sender: TObject; var Action: TCloseAction);
+var nIni: TIniFile;
 begin
-  SaveFormConfig(Self);
-  ReleaseCtrlData(Self);
-  FListA.Free;
+  nIni := TIniFile.Create(gPath + sFormConfig);
+  try
+    nIni.WriteInteger(Name, 'Customer', EditCusID.ItemIndex);
+    nIni.WriteInteger(Name, 'Sender', EditSender.ItemIndex);
+    nIni.WriteInteger(Name, 'ProductLine', EditLine.ItemIndex);
+
+    SaveFormConfig(Self, nIni);
+    ReleaseCtrlData(Self);
+    FListA.Free;
+  finally
+    nIni.Free;
+  end;
 end;
 
 //Desc: 回车键
@@ -130,6 +142,8 @@ end;
 //------------------------------------------------------------------------------
 procedure TfFormWaiXie.InitFormData;
 var nStr: string;
+    nIdx: Integer;
+    nIni: TIniFile;
 begin
   nStr := 'M_ID=Select M_ID,M_Name From %s Order By M_ID DESC';
   nStr := Format(nStr, [sTable_Materails]);
@@ -144,8 +158,31 @@ begin
   AdjustCXComboBoxItem(EditCusID, False);
 
   FDM.FillStringsData(EditSender.Properties.Items, nStr, 1, '.');
-  EditSender.Properties.Items.Insert(0, '');
   AdjustCXComboBoxItem(EditSender, False);
+
+  nStr := 'Select P_Name From %s Order By P_Name DESC';
+  nStr := Format(nStr, [sTable_Provider]);
+  FDM.FillStringsData(EditLine.Properties.Items, nStr);
+
+  nIni := TIniFile.Create(gPath + sFormConfig);
+  try
+    nIdx := nIni.ReadInteger(Name, 'Customer', 0);
+    if EditCusID.Properties.Items.Count > nIdx then
+      EditCusID.ItemIndex := nIdx;
+    //xxxxx
+
+    nIdx := nIni.ReadInteger(Name, 'Sender', 0);
+    if EditSender.Properties.Items.Count > nIdx then
+      EditSender.ItemIndex := nIdx;
+    //xxxxx
+
+    nIdx := nIni.ReadInteger(Name, 'ProductLine', 0);
+    if EditLine.Properties.Items.Count > nIdx then
+      EditLine.ItemIndex := nIdx;
+    //xxxxx
+  finally
+    nIni.Free;
+  end;
 end;
 
 procedure TfFormWaiXie.EditCusIDPropertiesEditValueChanged(Sender: TObject);
@@ -181,6 +218,19 @@ begin
     nHint := '请选择客户';
   end else
 
+  if Sender = EditSender then
+  begin
+    Result := EditSender.ItemIndex >= 0;
+    nHint := '请选择运输单位';
+  end else
+
+  if Sender = EditLine then
+  begin
+    EditLine.Text := Trim(EditLine.Text);
+    Result := EditLine.Text <> '';
+    nHint := '请填写产品线';
+  end else
+
   if Sender = EditStock then
   begin
     Result := EditStock.ItemIndex >= 0;
@@ -202,6 +252,7 @@ begin
     Values['CusName'] := EditCusName.Text;
     Values['Sender'] := GetCtrlData(EditSender);
     Values['SenderName'] := EditSenderName.Text;
+    Values['ProductLine'] := EditLine.Text;
     Values['Stock'] := GetCtrlData(EditStock);
     Values['StockName'] := EditStockName.Text;
     Values['Truck'] := EditTruck.Text;

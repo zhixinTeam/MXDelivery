@@ -215,6 +215,7 @@ begin
             SF('W_TransID', Values['Sender']),
             SF('W_TransName', Values['SenderName']),
             SF('W_TransPY', GetPinYinOfStr(Values['SenderName'])),
+            SF('W_ProductLine', Values['ProductLine']),
             SF('W_StockNo', Values['Stock']),
             SF('W_StockName', Values['StockName']),
 

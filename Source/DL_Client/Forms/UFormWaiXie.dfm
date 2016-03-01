@@ -1,15 +1,15 @@
 inherited fFormWaiXie: TfFormWaiXie
   Left = 451
   Top = 243
-  ClientHeight = 295
-  ClientWidth = 461
+  ClientHeight = 412
+  ClientWidth = 411
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 461
-    Height = 295
+    Width = 411
+    Height = 412
     AutoControlTabOrders = False
     object Bevel1: TBevel [0]
       Left = 23
@@ -33,19 +33,19 @@ inherited fFormWaiXie: TfFormWaiXie
       Shape = bsRightLine
     end
     inherited BtnOK: TButton
-      Left = 315
-      Top = 262
+      Left = 265
+      Top = 379
       Caption = #24320#21333
       TabOrder = 1
     end
     inherited BtnExit: TButton
-      Left = 385
-      Top = 262
+      Left = 335
+      Top = 379
       TabOrder = 3
     end
     object EditTruck: TcxButtonEdit [5]
       Left = 81
-      Top = 216
+      Top = 241
       ParentFont = False
       Properties.Buttons = <
         item
@@ -62,7 +62,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 36
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
-      Properties.DropDownRows = 18
+      Properties.DropDownRows = 20
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 6
@@ -82,7 +82,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 96
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
-      Properties.DropDownRows = 18
+      Properties.DropDownRows = 20
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 8
@@ -102,7 +102,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 156
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
-      Properties.DropDownRows = 18
+      Properties.DropDownRows = 20
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 10
@@ -116,6 +116,16 @@ inherited fFormWaiXie: TfFormWaiXie
       Properties.ReadOnly = True
       TabOrder = 11
       Width = 571
+    end
+    object EditLine: TcxComboBox [12]
+      Left = 81
+      Top = 216
+      ParentFont = False
+      Properties.DropDownRows = 20
+      Properties.ItemHeight = 20
+      Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
+      TabOrder = 12
+      Width = 357
     end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
@@ -159,6 +169,11 @@ inherited fFormWaiXie: TfFormWaiXie
         end
         object dxLayout1Item9: TdxLayoutItem
           Control = Bevel3
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item10: TdxLayoutItem
+          Caption = #20135' '#21697' '#32447':'
+          Control = EditLine
           ControlOptions.ShowBorder = False
         end
         object dxlytmLayout1Item12: TdxLayoutItem

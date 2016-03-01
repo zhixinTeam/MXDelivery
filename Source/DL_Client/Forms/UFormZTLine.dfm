@@ -2,26 +2,26 @@ inherited fFormZTLine: TfFormZTLine
   Left = 536
   Top = 401
   Caption = #35013#36710#32447#37197#32622
-  ClientHeight = 247
-  ClientWidth = 550
+  ClientHeight = 288
+  ClientWidth = 542
   Position = poMainFormCenter
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 550
-    Height = 247
+    Width = 542
+    Height = 288
     inherited BtnOK: TButton
-      Left = 404
-      Top = 214
-      TabOrder = 11
+      Left = 396
+      Top = 255
+      TabOrder = 14
     end
     inherited BtnExit: TButton
-      Left = 474
-      Top = 214
-      TabOrder = 12
+      Left = 466
+      Top = 255
+      TabOrder = 15
     end
     object EditName: TcxTextEdit [2]
-      Left = 354
+      Left = 329
       Top = 36
       Hint = 'T.Z_Name'
       ParentFont = False
@@ -36,60 +36,60 @@ inherited fFormZTLine: TfFormZTLine
       ParentFont = False
       Properties.ReadOnly = False
       TabOrder = 0
-      Width = 210
+      Width = 185
     end
     object EditMax: TcxTextEdit [4]
       Left = 81
-      Top = 111
+      Top = 171
       Hint = 'T.Z_QueueMax'
       HelpType = htKeyword
       HelpKeyword = 'I'
       ParentFont = False
-      TabOrder = 6
+      TabOrder = 9
       Text = '3'
-      Width = 210
+      Width = 185
     end
     object CheckValid: TcxCheckBox [5]
       Left = 11
-      Top = 214
+      Top = 255
       Hint = 'T.Z_Valid'
       Caption = #36890#36947#26377#25928
       ParentFont = False
       Style.BorderColor = clWindowFrame
       Style.BorderStyle = ebsSingle
-      TabOrder = 10
+      TabOrder = 13
       Transparent = True
       Width = 80
     end
     object EditStockName: TcxTextEdit [6]
-      Left = 354
-      Top = 61
+      Left = 81
+      Top = 86
       Hint = 'T.Z_Stock'
       ParentFont = False
       TabOrder = 3
       Width = 121
     end
     object cxLabel2: TcxLabel [7]
-      Left = 296
-      Top = 111
+      Left = 271
+      Top = 171
       Caption = #27880': '#35813#21442#25968#29992#20110#25511#21046#27599#38431#26368#22810#26377#22810#23569#36710#36742'.'
       ParentFont = False
       Transparent = True
     end
     object EditPeer: TcxTextEdit [8]
       Left = 81
-      Top = 136
+      Top = 196
       Hint = 'T.Z_PeerWeight'
       HelpType = htKeyword
       HelpKeyword = 'I'
       ParentFont = False
-      TabOrder = 8
+      TabOrder = 11
       Text = '50'
-      Width = 210
+      Width = 185
     end
     object cxLabel4: TcxLabel [9]
-      Left = 296
-      Top = 136
+      Left = 271
+      Top = 196
       Caption = #27880': '#35813#21442#25968#29992#20110#35013#36710#35745#25968#26102#35745#31639#34955#25968'.'
       ParentFont = False
       Transparent = True
@@ -107,7 +107,7 @@ inherited fFormZTLine: TfFormZTLine
     end
     object EditType: TcxComboBox [11]
       Left = 81
-      Top = 86
+      Top = 146
       Hint = 'T.Z_VIPLine'
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
@@ -117,14 +117,41 @@ inherited fFormZTLine: TfFormZTLine
         '2.VIP'
         '3.'#26632#21488
         '4.'#33337#36816)
-      TabOrder = 4
+      TabOrder = 7
       Text = '1.'#26222#36890
-      Width = 210
+      Width = 185
     end
     object cxLabel5: TcxLabel [12]
-      Left = 296
-      Top = 86
+      Left = 271
+      Top = 146
       Caption = #27880': '#35813#21442#25968#24433#21709#36827#38431#21015#30340#21457#36135#21333#31867#22411'.'
+      ParentFont = False
+      Transparent = True
+    end
+    object cxLabel1: TcxLabel [13]
+      Left = 23
+      Top = 111
+      AutoSize = False
+      ParentFont = False
+      Properties.LineOptions.Alignment = cxllaBottom
+      Transparent = True
+      Height = 5
+      Width = 496
+    end
+    object EditPacker: TcxComboBox [14]
+      Left = 81
+      Top = 121
+      Hint = 'T.Z_PackerNo'
+      ParentFont = False
+      Properties.DropDownRows = 20
+      Properties.ItemHeight = 20
+      TabOrder = 5
+      Width = 185
+    end
+    object cxLabel3: TcxLabel [15]
+      Left = 271
+      Top = 121
+      Caption = #27880': '#25955#35013#36890#36947#35831#36873#25321#19979#26009#21475#32534#21495'.'
       ParentFont = False
       Transparent = True
     end
@@ -152,7 +179,6 @@ inherited fFormZTLine: TfFormZTLine
         object dxLayout1Group2: TdxLayoutGroup
           ShowCaption = False
           Hidden = True
-          LayoutDirection = ldHorizontal
           ShowBorder = False
           object dxLayout1Item21: TdxLayoutItem
             Caption = #21697#31181#32534#21495':'
@@ -165,6 +191,28 @@ inherited fFormZTLine: TfFormZTLine
             Caption = #21697#31181#21517#31216':'
             Control = EditStockName
             ControlOptions.ShowBorder = False
+          end
+          object dxLayout1Item6: TdxLayoutItem
+            Caption = 'cxLabel1'
+            ShowCaption = False
+            Control = cxLabel1
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayout1Group5: TdxLayoutGroup
+            ShowCaption = False
+            Hidden = True
+            LayoutDirection = ldHorizontal
+            ShowBorder = False
+            object dxLayout1Item9: TdxLayoutItem
+              Caption = #21253#35013#26426#21495':'
+              Control = EditPacker
+              ControlOptions.ShowBorder = False
+            end
+            object dxLayout1Item11: TdxLayoutItem
+              ShowCaption = False
+              Control = cxLabel3
+              ControlOptions.ShowBorder = False
+            end
           end
         end
         object dxLayout1Group4: TdxLayoutGroup

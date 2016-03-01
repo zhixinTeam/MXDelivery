@@ -101,8 +101,7 @@ type
     FIn: TWorkerBusinessCommand;
     FOut: TWorkerBusinessCommand;
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
-    function DoAXWork(var nData: string): Boolean; override;
-
+    function DoAXWork(var nData: string): Boolean; override; 
     function BuildBusinessXMLPack(var nData: string): Boolean;
   public
     function GetFlagStr(const nFlag: Integer): string; override;
@@ -116,7 +115,6 @@ type
     FOut: TWorkerBusinessCommand;
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
-
     function BuildBusinessXMLPack(var nData: string): Boolean;
   public
     function GetFlagStr(const nFlag: Integer): string; override;
@@ -130,7 +128,6 @@ type
     FOut: TWorkerBusinessCommand;
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
-
     function BuildBusinessXMLPack(var nData: string): Boolean;
   public
     function GetFlagStr(const nFlag: Integer): string; override;
@@ -442,7 +439,7 @@ begin
     //get serial message no
 
     with FChannel^ do
-    begin
+    try
       if not Assigned(FChannel) then
         FChannel := CoWebService.Create(FMsg, FHttp);
       FHttp.TargetURL := gChannelChoolser.ActiveURL;
@@ -450,6 +447,13 @@ begin
       nInit := GetTickCount;
       Result := DoAXWork(nData);
       WriteLog(Format('对象: %s 执行: %d毫秒', [FunctionName, GetTickCount-nInit]));
+    except
+      on E: Exception do
+      begin
+        nData := '对象[ %s ]执行AX业务异常.';
+        nData := Format(nData, [FunctionName]);
+        WriteLog(E.Message);
+      end;
     end;
   finally
     gChannelManager.ReleaseChannel(FChannel);
@@ -592,6 +596,7 @@ begin
     Values['Card'] := NodeByName('Card').ValueAsString;
     Values['CustAccount'] := NodeByName('CustAccount').ValueAsString;
     Values['CustName'] := NodeByName('CustName').ValueAsString;
+    Values['District'] := NodeByName('SalesDistrictId').ValueAsString;
 
     Values['DealerAccount'] := NodeByName('DealerAccount').ValueAsString;
     Values['DealerName'] := NodeByName('DealerName').ValueAsString;
@@ -741,7 +746,8 @@ begin
       NodeNew('BadBagQty').ValueAsString := FieldByName('L_DaiBuCha').AsString;
       NodeNew('CheckBatchID').ValueAsString := FieldByName('L_HYDan').AsString;
       NodeNew('ProportionID').ValueAsString := '?';
-      NodeNew('WrkCtrId').ValueAsString := FieldByName('L_LadeLine').AsString;
+      NodeNew('WrkCtrId').ValueAsString := FieldByName('L_PackerNo').AsString;
+      NodeNew('BatchID').ValueAsString := FieldByName('L_PrintCode').AsString;
     end;
   end;
 
@@ -1054,6 +1060,7 @@ begin
     NodeNew('VehicleNum').ValueAsString  := FieldByName('W_Truck').AsString;
     NodeNew('OutSourceUnit').ValueAsString := FieldByName('W_ProName').AsString;
     NodeNew('CarSenderUnit').ValueAsString := FieldByName('W_TransName').AsString;
+    NodeNew('ProductionLine').ValueAsString := FieldByName('W_ProductLine').AsString;
 
     NodeNew('TareDateTime').ValueAsString := FieldByName('W_PDate').AsString;
     NodeNew('GrossDateTime').ValueAsString := FieldByName('W_MDate').AsString;
@@ -1071,7 +1078,7 @@ begin
   BuildDefaultXMLPack;    
   if not BuildBusinessXMLPack(nData) then Exit;
 
-  nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);
+  nData := IWebService(FChannel.FChannel).SetOutSourceWeight(FXML.WriteToString);
   //remote call
 
   {$IFDEF DEBUG}
