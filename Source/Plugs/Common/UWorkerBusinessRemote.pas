@@ -745,7 +745,7 @@ begin
       NodeNew('BagQty').ValueAsString := FieldByName('L_DaiTotal').AsString;
       NodeNew('BadBagQty').ValueAsString := FieldByName('L_DaiBuCha').AsString;
       NodeNew('CheckBatchID').ValueAsString := FieldByName('L_HYDan').AsString;
-      NodeNew('ProportionID').ValueAsString := '?';
+      NodeNew('ProportionID').ValueAsString := '';
       NodeNew('WrkCtrId').ValueAsString := FieldByName('L_PackerNo').AsString;
       NodeNew('BatchID').ValueAsString := FieldByName('L_PrintCode').AsString;
     end;

@@ -237,7 +237,7 @@ var nStr: string;
     nOut: TWorkerBusinessCommand;
 begin
   nStr := 'Select L_ID From %s ' +
-          'Where L_SyncDate Is Null And L_SyncNum<=3 And L_OutFact Is Not null';
+          'Where L_SyncDate Is Null And L_SyncNum<3 And L_OutFact Is Not null';
   nStr := Format(nStr, [sTable_Bill]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -259,7 +259,7 @@ var nStr: string;
     nOut: TWorkerBusinessCommand;
 begin
   nStr := 'Select P_ID From %s ' +
-          'Where P_SyncDate Is Null And P_SyncNum<=3 And P_OutFact Is Not null';
+          'Where P_SyncDate Is Null And P_SyncNum<3 And P_OutFact Is Not null';
   nStr := Format(nStr, [sTable_PurchInfo]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -281,7 +281,7 @@ var nStr: string;
     nOut: TWorkerBusinessCommand;
 begin
   nStr := 'Select W_ID From %s ' +
-          'Where W_SyncDate Is Null And W_SyncNum<=3 And W_OutFact2 Is Not null';
+          'Where W_SyncDate Is Null And W_SyncNum<3 And W_OutFact2 Is Not null';
   nStr := Format(nStr, [sTable_WaiXieInfo]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -303,7 +303,7 @@ var nStr: string;
     nOut: TWorkerBusinessCommand;
 begin
   nStr := 'Select T_ID From %s Where ' +
-          'T_SyncDate Is Null And T_SyncNum<=3';
+          'T_SyncDate Is Null And T_SyncNum<3';
   nStr := Format(nStr, [sTable_Transfer]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
