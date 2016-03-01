@@ -1724,6 +1724,10 @@ begin
 
       with FBillLines[nInt] do
       begin
+        if (FType = sFlag_Dai) and (FTotal < 1) then
+          FTotal := Trunc(FValue * 1000/ 50);
+        //Ä¬ÈÏ´üÊý
+
         nSQL := MakeSQLByStr([SF('L_LadeLine', FLine),
                 SF('L_LineName', FName),
                 SF('L_PackerNo', FPacker),
