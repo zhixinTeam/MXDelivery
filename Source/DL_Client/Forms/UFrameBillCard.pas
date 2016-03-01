@@ -446,7 +446,31 @@ begin
       InitFormData(FWhere);
       ShowMsg('补卡操作成功', sHint);
     end;
-  end;
+  end
+  else if nStr = sFlag_Provide then
+  begin
+    nBill := SQLQuery.FieldByName('C_Card').AsString;
+    nStr := 'Select P_ID,P_Truck From %s Where P_Card=''%s''';
+    nStr := Format(nStr, [sTable_PurchInfo, nBill]);
+
+    with FDM.QueryTemp(nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        ShowMsg('磁卡对应的入厂信息已丢失', sHint);
+        Exit;
+      end;
+
+      nBill := FieldByName('P_ID').AsString;
+      nTruck := FieldByName('P_Truck').AsString;
+    end;
+
+    if SetBillCard(nBill, nTruck, False) then
+    begin
+      InitFormData(FWhere);
+      ShowMsg('补卡操作成功', sHint);
+    end;
+  end;  
 end;
 
 //Desc: 注销磁卡
@@ -457,11 +481,25 @@ begin
   nStr := Format('确定要对卡[ %s ]执行销卡操作吗?', [nCard]);
   if not QueryDlg(nStr, sAsk) then Exit;
 
-  if LogoutBillCard(nCard) then
+  nStr :=  SQLQuery.FieldByName('C_Used').AsString;
+  if nStr = sFlag_Sale then //销售
   begin
-    InitFormData(FWhere);
-    ShowMsg('注销操作成功', sHint);
+    if LogoutBillCard(nCard) then
+    begin
+      InitFormData(FWhere);
+      ShowMsg('注销操作成功', sHint);
+    end;
+  end else
+
+  if nStr = sFlag_Provide then //采购
+  begin
+    if LogoutOrderCard(nCard) then
+    begin
+      InitFormData(FWhere);
+      ShowMsg('注销操作成功', sHint);
+    end;
   end;
+
 end;
 
 //Desc: 冻结磁卡

@@ -1187,7 +1187,7 @@ begin
   BuildDefaultXMLPack;
   if not BuildBusinessXMLPack(nData) then Exit;
 
-  nData := IWebService(FChannel.FChannel).SetPurchPackingSlip(FXML.WriteToString);
+  nData := IWebService(FChannel.FChannel).SetItemTransfer(FXML.WriteToString);
   //remote call
 
   {$IFDEF DEBUG}

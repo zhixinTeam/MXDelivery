@@ -15,7 +15,7 @@ uses
   UFramePMaterails, UFormPMaterails, UFramePProvider, UFormPProvider,
   UFormGetProvider, UFormOrder, UFrameOrder, UFormOrdersAX, UFormPurchasing,
   UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew,
-  UFormTransfer, UFrameQueryTransferDetail,
+  UFormTransfer, UFrameQueryTransferDetail,UFrameQueryOrderDetail,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
   UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
   UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery,

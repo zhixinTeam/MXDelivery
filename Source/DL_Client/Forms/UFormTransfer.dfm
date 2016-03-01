@@ -32,7 +32,6 @@ inherited fFormTransfer: TfFormTransfer
     object EditMate: TcxTextEdit [3]
       Left = 81
       Top = 86
-      Enabled = False
       ParentFont = False
       Properties.MaxLength = 32
       TabOrder = 2
@@ -57,7 +56,6 @@ inherited fFormTransfer: TfFormTransfer
     object EditMID: TcxComboBox [6]
       Left = 81
       Top = 61
-      Enabled = False
       Properties.OnChange = EditMIDPropertiesChange
       TabOrder = 1
       Width = 121
