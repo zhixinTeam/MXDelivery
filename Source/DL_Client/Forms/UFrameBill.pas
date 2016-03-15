@@ -48,6 +48,7 @@ type
     CheckDelete: TcxCheckBox;
     dxlytmLayout1Item11: TdxLayoutItem;
     EditYTCard: TcxButtonEdit;
+    N3: TMenuItem;
     procedure EditIDPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure BtnDelClick(Sender: TObject);
@@ -59,6 +60,7 @@ type
     procedure N5Click(Sender: TObject);
     procedure N7Click(Sender: TObject);
     procedure CheckDeleteClick(Sender: TObject);
+    procedure N3Click(Sender: TObject);
   protected
     FStart,FEnd: TDate;
     //时间区间
@@ -307,6 +309,17 @@ begin
 
     InitFormData(FWhere);
     ShowMsg('封签号修改成功', sHint);
+  end;
+end;
+
+procedure TfFrameBill.N3Click(Sender: TObject);
+var nStr: string;
+begin
+  inherited;
+  if cxView1.DataController.GetSelectedCount > 0 then
+  begin
+    nStr := SQLQuery.FieldByName('L_ID').AsString;
+    PrintHeGeReport(nStr, False);
   end;
 end;
 

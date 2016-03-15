@@ -241,5 +241,13 @@ inherited fFrameOrderDetailQuery: TfFrameOrderDetailQuery
       Visible = False
       OnClick = N3Click
     end
+    object N6: TMenuItem
+      Caption = '-'
+      Enabled = False
+    end
+    object AX1: TMenuItem
+      Caption = #31435#21363#21516#27493#21040'AX'
+      OnClick = AX1Click
+    end
   end
 end

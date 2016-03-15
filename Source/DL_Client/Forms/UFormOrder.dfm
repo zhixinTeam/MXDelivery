@@ -113,6 +113,36 @@ inherited fFormOrder: TfFormOrder
       Text = '0.00'
       Width = 121
     end
+    object EditCYS: TcxComboBox [12]
+      Left = 81
+      Top = 86
+      ParentFont = False
+      Properties.OnChange = EditCYSPropertiesChange
+      TabOrder = 15
+      Width = 121
+    end
+    object EditCYName: TcxTextEdit [13]
+      Left = 81
+      Top = 111
+      ParentFont = False
+      TabOrder = 16
+      Width = 121
+    end
+    object EditLineID: TcxComboBox [14]
+      Left = 81
+      Top = 136
+      ParentFont = False
+      Properties.OnChange = EditCYSPropertiesChange
+      TabOrder = 17
+      Width = 121
+    end
+    object EditLine: TcxTextEdit [15]
+      Left = 281
+      Top = 136
+      ParentFont = False
+      TabOrder = 18
+      Width = 121
+    end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxLayout1Item4: TdxLayoutItem
@@ -125,6 +155,16 @@ inherited fFormOrder: TfFormOrder
           Control = EditProvider
           ControlOptions.ShowBorder = False
         end
+        object dxLayout1Item11: TdxLayoutItem
+          Caption = #25215#36816#32534#21495':'
+          Control = EditCYS
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item12: TdxLayoutItem
+          Caption = #25215' '#36816' '#21830':'
+          Control = EditCYName
+          ControlOptions.ShowBorder = False
+        end
         object dxLayout1Group4: TdxLayoutGroup
           ShowCaption = False
           Hidden = True
@@ -134,12 +174,22 @@ inherited fFormOrder: TfFormOrder
             ShowCaption = False
             Hidden = True
             ShowBorder = False
-            object dxLayout1Item9: TdxLayoutItem
-              AutoAligns = [aaVertical]
-              AlignHorz = ahClient
-              Caption = #21407' '#26448' '#26009':'
-              Control = EditMate
-              ControlOptions.ShowBorder = False
+            object dxLayout1Group5: TdxLayoutGroup
+              ShowCaption = False
+              Hidden = True
+              ShowBorder = False
+              object dxLayout1Item13: TdxLayoutItem
+                Caption = #25910#26009#32534#21495':'
+                Control = EditLineID
+                ControlOptions.ShowBorder = False
+              end
+              object dxLayout1Item9: TdxLayoutItem
+                AutoAligns = [aaVertical]
+                AlignHorz = ahClient
+                Caption = #21407' '#26448' '#26009':'
+                Control = EditMate
+                ControlOptions.ShowBorder = False
+              end
             end
             object dxLayout1Item5: TdxLayoutItem
               Caption = #20923' '#32467' '#37327':'
@@ -156,6 +206,11 @@ inherited fFormOrder: TfFormOrder
             ShowCaption = False
             Hidden = True
             ShowBorder = False
+            object dxLayout1Item14: TdxLayoutItem
+              Caption = #25910'  '#26009'  '#21475':'
+              Control = EditLine
+              ControlOptions.ShowBorder = False
+            end
             object dxLayout1Item3: TdxLayoutItem
               Caption = #21407#26448#26009#32534#21495':'
               Control = EditMateID

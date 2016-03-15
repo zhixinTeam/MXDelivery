@@ -878,12 +878,45 @@ begin
   Result := True;
 end;
 
+//-----------------------------------------------------------------------
+type
+  TPrinterWZP = class(TCodePrinterBase)
+  protected
+    function PrintCode(const nCode: string;
+     var nHint: string): Boolean; override;
+  public
+    class function DriverName: string; override;
+  end;
+
+class function TPrinterWZP.DriverName: string;
+begin
+  Result := 'WZP';
+end;
+
+function TPrinterWZP.PrintCode(const nCode: string;
+  var nHint: string): Boolean;
+var nData: string;
+    nBuf: TIdBytes;
+begin
+  //Î´ÖªÅçÂë»ú
+  //23 30 31 11 41 datas 0D 0A
+  nData := Char($23) + Char($30) + Char($31) + Char($11) + Char($41);
+  nData := nData + nCode + Char($0D) + Char($0A);
+  FClient.Socket.Write(nData, Indy8BitEncoding);
+
+  //SetLength(nBuf, 0);
+  //FClient.Socket.ReadBytes(nBuf, Length(nData), False);
+
+  Result := True;
+end;
+
 initialization
   gCodePrinterManager := TCodePrinterManager.Create;
   gCodePrinterManager.RegDriver(TPrinterZero);
   gCodePrinterManager.RegDriver(TPrinterJY);
   gCodePrinterManager.RegDriver(TPrinterWSD);
   gCodePrinterManager.RegDriver(TPrinterSGB);
+  gCodePrinterManager.RegDriver(TPrinterWZP);
 finalization
   FreeAndNil(gCodePrinterManager);
 end.

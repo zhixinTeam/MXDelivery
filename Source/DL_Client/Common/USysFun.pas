@@ -74,7 +74,18 @@ begin
       FRecMenuMax := ReadInteger(FProgID, 'MaxRecent', cRecMenuMax);
 
       FIconFile := ReadString(FProgID, 'IconFile', gPath + 'Icons\Icon.ini');
-      FIconFile := StringReplace(FIconFile, '$Path\', gPath, [rfIgnoreCase]);
+      FIconFile := StringReplace(FIconFile, '$Path\', gPath, [rfIgnoreCase]);  
+
+      FProberUser := 0;
+      FVoiceUser := 0;
+
+      FIsManual := False;
+      //手动称重
+      FAutoPound := False;
+      //自动称重
+
+      FPicBase := 0;
+      FPicPath := gPath + sCameraDir;
     end;
   finally
     if not Assigned(nIni) then nTmp.Free;

@@ -105,7 +105,7 @@ begin
   FListB := TStringList.Create;
 
   FWaiter := TWaitObject.Create;
-  FWaiter.Interval := 1000;
+  FWaiter.Interval := 60*1000;
   //1 minute
 
   FSyncLock := TCrossProcWaitObject.Create('BusMIT_AXUpload_Sync');

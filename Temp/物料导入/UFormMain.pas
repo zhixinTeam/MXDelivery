@@ -14,10 +14,14 @@ type
     Button3: TButton;
     Button4: TButton;
     Button1: TButton;
+    Button2: TButton;
+    Button5: TButton;
     procedure FormResize(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -136,6 +140,65 @@ begin
               SF('D_Desc', '包装机名称'),
               SF('D_Value', nStr)
               ], 'Sys_Dict', '', True);
+      Memo2.Lines.Add(nStr);
+    end;
+  finally
+    nList.Free;
+  end;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+var nStr,nType: string;
+    nIdx,nLen: Integer;
+    nList: TStrings;
+begin
+  nList := TStringList.Create;
+  try
+    Memo2.Text := 'Delete From P_Provider';
+    //xxxxx
+
+    for nIdx:=0 to Memo1.Lines.Count - 1 do
+    begin
+      nStr := Trim(Memo1.Lines[nIdx]);
+      if not SplitStr(nStr, nList, 3, #9) then Continue;
+      //xxxxx
+
+      if nList[2] = '是' then
+           nType := 'C'
+      else nType := 'G';
+
+      nStr := MakeSQLByStr([SF('P_ID', nList[0]),
+              SF('P_Name', nList[1]),
+              SF('P_PY', GetPinYinOfStr(nList[1])),
+              SF('P_Type', nType)
+              ], 'P_Provider', '', True);
+      Memo2.Lines.Add(nStr);
+    end;
+  finally
+    nList.Free;
+  end;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+var nStr,nType: string;
+    nIdx,nLen: Integer;
+    nList: TStrings;
+begin
+  nList := TStringList.Create;
+  try
+    Memo2.Text := 'Delete From P_Materails';
+    //xxxxx
+
+    for nIdx:=0 to Memo1.Lines.Count - 1 do
+    begin
+      nStr := Trim(Memo1.Lines[nIdx]);
+      if not SplitStr(nStr, nList, 2, #9) then Continue;
+      //xxxxx
+
+      nStr := MakeSQLByStr([SF('M_ID', nList[0]),
+              SF('M_Name', nList[1]),
+              SF('M_PY', GetPinYinOfStr(nList[1]))
+              ], 'P_Materails', '', True);
       Memo2.Lines.Add(nStr);
     end;
   finally

@@ -131,6 +131,26 @@ begin
     if (nP.FCommand = cCmd_ModalResult) and(nP.FParamA = mrOk) then
       EditTruck.Text := nP.FParamB;
     EditTruck.SelectAll;
+  end else
+
+  if ((Sender = EditCusID) or (Sender = EditSender)) and (Key = #13) then
+  begin
+    Key := #0;
+    nP.FParamA := TcxComboBox(Sender).Text;
+    CreateBaseFormItem(cFI_FormGetProvider, '', @nP);
+
+    if (nP.FCommand = cCmd_ModalResult) and(nP.FParamA = mrOk) then
+      SetCtrlData(TcxComboBox(Sender), nP.FParamB);
+  end else
+
+  if (Sender = EditLine) and (Key = #13) then
+  begin
+    Key := #0;
+    nP.FParamA := TcxComboBox(Sender).Text;
+    CreateBaseFormItem(cFI_FormGetProvider, '', @nP);
+
+    if (nP.FCommand = cCmd_ModalResult) and(nP.FParamA = mrOk) then
+      EditLine.Text := nP.FParamC;
   end;
 end;
 
@@ -271,7 +291,7 @@ begin
   SetWaiXieCard(nID, FListA.Values['Truck']);
 
   ModalResult := mrOK;
-  ShowMsg('采购入厂单保存成功', sHint);
+  ShowMsg('外协订单保存成功', sHint);
 end;
 
 initialization

@@ -116,7 +116,8 @@ begin
     EditName.Text := Trim(EditName.Text);
     if EditName.Text = '' then Exit;
 
-    FWhere := Format('P_Name Like ''%%%s%%''', [EditName.Text]);
+    FWhere := Format('P_Name Like ''%%%s%%'' or P_PY Like ''%%%s%%''',
+              [EditName.Text, EditName.Text]);
     InitFormData(FWhere);
   end;
 end;

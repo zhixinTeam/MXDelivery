@@ -9,7 +9,7 @@ interface
 uses
   Windows, DB, Classes, Controls, SysUtils, UBusinessPacker, UBusinessWorker,
   UBusinessConst, ULibFun, UAdjustForm, UFormCtrl, UDataModule, UDataReport,
-  UFormBase, cxMCListBox, UMgrPoundTunnels, UMgrCamera, USysConst,
+  UFormBase, cxMCListBox, UMgrPoundTunnels, USysConst, HKVNetSDK,
   USysDB, USysLoger;
 
 type
@@ -63,6 +63,10 @@ function GetCardUsed(const nCard: string): string;
 //获取卡片类型
 function GetPurchFreeze(var nFreeV, nFreeC: string): Boolean;
 //获取物料冻结量
+function GetTruckEmptyValue(nTruck: string): Double;
+//获取空车有效皮重
+function GetTruckFullValue(nTruck: string): Double;
+//原材料前10次重车平均值
 
 function LoadSysDictItem(const nItem: string; const nList: TStrings): TDataSet;
 //读取系统字典项
@@ -72,6 +76,8 @@ function AXReadOrdersInfo(var nData: string): Boolean;
 //读取AX采购订单信息
 function AXSyncBill(var nData: string): Boolean;
 //同步交货单到AX
+function AXSyncPurch(var nData: string): Boolean;
+//同步入厂单到AX
 function AXSyncDuanDao(var nData: string): Boolean;
 //同步短倒到AX
 function GetStockBatcode(const nStock: string; const nVal: Double): string;
@@ -104,6 +110,9 @@ procedure LoadBillItemToMC(const nItem: TLadingBillItem; const nMC: TStrings;
 function SaveLadingBills(const nPost: string; const nData: TLadingBillItems;
  const nTunnel: PPTTunnelItem = nil): Boolean;
 //保存指定岗位的交货单
+function SavePostError(const nPost: string; const nData: TLadingBillItems;
+ const nTunnel: PPTTunnelItem; const nErr: string=''): Boolean;
+//保存错误的磅单记录 
 
 function GetTruckPoundItem(const nTruck: string;
  var nPoundData: TLadingBillItems): Boolean;
@@ -160,10 +169,16 @@ function ChangeDispatchMode(const nMode: Byte): Boolean;
 //------------------------------------------------------------------------------
 function PrintBillReport(nBill: string; const nAsk: Boolean): Boolean;
 //打印提货单
+function PrintOrderReport(nOrder: string; const nAsk: Boolean): Boolean;
+//打印短倒单据
 function PrintPoundReport(const nPound: string; nAsk: Boolean): Boolean;
 //打印榜单
 function PrintWaiXieReport(nID: string; const nAsk: Boolean): Boolean;
 //打印外协单据
+function PrintDuanDaoReport(nID: string; const nAsk: Boolean): Boolean;
+//打印短倒单据
+function PrintHeGeReport(const nHID: string; const nAsk: Boolean): Boolean;
+//格证
 
 implementation
 
@@ -198,6 +213,53 @@ begin
   begin
     ShowDlg('该功能需要更高权限,请向管理员申请.', sHint);
   end;
+end;
+
+//------------------------------------------------------------------------------
+//Desc: 车辆有效皮重
+function GetTruckEmptyValue(nTruck: string): Double;
+var nStr: string;
+begin
+  nStr := 'Select T_PValue From %s Where T_Truck=''%s''';
+  nStr := Format(nStr, [sTable_Truck, nTruck]);
+
+  with FDM.QueryTemp(nStr) do
+  if RecordCount > 0 then
+       Result := Fields[0].AsFloat
+  else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+//Desc: 采购车辆前10次重车称量结果平均值
+function GetTruckFullValue(nTruck: string): Double;
+var nStr: string;
+    nInt: Integer;
+    nVal: Double;
+begin
+  nStr := 'Select Top 10 P_MValue From %s ' +
+          'Where P_Truck=''%s'' And P_OutFact Is Not Null ' +
+          'Order By P_OutFact Desc';
+  nStr := Format(nStr, [sTable_PurchInfo, nTruck]);
+
+  nVal := 0;
+  nInt := 0;
+  with FDM.QueryTemp(nStr) do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      nVal := nVal + Fields[0].AsFloat;
+      Inc(nInt);
+      Next;
+    end;  
+  end;
+
+  if nInt > 0 then nVal := nVal / nInt;
+  nVal := Float2Float(nVal, cPrecision, False);
+
+  Result := nVal;
 end;
 
 //Date: 2014-09-05
@@ -572,22 +634,17 @@ begin
   //clear buffer
 
   nLogin := -1;
-  gCameraNetSDKMgr.NET_DVR_SetDevType(nTunnel.FCamera.FType);
-  //xxxxx
-
-  gCameraNetSDKMgr.NET_DVR_Init;
-  //xxxxx
-
+  NET_DVR_Init();
   try
     for nIdx:=1 to cRetry do
     begin
-      nLogin := gCameraNetSDKMgr.NET_DVR_Login(nTunnel.FCamera.FHost,
+      nLogin := NET_DVR_Login(PChar(nTunnel.FCamera.FHost),
                    nTunnel.FCamera.FPort,
-                   nTunnel.FCamera.FUser,
-                   nTunnel.FCamera.FPwd, nInfo);
+                   PChar(nTunnel.FCamera.FUser),
+                   PChar(nTunnel.FCamera.FPwd), @nInfo);
       //to login
 
-      nErr := gCameraNetSDKMgr.NET_DVR_GetLastError;
+      nErr := NET_DVR_GetLastError;
       if nErr = 0 then break;
 
       if nIdx = cRetry then
@@ -612,13 +669,11 @@ begin
         nStr := MakePicName();
         //file path
 
-        gCameraNetSDKMgr.NET_DVR_CaptureJPEGPicture(nLogin,
-                                   nTunnel.FCameraTunnels[nIdx],
-                                   nPic, nStr);
+        NET_DVR_CaptureJPEGPicture(nLogin, nTunnel.FCameraTunnels[nIdx],
+                                   @nPic, PChar(nStr));
         //capture pic
 
-        nErr := gCameraNetSDKMgr.NET_DVR_GetLastError;
-
+        nErr := NET_DVR_GetLastError;
         if nErr = 0 then
         begin
           nList.Add(nStr);
@@ -636,10 +691,10 @@ begin
     end;
   finally
     if nLogin > -1 then
-     gCameraNetSDKMgr.NET_DVR_Logout(nLogin);
-    gCameraNetSDKMgr.NET_DVR_Cleanup();
+      NET_DVR_Logout(nLogin);
+    NET_DVR_Cleanup();
   end;
-end;
+end;       
 
 //------------------------------------------------------------------------------
 //Date: 2010-4-13
@@ -697,6 +752,18 @@ function AXSyncBill(var nData: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
   Result := CallBusinessSaleBill(cBC_AXSyncBill, nData, '', @nOut);
+  if Result then
+       nData := ''
+  else nData := nOut.FData;
+end;
+
+//Date: 2016-02-26
+//Parm: 交货单号[in];提示信息[out]
+//Desc: 将指定单号同步到AX
+function AXSyncPurch(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessPurchaseOrder(cBC_AXSyncOrder, nData, '', @nOut);
   if Result then
        nData := ''
   else nData := nOut.FData;
@@ -1048,14 +1115,20 @@ begin
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessSaleBill(cBC_SavePostBills, nStr, nPost, @nOut);
-	  if (not Result) or (nOut.FData = '') then Exit;
+    if (not Result) or (nOut.FData = '') then
+    begin
+      if (not Result) And
+        ((nPost = sFlag_TruckBFP) or (nPost = sFlag_TruckBFM)) then
+        Result := SavePostError(nPost, nData, nTunnel, nOut.FData);
+      Exit;
+    end;
   end else
 
   if nStr = sFlag_Provide then
   begin
     nStr := CombineBillItmes(nData);
     Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut); 
-	  if (not Result) or (nOut.FData = '') then Exit;
+    if (not Result) or (nOut.FData = '') then Exit;
   end else
 
   if nStr = sFlag_DuanDao then
@@ -1087,7 +1160,41 @@ begin
       nList.Free;
     end;
   end;
+end;
 
+//Date: 2014-09-18
+//Parm: 岗位;交货单列表;磅站通道
+//Desc: 保存岗位错误的交货单数据
+function SavePostError(const nPost: string; const nData: TLadingBillItems;
+ const nTunnel: PPTTunnelItem; const nErr: string=''): Boolean;
+var nIdx: Integer;
+    nList: TStrings;
+    nStr, nExt: string;
+    nOut: TWorkerBusinessCommand;
+begin
+  Result := False;
+  if Length(nData) < 1 then Exit;
+
+  nStr := CombineBillItmes(nData);
+  nExt := PackerEncodeStr(nPost + sFlag_Delimiter + nErr);
+  Result := CallBusinessCommand(cBC_SavePostBills, nStr, nExt, @nOut);
+  if (not Result) or (nOut.FData = '') then Exit;
+  
+  if Assigned(nTunnel) then //过磅称重
+  begin
+    nList := TStringList.Create;
+    try
+      CapturePicture(nTunnel, nList);
+      //capture file
+
+      for nIdx:=0 to nList.Count - 1 do
+        SavePicture(nOut.FData, nData[0].FTruck,
+                                nData[0].FStockName, nList[nIdx]);
+      //save file
+    finally
+      nList.Free;
+    end;
+  end;
 end;
 
 //Date: 2014-09-17
@@ -1341,6 +1448,53 @@ begin
   Result := FDR.PrintSuccess;
 end;
 
+//Desc: 打印提货单
+function PrintOrderReport(nOrder: string; const nAsk: Boolean): Boolean;
+var nStr: string;
+    nParam: TReportParamItem;
+begin
+  Result := False;
+
+  if nAsk then
+  begin
+    nStr := '是否要打印入厂单?';
+    if not QueryDlg(nStr, sAsk) then Exit;
+  end;
+
+  nOrder := AdjustListStrFormat(nOrder, '''', True, ',', False);
+  //添加引号
+  
+  nStr := 'Select * From %s b Where P_ID In(%s)';
+  nStr := Format(nStr, [sTable_PurchInfo, nOrder]);
+  //xxxxx
+
+  if FDM.QueryTemp(nStr).RecordCount < 1 then
+  begin
+    nStr := '编号为[ %s ] 的记录已无效!!';
+    nStr := Format(nStr, [nOrder]);
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nStr := gPath + sReportDir + 'PurchaseOrder.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nStr := '无法正确加载报表文件';
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nParam.FName := 'UserName';
+  nParam.FValue := gSysParam.FUserID;
+  FDR.AddParamItem(nParam);
+
+  nParam.FName := 'Company';
+  nParam.FValue := gSysParam.FHintText;
+  FDR.AddParamItem(nParam);
+
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.ShowReport;
+  Result := FDR.PrintSuccess;
+end;
+
 //Date: 2012-4-15
 //Parm: 过磅单号;是否询问
 //Desc: 打印nPound过磅记录
@@ -1404,7 +1558,7 @@ begin
 
   if nAsk then
   begin
-    nStr := '是否要打印外协称重榜单?';
+    nStr := '是否要打印外协称重磅单?';
     if not QueryDlg(nStr, sAsk) then Exit;
   end;
 
@@ -1433,6 +1587,84 @@ begin
   nParam.FName := 'Company';
   nParam.FValue := gSysParam.FHintText;
   FDR.AddParamItem(nParam);
+
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.ShowReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//Desc: 打印nID对应的短倒单据
+function PrintDuanDaoReport(nID: string; const nAsk: Boolean): Boolean;
+var nStr: string;
+    nParam: TReportParamItem;
+begin
+  Result := False;
+
+  if nAsk then
+  begin
+    nStr := '是否要打印短倒业务称重磅单?';
+    if not QueryDlg(nStr, sAsk) then Exit;
+  end;
+
+  nStr := 'Select * From %s b Where T_ID=''%s''';
+  nStr := Format(nStr, [sTable_Transfer, nID]);
+  //xxxxx
+
+  if FDM.QueryTemp(nStr).RecordCount < 1 then
+  begin
+    nStr := '编号为[ %s ] 的记录已无效!!';
+    nStr := Format(nStr, [nID]);
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nStr := gPath + sReportDir + 'DuanDao.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nStr := '无法正确加载报表文件';
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nParam.FName := 'UserName';
+  nParam.FValue := gSysParam.FUserID;
+  FDR.AddParamItem(nParam);
+
+  nParam.FName := 'Company';
+  nParam.FValue := gSysParam.FHintText;
+  FDR.AddParamItem(nParam);
+
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.ShowReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//Desc: 打印标识为nID的合格证
+function PrintHeGeReport(const nHID: string; const nAsk: Boolean): Boolean;
+var nStr: string;
+begin
+  if nAsk then
+  begin
+    Result := True;
+    nStr := '是否要打印合格证?';
+    if not QueryDlg(nStr, sAsk) then Exit;
+  end else Result := False;
+
+  nStr := 'Select * From %s Where L_ID=''%s''';
+  nStr := Format(nStr, [sTable_Bill, nHID]);
+  //xxxxx
+
+  if FDM.QueryTemp(nStr).RecordCount < 1 then
+  begin
+    nStr := '编号为[ %s ] 的化验单记录已无效!!';
+    nStr := Format(nStr, [nHID]);
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nStr := gPath + sReportDir + 'HeGeZheng.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nStr := '无法正确加载报表文件';
+    ShowMsg(nStr, sHint); Exit;
+  end;
 
   FDR.Dataset1.DataSet := FDM.SqlTemp;
   FDR.ShowReport;

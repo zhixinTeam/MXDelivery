@@ -76,6 +76,7 @@ type
     function IsSystemExpired(var nData: string): Boolean;
     //系统是否已过期
     function SaveTruck(var nData: string): Boolean;
+    function UpdateTruck(var nData: string): Boolean;
     //保存车辆到Truck表
     function GetTruckPoundData(var nData: string): Boolean;
     function SaveTruckPoundData(var nData: string): Boolean;
@@ -86,6 +87,7 @@ type
     //获取批次编号
     function GetPurchFreeze(var nData: string): Boolean;
     //获取物料冻结量
+    function SavePostError(var nData: string): Boolean;
   public
     constructor Create; override;
     destructor destroy; override;
@@ -314,11 +316,13 @@ begin
    cBC_GetSerialNO         : Result := GetSerailID(nData);
    cBC_IsSystemExpired     : Result := IsSystemExpired(nData);
    cBC_SaveTruckInfo       : Result := SaveTruck(nData);
+   cBC_UpdateTruckInfo     : Result := UpdateTruck(nData);
    cBC_GetTruckPoundData   : Result := GetTruckPoundData(nData);
    cBC_SaveTruckPoundData  : Result := SaveTruckPoundData(nData);
    cBC_GetStockItemInfo    : Result := GetStockItem(nData);
    cBC_GetBatcode          : Result := GetStockBatcode(nData);
    cBC_GetPurchFreeze      : Result := GetPurchFreeze(nData);
+   cBC_SavePostBills       : Result := SavePostError(nData);
    else
     begin
       Result := False;
@@ -524,6 +528,39 @@ begin
   begin
     nStr := 'Insert Into %s(T_Truck, T_PY) Values(''%s'', ''%s'')';
     nStr := Format(nStr, [sTable_Truck, FIn.FData, GetPinYinOfStr(FIn.FData)]);
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+  end;
+end;
+
+//Date: 2016-02-16
+//Parm: 车牌号(Truck); 表字段名(Field);数据值(Value)
+//Desc: 更新车辆信息到sTable_Truck表
+function TWorkerBusinessCommander.UpdateTruck(var nData: string): Boolean;
+var nStr: string;
+    nValInt: Integer;
+    nValFloat: Double;
+begin
+  Result := True;
+  FListA.Text := FIn.FData;
+
+  if FListA.Values['Field'] = 'T_PValue' then
+  begin
+    nStr := 'Select T_PValue, T_PTime From %s Where T_Truck=''%s''';
+    nStr := Format(nStr, [sTable_Truck, FListA.Values['Truck']]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+    begin
+      nValInt := Fields[1].AsInteger;
+      nValFloat := Fields[0].AsFloat;
+    end else Exit;
+
+    nValFloat := nValFloat * nValInt + StrToFloatDef(FListA.Values['Value'], 0);
+    nValFloat := nValFloat / (nValInt + 1);
+    nValFloat := Float2Float(nValFloat, cPrecision);
+
+    nStr := 'Update %s Set T_PValue=%.2f, T_PTime=T_PTime+1 Where T_Truck=''%s''';
+    nStr := Format(nStr, [sTable_Truck, nValFloat, FListA.Values['Truck']]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
   end;
 end;
@@ -854,9 +891,187 @@ begin
       end;
 
       gDBConnManager.WorkerExec(FDBConn, nSQL);
+      //xxxxxx
+
+      //--------------------------------------------------------------------------
+      FListC.Clear;
+      FListC.Values['Field'] := 'T_PValue';
+      FListC.Values['Truck'] := FTruck;
+      FListC.Values['Value'] := FloatToStr(FPData.FValue);
+
+      if not TWorkerBusinessCommander.CallMe(cBC_UpdateTruckInfo,
+            FListC.Text, '', @nOut) then
+        raise Exception.Create(nOut.FData);
+      //保存车辆有效皮重
     end;
 
     FOut.FData := FPoundID;
+    Result := True;
+  end;
+end;
+
+//Date: 2014-09-25
+//Parm: 称重数据[FIn.FData]
+//Desc: 获取指定车牌号的称皮数据(使用配对模式,未称重)
+function TWorkerBusinessCommander.SavePostError(var nData: string): Boolean;
+var nInt, nIdx: Integer;
+    nPound: TLadingBillItems;
+    nOut: TWorkerBusinessCommand;
+    nStr, nSQL, nPost, nError: string;
+begin
+  Result := False;
+  AnalyseBillItems(FIn.FData, nPound);
+  nInt := Length(nPound);
+
+  if nInt < 1 then
+  begin
+    nData := '岗位[ %s ]提交的单据为空.';
+    nData := Format(nData, [PostTypeToStr(FIn.FExtParam)]);
+    Exit;
+  end;
+
+  if (nPound[0].FType <> sFlag_Dai) and (nInt > 1) then
+  begin
+    nData := '岗位[ %s ]提交了散装合单,该业务系统暂时不支持.';
+    nData := Format(nData, [PostTypeToStr(FIn.FExtParam)]);
+    Exit;
+  end;
+
+  nStr := PackerDecodeStr(FIn.FExtParam);
+  nInt := Pos(sFlag_Delimiter, nStr);
+  nPost := Copy(nStr, 1, nInt-1);
+  nError := Copy(nStr, nInt+1, Length(nStr)-nInt);
+
+  nInt := Low(nPound);
+  for nIdx:=nInt to High(nPound) do
+  if nPound[nIdx].FPoundID = sFlag_Yes then
+  begin
+    nInt := nIdx;
+    Break;
+  end;
+
+  with nPound[nInt] do
+  begin
+    TWorkerBusinessCommander.CallMe(cBC_SaveTruckInfo, FTruck, '', @nOut);
+    //保存车牌号
+    FListC.Clear;
+    FListC.Values['Group'] := sFlag_BusGroup;
+    FListC.Values['Object'] := sFlag_PoundErr;
+
+    if not CallMe(cBC_GetSerialNO, FListC.Text, sFlag_Yes, @nOut) then
+      raise Exception.Create(nOut.FData);
+    //xxxxx
+
+    if nPost = sFlag_TruckBFP then
+    begin
+      nSQL := MakeSQLByStr([
+              SF('E_ID', nOut.FData),
+              SF('E_Type', FCardUse),
+              SF('E_Card', FCard),
+              SF('E_Truck', FTruck),
+              SF('E_SrcID', FID),
+              SF('E_LimValue', FValue, sfVal),
+              SF('E_SrcNextStatus', nPost),
+
+              SF('E_CusID', FCusID),
+              SF('E_CusName', FCusName),
+
+              SF('E_MType', FType),
+              SF('E_MID', FStockNo),
+              SF('E_MName', FStockName),
+
+              SF('E_PValue', FPData.FValue, sfVal),
+              SF('E_PDate', sField_SQLServer_Now, sfVal),
+              SF('E_PMan', FIn.FBase.FFrom.FUser),
+              SF('E_PStation', FMData.FStation),
+
+              SF('E_Date', sField_SQLServer_Now, sfVal),
+              SF('E_Man', FIn.FBase.FFrom.FUser),
+
+              SF('E_FactID', FFactory),
+              SF('E_Valid', sFlag_No),
+              SF('E_Memo', nError)
+              ], sTable_PoundErr, '', True);
+    end
+
+    else if nPost = sFlag_TruckBFM then
+    begin
+      if FNextStatus = sFlag_TruckBFP then
+      begin
+        nSQL := MakeSQLByStr([
+                SF('E_ID', nOut.FData),
+                SF('E_Type', FCardUse),
+                SF('E_Card', FCard),
+                SF('E_Truck', FTruck),
+                SF('E_SrcID', FID),
+                SF('E_LimValue', FValue, sfVal),
+                SF('E_SrcNextStatus', nPost),
+
+                SF('E_CusID', FCusID),
+                SF('E_CusName', FCusName),
+
+                SF('E_MType', FType),
+                SF('E_MID', FStockNo),
+                SF('E_MName', FStockName),
+
+                SF('E_PValue', FPData.FValue, sfVal),
+                SF('E_PDate', sField_SQLServer_Now, sfVal),
+                SF('E_PMan', FIn.FBase.FFrom.FUser),
+                SF('E_PStation', FPData.FStation),
+                SF('E_MValue', FMData.FValue, sfVal),
+                SF('E_MDate', DateTime2Str(FMData.FDate)),
+                SF('E_MMan', FMData.FOperator),
+                SF('E_MStation', FMData.FStation),
+
+                SF('E_Date', sField_SQLServer_Now, sfVal),
+                SF('E_Man', FIn.FBase.FFrom.FUser),
+
+                SF('E_FactID', FFactory),
+                SF('E_Valid', sFlag_No),
+                SF('E_Memo', nError)
+                ], sTable_PoundErr, '', True);
+        //称重时,由于皮重大,交换皮毛重数据
+      end else
+      begin
+        nSQL := MakeSQLByStr([
+                SF('E_ID', nOut.FData),
+                SF('E_Type', FCardUse),
+                SF('E_Card', FCard),
+                SF('E_Truck', FTruck),
+                SF('E_SrcID', FID),
+                SF('E_LimValue', FValue, sfVal),
+                SF('E_SrcNextStatus', nPost),
+
+                SF('E_CusID', FCusID),
+                SF('E_CusName', FCusName),
+
+                SF('E_MType', FType),
+                SF('E_MID', FStockNo),
+                SF('E_MName', FStockName),
+
+                SF('E_PValue', FPData.FValue, sfVal),
+                SF('E_PDate', DateTime2Str(FPData.FDate)),
+                SF('E_PMan', FPData.FOperator),
+                SF('E_PStation', FPData.FStation),
+                SF('E_MValue', FMData.FValue, sfVal),
+                SF('E_MDate', sField_SQLServer_Now, sfVal),
+                SF('E_MMan', FIn.FBase.FFrom.FUser),
+                SF('E_MStation', FMData.FStation),
+
+                SF('E_Date', sField_SQLServer_Now, sfVal),
+                SF('E_Man', FIn.FBase.FFrom.FUser),
+
+                SF('E_FactID', FFactory),
+                SF('E_Valid', sFlag_No),
+                SF('E_Memo', nError)
+                ], sTable_PoundErr, '', True);
+        //xxxxx
+      end;  
+    end;  
+
+    gDBConnManager.WorkerExec(FDBConn, nSQL);
+
+    FOut.FData := nOut.FData;
     Result := True;
   end;
 end;

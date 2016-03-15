@@ -57,4 +57,6 @@
 {$IFDEF BTMX}
   {$DEFINE AppAtTaskBar}
   //状态栏显示
+  {$DEFINE HYRFID201}
+  //电子标签
 {$ENDIF}

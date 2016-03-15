@@ -151,8 +151,8 @@ implementation
 
 uses
   ULibFun, UAdjustForm, UFormBase, UMgrTruckProbe, UMgrRemoteVoice,
-  UMgrVoiceNet, UDataModule,
-  USysBusiness, UBusinessPacker, UFormInputbox, UFormWait, USysConst, USysDB,
+  UMgrVoiceNet, UDataModule, USysBusiness, UBusinessPacker,
+  UFormInputbox, UFormWait, USysConst, USysDB,
   UPoundCardReader, UMgrSndPlay, IniFiles, USysLoger;
 
 const
@@ -1035,8 +1035,8 @@ begin
       if ((FType = sFlag_Dai) and (
           ((nVal > 0) and (FPoundDaiZ > 0) and (nVal > FPoundDaiZ)) or
           ((nVal < 0) and (FPoundDaiF > 0) and (-nVal > FPoundDaiF)))) or
-         ((FType = sFlag_San) and (
-          (nVal < 0) and (FPoundSanF > 0) and (-nVal > FPoundSanF))) then
+         ((FType = sFlag_San) and ((Abs(nVal) > FPoundSanF) and (FPoundSanF > 0)))
+      then
       begin
         nStr := '车辆[ %s ]实际装车量误差较大,详情如下:' + #13#10#13#10 +
                 '※.开单量: %.2f吨' + #13#10 +

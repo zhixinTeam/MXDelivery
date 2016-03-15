@@ -28,6 +28,7 @@ const
   cBC_GetPurchFreeze          = $0005;   //获取物料冻结量
 
   cBC_SaveTruckInfo           = $0013;   //保存车辆信息
+  cBC_UpdateTruckInfo         = $0014;   //更新车辆信息
   cBC_GetTruckPoundData       = $0015;   //获取车辆称重数据
   cBC_SaveTruckPoundData      = $0016;   //保存车辆称重数据
   cBC_GetStockItemInfo        = $0017;   //获取物料信息

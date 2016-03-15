@@ -46,6 +46,8 @@ type
     dxLayoutControl1Group3: TdxLayoutGroup;
     dxLayoutControl1Item3: TdxLayoutItem;
     EditID: TcxTextEdit;
+    EditProType: TcxComboBox;
+    dxLayoutControl1Item1: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnAddClick(Sender: TObject);
@@ -198,6 +200,15 @@ end;
 procedure TfFormProvider.InitFormData(const nID: string);
 var nStr: string;
 begin
+  nStr := 'D_Value=Select D_Value,D_Memo From %s Where D_Name=''%s'' ' +
+          'Order By D_Index ASC';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_ProviderItem]);
+
+  FDM.FillStringsData(EditProType.Properties.Items, nStr, 1, '.');
+  AdjustCXComboBoxItem(EditProType, False);
+
+  if EditProType.Properties.Items.Count>0 then EditProType.ItemIndex := 0;
+
   if InfoItems.Properties.Items.Count < 1 then
   begin
     InfoItems.Clear;

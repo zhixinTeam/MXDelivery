@@ -777,25 +777,66 @@ begin
 end;
 
 function TAXWorkerSyncBill.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
-var nStr: string;
+var nStr, nZID, nSID: string;
+    nHasSync: Boolean;
+    nVal: Double;
 begin
   Result := inherited DoAfterDBWork(nData, nResult);
   //parent default
 
   if nResult then //同步成功
   begin
-    nStr := 'Update %s Set L_SyncNum=L_SyncNum+1,L_SyncDate=%s,L_SyncMemo=Null ' +
+    nStr := 'Select L_ZhiKa, L_StockNo, L_Value, L_SyncDate From %s ' +
             'Where L_ID=''%s''';
-    nStr := Format(nStr, [sTable_Bill, sField_SQLServer_Now, FIn.FData]);
+    nStr := Format(nStr, [sTable_Bill, FIn.FData]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        nData := '交货单 [%s] 信息已丢失!';
+        nData := Format(nData, [FIn.FData]);
+        Exit;
+      end;
+
+      nVal := FieldByName('L_Value').AsFloat;
+      nZID := FieldByName('L_ZhiKa').AsString;
+      nSID := FieldByName('L_StockNo').AsString;
+      nHasSync := FieldByName('L_SyncDate').AsString <> '';
+    end;
+
+    FDBConn.FConn.BeginTrans;
+    try
+      if not nHasSync then
+      begin
+        nStr := 'Update %s Set C_HasDone=C_HasDone+(%.2f),' +
+                'C_Freeze=C_Freeze-(%.2f) Where C_ID=''%s'' And C_Stock=''%s''';
+        nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nVal, nZID, nSID]);
+        gDBConnManager.WorkerExec(FDBConn, nStr); //更新订单
+      end;
+      //未同步成功的，需要更新冻结量
+
+      nStr := 'Update %s Set L_SyncNum=L_SyncNum+1,L_SyncDate=%s,' +
+              'L_SyncMemo=Null Where L_ID=''%s''';
+      nStr := Format(nStr, [sTable_Bill, sField_SQLServer_Now, FIn.FData]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+
+      FDBConn.FConn.CommitTrans;
+      //Finished
+    except
+      FDBConn.FConn.RollbackTrans;
+      nData := Format('交货单[ %s ] 保存信息失败!', [FIn.FData]);
+      Exit;
+    end;
+
   end else
   begin
     nStr := 'Update %s Set L_SyncNum=L_SyncNum+1,L_SyncMemo=''%s'' ' +
             'Where L_ID=''%s''';
     nStr := Format(nStr, [sTable_Bill, nData, FIn.FData]);
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+    //write sync status
   end;
-
-  gDBConnManager.WorkerExec(FDBConn, nStr);
-  //write sync status
 end;
 
 //------------------------------------------------------------------------------
@@ -994,25 +1035,65 @@ begin
 end;
 
 function TAXWorkerSyncOrder.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
-var nStr: string;
+var nStr, nPID, nSID: string;
+    nHasSync: Boolean;
+    nVal: Double;
 begin
   Result := inherited DoAfterDBWork(nData, nResult);
   //parent default
 
   if nResult then //同步成功
   begin
-    nStr := 'Update %s Set P_SyncNum=P_SyncNum+1,P_SyncDate=%s,P_SyncMemo=Null ' +
-            'Where P_ID=''%s''';
-    nStr := Format(nStr, [sTable_PurchInfo, sField_SQLServer_Now, FIn.FData]);
+    nStr := 'Select P_ProID, P_StockNo, P_Value, P_SyncDate From %s Where P_ID=''%s''';
+    nStr := Format(nStr, [sTable_PurchInfo, FIn.FData]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        nData := '入厂单[ %s ]信息已丢失！';
+        nData := Format(nData, [FIn.FData]);
+        Exit;
+      end;
+
+      nVal := FieldByName('P_Value').AsFloat;
+      nPID := FieldByName('P_ProID').AsString;
+      nSID := FieldByName('P_StockNo').AsString;
+      nHasSync := FieldByName('P_SyncDate').AsString <> '';
+    end;
+
+    FDBConn.FConn.BeginTrans;
+    try
+      if not nHasSync then
+      begin
+        nStr := 'Update %s Set C_Freeze=C_Freeze-%s, C_HasDone=C_HasDone+%s, ' +
+                'C_Count=C_Count-1 Where C_ID=''%s'' And C_Stock=''%s''';
+        nStr := Format(nStr, [sTable_AX_OrderInfo, FloatToStr(nVal),
+                FloatToStr(nVal), nPID, nSID]);
+        gDBConnManager.WorkerExec(FDBConn, nStr);
+      end;
+
+      nStr := 'Update %s Set P_SyncNum=P_SyncNum+1,P_SyncDate=%s,' +
+              'P_SyncMemo=Null Where P_ID=''%s''';
+      nStr := Format(nStr, [sTable_PurchInfo, sField_SQLServer_Now, FIn.FData]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+
+      FDBConn.FConn.CommitTrans;
+      //Finished
+    except
+      FDBConn.FConn.RollbackTrans;
+      nData := '订单 [ %s ] 同步失败';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end; 
   end else
   begin
     nStr := 'Update %s Set P_SyncNum=P_SyncNum+1,P_SyncMemo=''%s'' ' +
             'Where P_ID=''%s''';
     nStr := Format(nStr, [sTable_PurchInfo, nData, FIn.FData]);
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+    //write sync status
   end;
-
-  gDBConnManager.WorkerExec(FDBConn, nStr);
-  //write sync status
 end;
 
 //------------------------------------------------------------------------------

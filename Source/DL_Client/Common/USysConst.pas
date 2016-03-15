@@ -45,6 +45,7 @@ const
   cFI_FrameZTDispatch   = $0034;                     //栈台调度
   cFI_FramePoundManual  = $0035;                     //手动称重
   cFI_FramePoundAuto    = $0036;                     //自动称重
+  cFI_FramePoundErr     = $0037;                     //错误过磅
 
   cFI_FrameStock        = $0042;                     //品种管理
   cFI_FrameStockRecord  = $0043;                     //检验记录
@@ -137,6 +138,7 @@ const
   cFI_FormOrderBase     = $1055;                     //采购订单
   cFI_FormPurchase      = $1056;                     //采购验收
   cFI_FormGetPOrderBase  = $1057;                    //采购订单
+  cFI_FormGetPurchLine  = $1058;                     //卸货口
   
   cFI_FormWaiXie        = $1060;                     //外协称重
 
@@ -163,6 +165,8 @@ const
   cFI_FormAuthorize     = $1090;                     //安全验证
   cFI_FormWXAccount     = $1091;                     //微信账户
   cFI_FormWXSendlog     = $1092;                     //微信日志
+
+  cFI_FormDealPoundErr  = $1093;                     //处理错误信息
 
   {*Command*}
   cCmd_RefreshData      = $0002;                     //刷新数据
@@ -211,10 +215,13 @@ type
     FDaiPercent : Boolean;                           //按比例计算偏差
     FDaiWCStop  : Boolean;                           //不允许袋装偏差
     FPoundSanF  : Double;                            //散装负误差
+    FPoundSanP  : Double;                            //皮重误差
+    FPoundProM  : Double;                            //采购毛重误差
     FPicBase    : Integer;                           //图片索引
     FPicPath    : string;                            //图片目录
     FVoiceUser  : Integer;                           //语音计数
-    FProberUser : Integer;                           //检测器技术 
+    FProberUser : Integer;                           //检测器技术
+    FSanVerifyStock: String;                         //散装校验误差品种
   end;
   //系统参数
 
@@ -329,6 +336,7 @@ begin
   AddMenuModuleItem('MAIN_E01', cFI_FramePoundManual);
   AddMenuModuleItem('MAIN_E02', cFI_FramePoundAuto);
   AddMenuModuleItem('MAIN_E03', cFI_FramePoundQuery);
+  AddMenuModuleItem('MAIN_E04', cFI_FramePoundErr);
 
   AddMenuModuleItem('MAIN_F01', cFI_FormLadDai, mtForm);
   AddMenuModuleItem('MAIN_F03', cFI_FrameZhanTaiQuery);

@@ -550,7 +550,7 @@ end;
 //Desc: 保存指定岗位提交的交货单列表
 function TWorkerBusinessWaiXie.SavePostItems(var nData: string): Boolean;
 var nInt,nIdx: Integer;
-    nStr,nSQL: string;
+    nSQL: string;
     nBills: TLadingBillItems;
     nOut: TWorkerBusinessCommand;
 begin

@@ -41,6 +41,8 @@ type
     N3: TMenuItem;
     N4: TMenuItem;
     N5: TMenuItem;
+    N6: TMenuItem;
+    AX1: TMenuItem;
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
@@ -49,6 +51,7 @@ type
     procedure N2Click(Sender: TObject);
     procedure N3Click(Sender: TObject);
     procedure N4Click(Sender: TObject);
+    procedure AX1Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -71,7 +74,7 @@ implementation
 {$R *.dfm}
 uses
   IniFiles, ULibFun, UMgrControl, UFormDateFilter, USysPopedom, USysBusiness,
-  UBusinessConst, USysConst, USysDB;
+  UBusinessConst, USysConst, USysDB, UFormWait;
 
 class function TfFrameOrderDetailQuery.FrameID: integer;
 begin
@@ -222,6 +225,26 @@ begin
     InitFormData('');
   finally
     FJBWhere := '';
+  end;
+end;
+
+procedure TfFrameOrderDetailQuery.AX1Click(Sender: TObject);
+var nStr: string;
+    nRes: Boolean;
+begin
+  nRes := False;
+  //init
+
+  if cxView1.DataController.GetSelectedCount > 0 then
+  try  
+    ShowWaitForm(ParentForm, '正在同步');
+    nStr := SQLQuery.FieldByName('P_ID').AsString;
+    nRes := AXSyncPurch(nStr);
+  finally
+    CloseWaitForm;
+    if nRes then
+      InitFormData(Fwhere);
+    //xxxxx
   end;
 end;
 

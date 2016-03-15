@@ -66,6 +66,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 6
+      OnKeyPress = EditLadingKeyPress
       Width = 368
     end
     object EditCusName: TcxTextEdit [7]
@@ -73,7 +74,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 61
       ParentFont = False
       Properties.MaxLength = 80
-      Properties.ReadOnly = True
+      Properties.ReadOnly = False
       TabOrder = 7
       Width = 368
     end
@@ -86,6 +87,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 8
+      OnKeyPress = EditLadingKeyPress
       Width = 571
     end
     object EditSenderName: TcxTextEdit [9]
@@ -93,7 +95,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 121
       ParentFont = False
       Properties.MaxLength = 80
-      Properties.ReadOnly = True
+      Properties.ReadOnly = False
       TabOrder = 9
       Width = 571
     end
@@ -113,7 +115,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Top = 181
       ParentFont = False
       Properties.MaxLength = 80
-      Properties.ReadOnly = True
+      Properties.ReadOnly = False
       TabOrder = 11
       Width = 571
     end
@@ -125,6 +127,7 @@ inherited fFormWaiXie: TfFormWaiXie
       Properties.ItemHeight = 20
       Properties.OnEditValueChanged = EditCusIDPropertiesEditValueChanged
       TabOrder = 12
+      OnKeyPress = EditLadingKeyPress
       Width = 357
     end
     object Check1: TcxCheckBox [13]

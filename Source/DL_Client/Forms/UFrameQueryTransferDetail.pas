@@ -34,12 +34,15 @@ type
     N1: TMenuItem;
     N2: TMenuItem;
     AX1: TMenuItem;
+    N3: TMenuItem;
+    N4: TMenuItem;
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure N2Click(Sender: TObject);
     procedure AX1Click(Sender: TObject);
+    procedure N4Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -89,7 +92,7 @@ function TfFrameTransferDetailQuery.InitFormDataSQL(const nWhere: string): strin
 begin
   FEnableBackDB := True;
   EditDate.Text := Format('%s жа %s', [Date2Str(FStart), Date2Str(FEnd)]);
-  Result := 'Select * From $Transfer ';
+  Result := 'Select *,(T_MValue-T_PValue) As T_NetWeight From $Transfer ';
 
   if FJBWhere = '' then
   begin
@@ -171,6 +174,17 @@ begin
     if nRes then
       InitFormData(Fwhere);
     //xxxxx
+  end;
+end;
+
+procedure TfFrameTransferDetailQuery.N4Click(Sender: TObject);
+var nStr: string;
+begin
+  inherited;
+  if cxView1.DataController.GetSelectedCount > 0 then
+  begin
+    nStr := SQLQuery.FieldByName('T_ID').AsString;
+    PrintDuanDaoReport(nStr, False)
   end;
 end;
 

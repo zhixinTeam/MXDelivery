@@ -60,6 +60,20 @@ inherited fFormTransfer: TfFormTransfer
       TabOrder = 1
       Width = 121
     end
+    object EditDC: TcxComboBox [7]
+      Left = 81
+      Top = 111
+      Properties.OnChange = EditDCPropertiesChange
+      TabOrder = 3
+      Width = 121
+    end
+    object EditDR: TcxComboBox [8]
+      Left = 81
+      Top = 161
+      Properties.OnChange = EditDCPropertiesChange
+      TabOrder = 5
+      Width = 121
+    end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxLayout1Item4: TdxLayoutItem
@@ -77,9 +91,19 @@ inherited fFormTransfer: TfFormTransfer
           Control = EditMate
           ControlOptions.ShowBorder = False
         end
+        object dxLayout1Item8: TdxLayoutItem
+          Caption = #20498#20986#32534#21495':'
+          Control = EditDC
+          ControlOptions.ShowBorder = False
+        end
         object dxLayout1Item6: TdxLayoutItem
           Caption = #20498#20986#22320#28857':'
           Control = EditSrcAddr
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item9: TdxLayoutItem
+          Caption = #20498#20837#32534#21495':'
+          Control = EditDR
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item7: TdxLayoutItem

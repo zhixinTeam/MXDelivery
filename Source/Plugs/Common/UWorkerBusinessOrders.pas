@@ -369,6 +369,13 @@ begin
             SF('P_ProName', FListA.Values['ProviderName']),
             SF('P_ProPY', GetPinYinOfStr(FListA.Values['ProviderName'])),
 
+            SF('P_TransID', FListA.Values['ChengYunID']),
+            SF('P_TransName', FListA.Values['ChengYunName']),
+            SF('P_TransPY', GetPinYinOfStr(FListA.Values['ChengYunName'])),
+
+            SF('P_YLine', FListA.Values['LineID']),
+            SF('P_YLineName', FListA.Values['LineName']),
+
             SF('P_Type', sFlag_San),
             SF('P_StockNo', FListA.Values['StockNO']),
             SF('P_StockName', FListA.Values['StockName']),
@@ -562,8 +569,11 @@ begin
   end;
 
   //----------------------------------------------------------------------------
+  nStr := AdjustListStrFormat2(FListB, '''', True, ',', False);
+  //磁卡列表
+
   nSQL := 'Select P_ID,P_Truck From %s Where P_Card In (%s)';
-  nSQL := Format(nSQL, [sTable_PurchInfo, FIn.FExtParam]);
+  nSQL := Format(nSQL, [sTable_PurchInfo, nStr]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
   if RecordCount > 0 then
@@ -720,7 +730,7 @@ begin
 
   nStr := 'Select b.P_ID,b.P_ProID,b.P_ProName,b.P_Type,b.P_StockNo,' +
           'b.P_StockName,b.P_Truck,b.P_Value,b.P_Status,P_NextStatus,' +
-          'b.P_Memo, b.P_KZValue, b.P_YSResult,' +
+          'b.P_Memo, b.P_KZValue, b.P_YSResult, b.P_YLine,' +
           'b.P_Card, b.P_PValue, b.P_MValue,' +
           'p.P_PDate, p.P_PStation, p.P_PMan ' +
           'From $Bill b ' +
@@ -782,6 +792,7 @@ begin
         FOperator := FieldByName('P_PMan').AsString;
       end;
 
+      FIsVIP        := FieldByName('P_YLine').AsString;
       FMemo         := FieldByName('P_Memo').AsString;
       FKZValue      := FieldByName('P_KZValue').AsFloat;
       FYSValid      := FieldByName('P_YSResult').AsString;
@@ -802,7 +813,7 @@ end;
 function TWorkerBusinessOrders.SavePostOrderItems(var nData: string): Boolean;
 var nVal, f, m: Double;
     nInt, nIdx: Integer;
-    nStr, nSQL: string;
+    nStr, nSQL, nYS: string;
     nPound: TLadingBillItems;
     nOut: TWorkerBusinessCommand;
 begin
@@ -862,6 +873,13 @@ begin
       end;
     end;
 
+    nStr := 'Select D_Value From %s Where D_Name=''%s''';
+    nStr := Format(nStr, [sTable_SysDict, sFlag_StockIfYS]);
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+         nYS := Fields[0].AsString
+    else nYS := sFlag_No;
+
     FListC.Clear;
     FListC.Values['Group'] := sFlag_BusGroup;
     FListC.Values['Object'] := sFlag_PoundID;
@@ -878,7 +896,7 @@ begin
       FStatus := sFlag_TruckBFP;
       FNextStatus := sFlag_TruckXH;
 
-      if FListB.IndexOf(FStockNo) >= 0 then
+      if (FListB.IndexOf(FStockNo) >= 0) or (nYS <> sFlag_Yes) then
         FNextStatus := sFlag_TruckBFM;
       //现场不发货直接过重
 
@@ -1004,6 +1022,17 @@ begin
         FListA.Add(nSQL);
       end;
 
+      //--------------------------------------------------------------------------
+      FListC.Clear;
+      FListC.Values['Field'] := 'T_PValue';
+      FListC.Values['Truck'] := FTruck;
+      FListC.Values['Value'] := FloatToStr(FPData.FValue);
+
+      if not TWorkerBusinessCommander.CallMe(cBC_UpdateTruckInfo,
+            FListC.Text, '', @nOut) then
+        raise Exception.Create(nOut.FData);
+      //保存车辆有效皮重
+
       f := Float2Float(nVal - FValue, cPrecision, True);
       if FYSValid <> sFlag_No then
       begin
@@ -1078,11 +1107,11 @@ begin
               ], sTable_PurchInfo, SF('P_ID', FID), False);
       FListA.Add(nSQL); //更新采购单
 
-      nSQL := 'Update %s Set C_Freeze=C_Freeze-%s, C_HasDone=C_HasDone+%s, ' +
+      {nSQL := 'Update %s Set C_Freeze=C_Freeze-%s, C_HasDone=C_HasDone+%s, ' +
               'C_Count=C_Count-1 Where C_ID=''%s'' And C_Stock=''%s''';
       nSQL := Format(nSQL, [sTable_AX_OrderInfo, FloatToStr(FValue),
               FloatToStr(FValue), FCusID, FStockNo]);
-      FListA.Add(nSQL);
+      FListA.Add(nSQL);  }
     end;
   end;
 

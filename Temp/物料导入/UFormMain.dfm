@@ -49,6 +49,24 @@ object Form1: TForm1
       TabOrder = 2
       OnClick = Button1Click
     end
+    object Button2: TButton
+      Left = 264
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = #20379#24212#21830
+      TabOrder = 3
+      OnClick = Button2Click
+    end
+    object Button5: TButton
+      Left = 360
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = #21407#26448#26009
+      TabOrder = 4
+      OnClick = Button5Click
+    end
   end
   object Memo1: TMemo
     Left = 0

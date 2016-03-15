@@ -353,7 +353,9 @@ begin
   for nIdx:=Low(nTrucks) to High(nTrucks) do
   with nTrucks[nIdx] do
   begin
-    if (FStatus = sFlag_TruckNone) or (FStatus = sFlag_TruckIn) then Continue;
+    if (FStatus = sFlag_TruckNone) or (FStatus = sFlag_TruckIn)
+     or ((FStatus = sFlag_TruckOut) And (FNextStatus = sFlag_TruckIn)) //外协业务
+    then Continue;
     //未进长,或已进厂
 
     nStr := '车辆[ %s ]下一状态为:[ %s ],进厂刷卡无效.';
@@ -724,11 +726,8 @@ begin
   WriteHardHelperLog(Format('华益标签 %s:%s', [nReader.FTunnel, nReader.FCard]));
   {$ENDIF}
 
-  {$IFDEF JYZL}
   gHardwareHelper.SetReaderCard(nReader.FID, 'H' + nReader.FCard, False);
-  {$ELSE}
   g02NReader.ActiveELabel(nReader.FID, nReader.FCard);
-  {$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -1080,7 +1079,6 @@ begin
     gDBConnManager.ReleaseConnection(nWorker);
   end;
 
-
   gERelayManager.LineOpen(nTunnel);
   //打开放灰
 
@@ -1098,19 +1096,30 @@ end;
 //Parm: 磁卡号;通道号
 //Desc: 对nCard执行袋装装车操作
 procedure MakeTruckLadingSan(const nCard,nTunnel: string);
-var nStr: string;
-    nIdx: Integer;
+var nIdx: Integer;
+    nRet: Boolean;
     nPLine: PLineItem;
     nPTruck: PTruckItem;
+    nStr, nTmp, nCardType: string;
     nTrucks: TLadingBillItems;
 begin
   {$IFDEF DEBUG}
   WriteNearReaderLog('MakeTruckLadingSan进入.');
   {$ENDIF}
 
-  if not GetLadingBills(nCard, sFlag_TruckFH, nTrucks) then
+  nCardType := '';
+  if not GetCardUsed(nCard, nCardType) then Exit;
+
+  nRet := False;
+  if nCardType = sFlag_Sale then
+    nRet := GetLadingBills(nCard, sFlag_TruckIn, nTrucks) else
+  if nCardType = sFlag_Provide then
+    nRet := GetLadingOrders(nCard, sFlag_TruckIn, nTrucks);
+  //xxxxx
+
+  if not nRet then
   begin
-    nStr := '读取磁卡[ %s ]交货单信息失败.';
+    nStr := '读取磁卡[ %s ]岗位信息失败.';
     nStr := Format(nStr, [nCard]);
 
     WriteNearReaderLog(nStr);
@@ -1126,6 +1135,45 @@ begin
     Exit;
   end;
 
+  if nCardType = sFlag_Provide then
+  with nTrucks[0] do
+  if (FStatus = sFlag_TruckXH) or (FNextStatus = sFlag_TruckXH)  //验收车辆
+     or (FNextStatus = sFlag_TruckBFM) then   //无验收
+  begin
+    if CompareText(FIsVIP, nTunnel) = 0 then
+    begin
+      gERelayManager.LineOpen(nTunnel);
+      //打开放灰
+
+      nStr := FTruck + StringOfChar(' ', 12 - Length(FTruck));
+      nTmp := FStockName + FloatToStr(FValue);
+      nStr := nStr + FStockName + StringOfChar(' ', 12 - Length(nTmp)) +
+              FloatToStr(FValue);
+      //xxxxx  
+
+      gERelayManager.ShowTxt(nTunnel, nStr);
+      WriteNearReaderLog(nStr);
+      //显示内容
+      Exit;
+    end else
+    begin
+      nIdx := Length(nTrucks[0].FTruck);
+      nStr := nTrucks[0].FTruck + StringOfChar(' ',12 - nIdx) + '请换库卸车';
+      gERelayManager.ShowTxt(nTunnel, nStr);
+      WriteNearReaderLog(nStr);
+      //loged
+      Exit;
+    end;  
+
+  end else
+  begin
+    nStr := '车辆[ %s ]下一状态为:[ %s ],无法卸货.';
+    nStr := Format(nStr, [FTruck, TruckStatusToStr(FNextStatus)]);
+    
+    WriteHardHelperLog(nStr);
+    Exit;
+  end;    
+
   for nIdx:=Low(nTrucks) to High(nTrucks) do
   with nTrucks[nIdx] do
   begin
@@ -1134,14 +1182,14 @@ begin
 
     nStr := '车辆[ %s ]下一状态为:[ %s ],无法放灰.';
     nStr := Format(nStr, [FTruck, TruckStatusToStr(FNextStatus)]);
-    
+
     WriteHardHelperLog(nStr);
     Exit;
   end;
 
   if not IsTruckInQueue(nTrucks[0].FTruck, nTunnel, False, nStr,
          nPTruck, nPLine, sFlag_San) then
-  begin 
+  begin
     WriteNearReaderLog(nStr);
     //loged
 

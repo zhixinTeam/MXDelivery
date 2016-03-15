@@ -79,6 +79,7 @@ ResourceString
   sFlag_Unknow        = 'U';                         //未知 
   sFlag_Enabled       = 'Y';                         //启用
   sFlag_Disabled      = 'N';                         //禁用
+  sFlag_Delimiter     = '@';                         //分割符
 
   sFlag_Integer       = 'I';                         //整数
   sFlag_Decimal       = 'D';                         //小数
@@ -140,6 +141,11 @@ ResourceString
   sFlag_PoundCC       = 'C';                         //出厂(过磅模式)
   sFlag_PoundLS       = 'L';                         //临时
 
+  sFlag_ProvideC      = 'C';                         //承运商
+  sFlag_ProvideD      = 'D';                         //倒入倒出地
+  sFlag_ProvideL      = 'L';                         //产品线
+  sFlag_ProvideG      = 'G';                         //供应商
+
   sFlag_SysParam      = 'SysParam';                  //系统参数
   sFlag_EnableBakdb   = 'Uses_BackDB';               //备用库
   sFlag_ValidDate     = 'SysValidDate';              //有效期
@@ -151,10 +157,14 @@ ResourceString
   sFlag_PDaiPercent   = 'PoundDaiPercent';           //按比例计算误差
   sFlag_PDaiWuChaStop = 'PoundDaiWuChaStop';         //误差时停止业务
   sFlag_PSanWuChaF    = 'PoundSanWuChaF';            //散装负误差
+  sFlag_PSanWuChaP    = 'PoundSanWuChaP';            //散装皮重误差
+  sFlag_PProWuChaM    = 'PoundProWuChaM';            //供应毛重误差
   sFlag_PoundWuCha    = 'PoundWuCha';                //过磅误差分组
   sFlag_PoundIfDai    = 'PoundIFDai';                //袋装是否过磅
   sFlag_NFStock       = 'NoFaHuoStock';              //现场无需发货
+  sFlag_StockIfYS     = 'StockIfYS';                 //现场是否验收
   sFlag_DispatchPound = 'PoundDispatch';             //磅站调度
+  sFlag_PSanVerifyStock='PSanVerifyStock';           //散装校验
 
   sFlag_CommonItem    = 'CommonItem';                //公共信息
   sFlag_CardItem      = 'CardItem';                  //磁卡信息项
@@ -163,6 +173,7 @@ ResourceString
   sFlag_CustomerItem  = 'CustomerItem';              //客户信息项
   sFlag_BankItem      = 'BankItem';                  //银行信息项
   sFlag_UserLogItem   = 'UserLogItem';               //用户登录项
+  sFlag_PurchLineItem = 'PurchLineItem';             //收料信息项
 
   sFlag_StockItem     = 'StockItem';                 //水泥信息项
   sFlag_PackerItem    = 'PackerItem';                //包机信息项
@@ -175,6 +186,7 @@ ResourceString
 
   sFlag_ProviderItem  = 'ProviderItem';              //供应商信息项
   sFlag_MaterailsItem = 'MaterailsItem';             //原材料信息项
+  sFlag_ProviderType  = 'ProviderType';              //供应商类型
 
   sFlag_HardSrvURL    = 'HardMonURL';
   sFlag_MITSrvURL     = 'MITServiceURL';             //服务地址
@@ -183,6 +195,7 @@ ResourceString
   sFlag_AutoIn        = 'Truck_AutoIn';              //自动进厂
   sFlag_AutoOut       = 'Truck_AutoOut';             //自动出厂
   sFlag_InTimeout     = 'InFactTimeOut';             //进厂超时(队列)
+  sFlag_InAndBill     = 'InFactAndBill';             //进停车厂开单间隔
   sFlag_SanMultiBill  = 'SanMultiBill';              //散装预开多单
   sFlag_NoDaiQueue    = 'NoDaiQueue';                //袋装禁用队列
   sFlag_NoSanQueue    = 'NoSanQueue';                //散装禁用队列
@@ -202,6 +215,7 @@ ResourceString
   sFlag_ForceHint     = 'Bus_HintMsg';               //强制提示
   sFlag_PurchInfo     = 'Bus_PurchID';               //采购单号
   sFlag_Transfer      = 'Bus_Transfer';              //短倒单号
+  sFlag_PoundErr      = 'Bus_PoundErr';              //称重记录
 
   sFlag_SerialAX      = 'AXFunction';                //AX编码组
   sFlag_AXMsgNo       = 'AX_MsgNo';                  //AX消息号
@@ -252,6 +266,7 @@ ResourceString
 
   sTable_PoundLog     = 'Sys_PoundLog';              //过磅数据
   sTable_PoundBak     = 'Sys_PoundBak';              //过磅作废
+  sTable_PoundErr     = 'Sys_PoundErr';              //过磅作废
   sTable_Picture      = 'Sys_Picture';               //存放图片
   
   sTable_AX_CardInfo  = 'S_AXCardInfo';              //销售卡片
@@ -526,7 +541,7 @@ ResourceString
        'P_Valid Char(1), P_PrintNum Integer Default 1,' +
        'P_DelMan varChar(32), P_DelDate DateTime, P_KZValue $Float)';
   {-----------------------------------------------------------------------------
-   过磅记录: Materails
+   过磅记录: PoundLog
    *.P_ID: 编号
    *.P_Type: 类型(销售,供应,临时)
    *.P_Order: 订单号(供应)
@@ -549,6 +564,42 @@ ResourceString
    *.P_PrintNum: 打印次数
    *.P_DelMan,P_DelDate: 删除记录
    *.P_KZValue: 供应扣杂
+  -----------------------------------------------------------------------------}
+
+  sSQL_NewPoundError = 'Create Table $Table(R_ID $Inc, E_ID varChar(15),' +
+       'E_Type varChar(1), E_Card varChar(16),' +
+       'E_Truck varChar(15), E_CusID varChar(32), E_CusName varChar(100),' +
+       'E_MID varChar(32),E_MName varChar(80), E_MType varChar(10),' +
+       'E_SrcID varChar(20), E_LimValue $Float, E_SrcNextStatus Char(1),' +
+       'E_PValue $Float, E_PDate DateTime, E_PMan varChar(32), ' +
+       'E_MValue $Float, E_MDate DateTime, E_MMan varChar(32), ' +
+       'E_FactID varChar(32), E_PStation varChar(10), E_MStation varChar(10),' +
+       'E_PModel varChar(10), E_Valid Char(1),' +
+       'E_Man varChar(32), E_Date DateTime,' +
+       'E_DealMan varChar(32), E_DealDate DateTime, E_DealMemo varChar(500),' +
+       'E_Memo varChar(500))';
+  {-----------------------------------------------------------------------------
+   错误磅单: PoundError
+   *.P_ID: 编号
+   *.E_Type: 类型(销售,供应,临时)
+   *.E_Card: 卡号
+   *.E_Truck: 车牌号
+   *.E_CusID: 客户号
+   *.E_CusName: 物料名
+   *.E_MID: 物料号
+   *.E_MName: 物料名
+   *.E_MType: 包,散等
+   *.E_SrcID: 订单号(供应);提货单(销售)
+   *.E_LimValue: 票重
+   *.E_SrcNextStatus: 订单下一状态
+   *.E_PValue,E_PDate,E_PMan: 皮重
+   *.E_MValue,E_MDate,E_MMan: 毛重
+   *.E_FactID: 工厂编号
+   *.E_PStation,E_MStation: 称重磅站
+   *.E_Valid: (N、未处理;Y、已处理)
+   *.E_Man,E_Date:
+   *.E_DealMan,E_DealDate,E_DealMemo: 处理人
+   *.E_Memo: 错误信息
   -----------------------------------------------------------------------------}
 
   sSQL_NewPicture = 'Create Table $Table(R_ID $Inc, P_ID varChar(15),' +
@@ -664,7 +715,7 @@ ResourceString
 
   sSQL_NewProvider = 'Create Table $Table(R_ID $Inc, P_ID varChar(32),' +
        'P_Name varChar(80),P_PY varChar(80), P_Phone varChar(20),' +
-       'P_Saler varChar(32),P_Memo varChar(50))';
+       'P_Type Char(1), P_Saler varChar(32),P_Memo varChar(50))';
   {-----------------------------------------------------------------------------
    供应商: Provider
    *.P_ID: 编号
@@ -672,6 +723,7 @@ ResourceString
    *.P_PY: 拼音简写
    *.P_Phone: 联系方式
    *.P_Saler: 业务员
+   *.P_Type: 供应商类型(C、承运商;D、倒入倒出地;G、供应商;L、产品线)
    *.P_Memo: 备注
   -----------------------------------------------------------------------------}
 
@@ -969,6 +1021,7 @@ begin
   AddSysTableItem(sTable_ZTTrucks, sSQL_NewZTTrucks);
   AddSysTableItem(sTable_PoundLog, sSQL_NewPoundLog);
   AddSysTableItem(sTable_PoundBak, sSQL_NewPoundLog);
+  AddSysTableItem(sTable_PoundErr, sSQL_NewPoundError);
   AddSysTableItem(sTable_Picture, sSQL_NewPicture);
   AddSysTableItem(sTable_Batcode, sSQL_NewBatcode);
 

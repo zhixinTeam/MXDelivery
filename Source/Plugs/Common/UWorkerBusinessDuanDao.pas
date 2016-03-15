@@ -131,49 +131,8 @@ end;
 //Parm: 
 //Desc: 短倒业务办理磁卡
 function TWorkerBusinessDuanDao.SaveDDCard(var nData: string): Boolean;
-var nSQL,nTruck,nCard: string;
+var nSQL: string;
 begin
-  Result := False;
-  //Init
-
-  nSQL := 'Select C_Card,C_TruckNo From %s Where C_Card=''%s'' And C_Used=''%s''';
-  nSQL := Format(nSQL, [sTable_Card, FIn.FExtParam, sFlag_DuanDao]);
-
-  with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
-  if RecordCount > 0 then
-  begin
-    nTruck := FieldByName('C_TruckNo').AsString;
-    if CompareText(nTruck, FIn.FData)= 0 then Result := True;
-
-    nData := '车辆[ %s ]正在使用该卡,无法重复使用.';
-    nData := Format(nData, [FieldByName('C_TruckNo').AsString]);
-    Exit;
-  end;
-
-  //----------------------------------------------------------------------------
-  nSQL := 'Select T_Card From %s Where T_Truck=''%s''';
-  nSQL := Format(nSQL, [sTable_Truck, FIn.FData]);
-
-  with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
-  if RecordCount > 0 then
-  begin
-    First;
-
-    while not Eof do
-    try
-      nCard := FieldByName('T_Card').AsString;
-      if Length(nCard) < 1 then Continue;
-
-      if CompareText(nCard, FIn.FExtParam)=0 then Result := True;
-
-      nData := '车辆[ %s ]正在使用磁卡[ %s ],更换卡片请先注销.';
-      nData := Format(nData, [FIn.FData, nCard]);
-      Exit;
-    finally
-      Next;
-    end;
-  end;
-
   FDBConn.FConn.BeginTrans;
   try
     if FIn.FData <> '' then
@@ -299,7 +258,7 @@ begin
     SetLength(nBills, 1);
     with nBills[0] do
     begin
-      FID         := FieldByName('T_MatePID').AsString;
+      FID         := FieldByName('T_MateID').AsString;
       FCusName    := FieldByName('T_SrcAddr').AsString + '-->' +
                      FieldByName('T_DestAddr').AsString;
       FTruck      := FieldByName('T_Truck').AsString;
@@ -317,6 +276,8 @@ begin
         FDate   := FieldByName('T_PrePTime').AsDateTime;
         FValue  := FieldByName('T_PrePValue').AsFloat;
         FOperator := FieldByName('T_PrePMan').AsString;
+
+        if FValue <=0 then FNextStatus := sFlag_TruckBFP;
       end;
 
       FMemo         := FieldByName('T_SrcAddr').AsString;

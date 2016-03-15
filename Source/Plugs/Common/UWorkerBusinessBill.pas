@@ -53,6 +53,7 @@ type
     function GetStockGroup(const nStock: string): string;
     function GetMatchRecord(const nStock: string): string;
     //物料分组
+    function GetInBillInterval: Integer;
     function AllowedSanMultiBill: Boolean;
     function VerifyBeforSave(var nData: string): Boolean;
     function VeryCardBillValue(const nCard: string; var nData: string): Boolean;
@@ -256,6 +257,23 @@ begin
   end;
 end;
 
+
+//Date: 2015-01-09
+//Desc: 车辆进厂后在指定时间内必须开单,过期无效
+function TWorkerBusinessBills.GetInBillInterval: Integer;
+var nStr: string;
+begin
+  Result := 0;
+  nStr := 'Select D_Value From %s Where D_Name=''%s'' And D_Memo=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_InAndBill]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+  begin
+    Result := Fields[0].AsInteger;
+  end;
+end;
+
 //Date: 2016-02-24
 //Parm: 大卡号;输出信息
 //Desc: 重新读取大卡信息,并验证开单量是否有效
@@ -290,13 +308,55 @@ end;
 //Date: 2014-09-15
 //Desc: 验证能否开单
 function TWorkerBusinessBills.VerifyBeforSave(var nData: string): Boolean;
-var nIdx: Integer;
+var nIdx, nInt: Integer;
     nStr,nTruck: string;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
   nTruck := FListA.Values['Truck'];
   if not VerifyTruckNO(nTruck, nData) then Exit;
+
+  if FListA.Values['BuDan'] = sFlag_Yes then
+       nInt := 0
+  else nInt := GetInBillInterval;
+  
+  if nInt > 0 then
+  begin
+    nStr := 'Select %s as T_Now,T_LastTime,T_NoVerify,T_Valid From %s ' +
+            'Where T_Truck=''%s''';
+    nStr := Format(nStr, [sField_SQLServer_Now, sTable_Truck, nTruck]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        nData := '没有车辆[ %s ]的档案,无法开单.';
+        nData := Format(nData, [nTruck]);
+        Exit;
+      end;
+
+      if FieldByName('T_Valid').AsString = sFlag_No then
+      begin
+        nData := '车辆[ %s ]被管理员禁止开单.';
+        nData := Format(nData, [nTruck]);
+        Exit;
+      end;
+
+      if FieldByName('T_NoVerify').AsString <> sFlag_Yes then
+      begin
+        nIdx := Trunc((FieldByName('T_Now').AsDateTime -
+                       FieldByName('T_LastTime').AsDateTime) * 24 * 60);
+        //上次活动分钟数
+
+        if nIdx >= nInt then
+        begin
+          nData := '车辆[ %s ]可能不在停车场,禁止开单.';
+          nData := Format(nData, [nTruck]);
+          Exit;
+        end;
+      end;
+    end;
+  end;
 
   //----------------------------------------------------------------------------
   SetLength(FStockItems, 0);
@@ -421,7 +481,7 @@ end;
 //Date: 2014-09-15
 //Desc: 保存交货单
 function TWorkerBusinessBills.SaveBills(var nData: string): Boolean;
-var nStr,nSQL: string;
+var nStr,nSQL,nTmp: string;
     nInt: Integer;
     nOut: TWorkerBusinessCommand;
 begin
@@ -474,14 +534,32 @@ begin
 
     if FListA.Values['BuDan'] = sFlag_Yes then //补单
     begin
+      nStr := 'Select Top 1 D_Value From %s Where D_Name=''%s'' ' +
+              'Order By D_Memo DESC';
+      nStr := Format(nStr, [sTable_SysDict, sFlag_PackerItem]);
+
+      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+      begin
+        if RecordCount < 1 then
+        begin
+          nData := '字典表未配置默认的包装机.';
+          Exit;
+        end;
+
+        nTmp := Fields[0].AsString;
+      end;
+
       nStr := MakeSQLByStr([SF('L_Status', sFlag_TruckOut),
               SF('L_InTime', sField_SQLServer_Now, sfVal),
-              SF('L_PValue', 0, sfVal),
+              SF('L_PValue', 1, sfVal),
               SF('L_PDate', sField_SQLServer_Now, sfVal),
               SF('L_PMan', FIn.FBase.FFrom.FUser),
-              SF('L_MValue', FListA.Values['Value'], sfVal),
+              SF('L_MValue', StrToFloat(FListA.Values['Value']) + 1, sfVal),
               SF('L_MDate', sField_SQLServer_Now, sfVal),
               SF('L_MMan', FIn.FBase.FFrom.FUser),
+              SF('L_PackerNo', nTmp),
+              SF('L_LadeTime', sField_SQLServer_Now, sfVal),
+              SF('L_LadeMan', FIn.FBase.FFrom.FUser),
               SF('L_OutFact', sField_SQLServer_Now, sfVal),
               SF('L_OutMan', FIn.FBase.FFrom.FUser),
               SF('L_Card', '')
@@ -526,46 +604,24 @@ begin
       end;
     end;
 
-    if FListA.Values['BuDan'] = sFlag_Yes then //补单
-    begin
-      nStr := 'Update %s Set C_HasDone=C_HasDone+%.2f ' +
-              'Where C_ID=''%s'' And C_Stock=''%s''';
-      nStr := Format(nStr, [sTable_AX_CardInfo,
-              StrToFloat(FListA.Values['Value']),
-              FListA.Values['Record'], FListA.Values['StockNO']]);
-      nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
+    nStr := 'Update %s Set C_Freeze=C_Freeze+%.2f ' +
+            'Where C_ID=''%s'' And C_Stock=''%s''';
+    nStr := Format(nStr, [sTable_AX_CardInfo,
+            StrToFloat(FListA.Values['Value']),
+            FListA.Values['Record'], FListA.Values['StockNO']]);
+    nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
+    //同步完成后，更新冻结量为已发量
 
-      if nInt < 1 then
-      begin
-        nSQL := MakeSQLByStr([
-          SF('C_ID', FListA.Values['Record']),
-          SF('C_Card', FListA.Values['ZhiKa']),
-          SF('C_Stock', FListA.Values['StockNO']),
-          SF('C_Freeze', '0', sfVal),
-          SF('C_HasDone', FListA.Values['Value'], sfVal)
-          ], sTable_AX_CardInfo, '', True);
-        gDBConnManager.WorkerExec(FDBConn, nSQL);
-      end;
-    end else
+    if nInt < 1 then
     begin
-      nStr := 'Update %s Set C_Freeze=C_Freeze+%.2f ' +
-              'Where C_ID=''%s'' And C_Stock=''%s''';
-      nStr := Format(nStr, [sTable_AX_CardInfo,
-              StrToFloat(FListA.Values['Value']),
-              FListA.Values['Record'], FListA.Values['StockNO']]);
-      nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
-
-      if nInt < 1 then
-      begin
-        nSQL := MakeSQLByStr([
-          SF('C_ID', FListA.Values['Record']),
-          SF('C_Card', FListA.Values['ZhiKa']),
-          SF('C_Stock', FListA.Values['StockNO']),
-          SF('C_Freeze', FListA.Values['Value'], sfVal),
-          SF('C_HasDone', '0', sfVal)
-          ], sTable_AX_CardInfo, '', True);
-        gDBConnManager.WorkerExec(FDBConn, nSQL);
-      end;
+      nSQL := MakeSQLByStr([
+        SF('C_ID', FListA.Values['Record']),
+        SF('C_Card', FListA.Values['ZhiKa']),
+        SF('C_Stock', FListA.Values['StockNO']),
+        SF('C_Freeze', FListA.Values['Value'], sfVal),
+        SF('C_HasDone', '0', sfVal)
+        ], sTable_AX_CardInfo, '', True);
+      gDBConnManager.WorkerExec(FDBConn, nSQL);
     end;
 
     nSQL := 'Update %s Set B_HasUse=B_HasUse+(%s),B_LastDate=%s ' +
@@ -712,13 +768,14 @@ begin
 
     nHasOut := FieldByName('L_OutFact').AsString <> '';
     //已出厂
-
+    {
     if nHasOut then
     begin
       nData := '交货单[ %s ]已出厂,不允许删除.';
       nData := Format(nData, [FIn.FData]);
       Exit;
     end;
+    }
 
     nZK  := FieldByName('L_ZhiKa').AsString;
     nSN  := FieldByName('L_StockNo').AsString;
@@ -1308,6 +1365,17 @@ begin
       Exit;
     end;
 
+    //--------------------------------------------------------------------------
+    FListC.Clear;
+    FListC.Values['Field'] := 'T_PValue';
+    FListC.Values['Truck'] := nBills[nInt].FTruck;
+    FListC.Values['Value'] := FloatToStr(nBills[nInt].FPData.FValue);
+
+    if not TWorkerBusinessCommander.CallMe(cBC_UpdateTruckInfo,
+          FListC.Text, '', @nOut) then
+      raise Exception.Create(nOut.FData);
+    //保存车辆有效皮重
+
     FListC.Clear;
     FListC.Values['Group'] := sFlag_BusGroup;
     FListC.Values['Object'] := sFlag_PoundID;
@@ -1598,10 +1666,10 @@ begin
               ], sTable_Bill, SF('L_ID', FID), False);
       FListA.Add(nSQL); //更新交货单
 
-      nSQL := 'Update %s Set C_HasDone=C_HasDone+(%.2f),C_Freeze=C_Freeze-(%.2f)' +
+      {nSQL := 'Update %s Set C_HasDone=C_HasDone+(%.2f),C_Freeze=C_Freeze-(%.2f)' +
               'Where C_ID=''%s'' And C_Stock=''%s''';
       nSQL := Format(nSQL, [sTable_AX_CardInfo, FValue, FValue, FZhiKa, FStockNo]);
-      FListA.Add(nSQL); //更新订单
+      FListA.Add(nSQL); //更新订单}
     end;
 
     nSQL := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';
@@ -1656,6 +1724,8 @@ begin
             //xxxxx
 
             FPerW    := FieldByName('T_PeerWeight').AsInteger;
+            if FPerW < 1 then FPerW := 50;
+
             FTotal   := FieldByName('T_Total').AsInteger;
             FNormal  := FieldByName('T_Normal').AsInteger;
             FBuCha   := FieldByName('T_BuCha').AsInteger;
@@ -1686,9 +1756,6 @@ begin
 
       with FBillLines[nInt] do
       begin
-        if FPerW < 1 then Continue;
-        //袋重无效
-
         i := Trunc(FValue * 1000 / FPerW);
         //袋数
 
@@ -1725,7 +1792,7 @@ begin
       with FBillLines[nInt] do
       begin
         if (FType = sFlag_Dai) and (FTotal < 1) then
-          FTotal := Trunc(FValue * 1000/ 50);
+          FTotal := Trunc(FValue * 1000/ FPerW);
         //默认袋数
 
         nSQL := MakeSQLByStr([SF('L_LadeLine', FLine),

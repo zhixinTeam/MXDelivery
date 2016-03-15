@@ -24,8 +24,13 @@ type
     dxLayout1Item7: TdxLayoutItem;
     EditMID: TcxComboBox;
     dxLayout1Item3: TdxLayoutItem;
+    EditDC: TcxComboBox;
+    dxLayout1Item8: TdxLayoutItem;
+    EditDR: TcxComboBox;
+    dxLayout1Item9: TdxLayoutItem;
     procedure BtnOKClick(Sender: TObject);
     procedure EditMIDPropertiesChange(Sender: TObject);
+    procedure EditDCPropertiesChange(Sender: TObject);
   private
     { Private declarations }
     procedure LoadMateInfo(const nSelected, nInfo: String);
@@ -41,7 +46,7 @@ implementation
 {$R *.dfm}
 
 uses
-  UMgrControl, UDataModule, UFormBase, UFormCtrl, USysDB, USysConst;
+  UMgrControl, UDataModule, UFormBase, UFormCtrl, USysDB, USysConst, UAdjustForm;
 
 type
   TMateItem = record
@@ -141,6 +146,15 @@ begin
     EditMID.ItemIndex := nInt;
     EditMate.Text := gMateItems[nInt].FName;
   end;
+
+  nStr := 'P_ID=Select P_ID,P_Name From %s Where P_Type=''%s'' Order By P_Name DESC';
+  nStr := Format(nStr, [sTable_Provider, sFlag_ProvideD]);
+
+  FDM.FillStringsData(EditDC.Properties.Items, nStr, 1, '.');
+  AdjustCXComboBoxItem(EditDC, False);
+
+  FDM.FillStringsData(EditDR.Properties.Items, nStr, 1, '.');
+  AdjustCXComboBoxItem(EditDR, False);
 end;  
 
 procedure TfFormTransfer.EditMIDPropertiesChange(Sender: TObject);
@@ -149,6 +163,21 @@ begin
   if (not EditMID.Focused) or (EditMID.ItemIndex < 0) then Exit;
   nIdx := Integer(EditMID.Properties.Items.Objects[EditMID.ItemIndex]);
   EditMate.Text := gMateItems[nIdx].FName;
+end;
+
+procedure TfFormTransfer.EditDCPropertiesChange(Sender: TObject);
+var nStr: string;
+    nCom: TcxComboBox;
+begin
+  nCom := Sender as TcxComboBox;
+  nStr := nCom.Text;
+  System.Delete(nStr, 1, Length(GetCtrlData(nCom)) + 1);
+
+  if Sender = EditDC then
+    EditSrcAddr.Text := nStr
+  else if Sender = EditDR then
+    EditDstAddr.Text := nStr;
+  //xxxxx
 end;
 
 initialization

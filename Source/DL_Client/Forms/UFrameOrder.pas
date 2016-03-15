@@ -49,6 +49,7 @@ type
     CheckDelete: TcxCheckBox;
     dxlytmLayout1Item11: TdxLayoutItem;
     EditYTCard: TcxButtonEdit;
+    N7: TMenuItem;
     procedure EditIDPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure BtnDelClick(Sender: TObject);
@@ -61,6 +62,7 @@ type
     procedure PMenu1Popup(Sender: TObject);
     procedure CheckDeleteClick(Sender: TObject);
     procedure N3Click(Sender: TObject);
+    procedure N7Click(Sender: TObject);
   protected
     FStart,FEnd: TDate;
     //时间区间
@@ -240,7 +242,7 @@ begin
   if cxView1.DataController.GetSelectedCount > 0 then
   begin
     nStr := SQLQuery.FieldByName('P_ID').AsString;
-    //PrintOrderReport(nStr, False);
+    PrintOrderReport(nStr, False);
   end;
 end;
 
@@ -256,6 +258,12 @@ var nStr,nTruck: string;
 begin
   if cxView1.DataController.GetSelectedCount > 0 then
   begin
+    if SQLQuery.FieldByName('P_OutFact').AsString <> '' then
+    begin
+      ShowMsg('车辆已出厂, 禁止修改车牌号', sHint);
+      Exit;
+    end;
+
     nStr := SQLQuery.FieldByName('P_Truck').AsString;
     nTruck := nStr;
     if not ShowInputBox('请输入新的车牌号码:', '修改', nTruck, 15) then Exit;
@@ -264,7 +272,7 @@ begin
     //无效或一致
 
     nStr := SQLQuery.FieldByName('P_ID').AsString;
-    if ChangeLadingTruckNo(nStr, nTruck) then
+    if ChangeOrderTruckNo(nStr, nTruck) then
     begin
       InitFormData(FWhere);
       ShowMsg('车牌号修改成功', sHint);
@@ -280,6 +288,30 @@ begin
     if SetOrderCard(SQLQuery.FieldByName('P_ID').AsString,
                     SQLQuery.FieldByName('P_Truck').AsString) then
       InitFormData(FWhere);
+    //xxxxx
+  end;
+end;
+
+procedure TfFrameOrder.N7Click(Sender: TObject);
+var nP: TFormCommandParam;
+    nStr, nPID: String;
+begin
+  inherited;
+  if cxView1.DataController.GetSelectedCount > 0 then
+  begin
+    nPID := SQLQuery.FieldByName('P_ID').AsString;
+    CreateBaseFormItem(cFI_FormGetPurchLine, PopedomItem, @nP);
+    if (nP.FCommand <> cCmd_ModalResult) or (nP.FParamA <> mrOK) then Exit;
+
+    nStr := SQLQuery.FieldByName('P_YLine').AsString;
+    if CompareText(nStr, nP.FParamB)=0 then Exit;
+    //编号相同则不更新
+
+    nStr := 'Update %s Set P_YLine=''%s'', P_YLineName=''%s'' Where P_ID=''%s''';
+    nStr := Format(nStr, [sTable_PurchInfo, nP.FParamB, nP.FParamC, nPID]);
+    FDM.ExecuteSQL(nStr);
+
+    InitFormData(FWhere);
     //xxxxx
   end;
 end;

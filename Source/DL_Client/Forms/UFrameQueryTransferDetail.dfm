@@ -183,6 +183,14 @@ inherited fFrameTransferDetailQuery: TfFrameTransferDetailQuery
     AutoHotkeys = maManual
     Left = 10
     Top = 280
+    object N4: TMenuItem
+      Caption = #25171#21360#30701#20498#20973#35777
+      OnClick = N4Click
+    end
+    object N3: TMenuItem
+      Caption = '-'
+      Enabled = False
+    end
     object N2: TMenuItem
       Tag = 20
       Caption = #25353#26102#38388#27573#26597#35810

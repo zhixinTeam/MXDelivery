@@ -10,7 +10,7 @@ interface
 uses
   Windows, Classes, Controls, DB, SysUtils, UBusinessWorker, UBusinessPacker,
   UBusinessConst, UMgrDBConn, UMgrParam, ZnMD5, ULibFun, UFormCtrl, USysLoger,
-  USysDB, UMITConst;
+  USysDB, UMITConst, StrUtils;
 
 type
   THardwareDBWorker = class(TBusinessWorkerBase)
@@ -422,6 +422,7 @@ end;
 //Desc: 在指定通道上喷码
 function THardwareCommander.PrintCode(var nData: string): Boolean;
 var nStr,nCode: string;
+    nPrefixLen, nIDLen: Integer;
 begin
   Result := True;
   if not gCodePrinterManager.EnablePrinter then Exit;
@@ -430,13 +431,30 @@ begin
   nStr := Format(nStr, [FIn.FExtParam, FIn.FData]);
   WriteLog(nStr);
 
+  nStr := 'Select B_Prefix,B_IDLen From %s ' +
+          'Where B_Group=''%s'' And B_Object=''%s''';
+  nStr := Format(nStr, [sTable_SerialBase,sFlag_BusGroup, sFlag_BillNo]);
+  //xxxxx
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+   if RecordCount>0 then
+   begin
+     nPrefixLen := Length(Fields[0].AsString);
+     nIDLen     := Fields[1].AsInteger;
+   end else begin
+     nPrefixLen := -1;
+     nIDLen     := -1;
+   end;
+  //xxxxx
+
   if Pos('@', FIn.FData) = 1 then
   begin
     nCode := Copy(FIn.FData, 2, Length(FIn.FData) - 1);
     //固定喷码
   end else
   begin
-    nStr := 'Select L_ID,L_Seal From %s Where L_ID=''%s''';
+    if (nPrefixLen<0) or (nIDLen<0) then Exit;
+
+    nStr := 'Select * From %s Where L_ID=''%s''';
     nStr := Format(nStr, [sTable_Bill, FIn.FData]);
 
     with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -447,14 +465,14 @@ begin
         nData := Format('交货单[ %s ]已无效.', [FIn.FData]); Exit;
       end;
 
-      {$IFDEF XAZL}
-      nCode := StringReplace(Fields[0].AsString, 'TH', '', [rfIgnoreCase]);
-      nCode := Fields[1].AsString + ' ' + nCode;
-      {$ENDIF}
+      {$IFDEF BTMX}
+      nStr := FieldByName('L_ID').AsString;
+      nIDLen := Length(nStr);
 
-      {$IFDEF RDHX}
-      nCode := Trim(Fields[1].AsString);
-      nCode := nCode + Date2Str(Now, False);;
+      nCode:= Copy(nStr, nPrefixLen + 1, 6);
+      nCode:= nCode + RightStr(StringOfChar('0', 6) + FieldByName('L_HYDan').AsString, 6);
+      nCode:= nCode + Copy(nStr, nPrefixLen + 7, nIDLen-nPreFixLen-6);
+      nCode:= nCode + FieldByName('L_District').AsString;
       {$ENDIF}
     end;
   end;
@@ -465,6 +483,10 @@ begin
     nData := nStr;
     Exit;
   end;
+
+  nStr := 'Update %s Set L_PrintCode=''%s'' Where L_ID=''%s''';
+  nStr := Format(nStr, [sTable_Bill, nCode, FIn.FData]);
+  gDBConnManager.WorkerExec(FDBConn, nStr);
 
   nStr := '向通道[ %s ]发送防违流码[ %s ]成功.';
   nStr := Format(nStr, [FIn.FExtParam, nCode]);

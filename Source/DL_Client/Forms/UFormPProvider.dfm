@@ -137,6 +137,13 @@ inherited fFormProvider: TfFormProvider
       OnKeyDown = FormKeyDown
       Width = 348
     end
+    object EditProType: TcxComboBox
+      Left = 81
+      Top = 86
+      Hint = 'T.P_Type'
+      TabOrder = 2
+      Width = 121
+    end
     object dxLayoutControl1Group_Root: TdxLayoutGroup
       ShowCaption = False
       Hidden = True
@@ -157,6 +164,11 @@ inherited fFormProvider: TfFormProvider
             AlignHorz = ahClient
             Caption = #20379#24212#21517#31216':'
             Control = EditName
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayoutControl1Item1: TdxLayoutItem
+            Caption = #20379#24212#31867#22411':'
+            Control = EditProType
             ControlOptions.ShowBorder = False
           end
           object dxLayoutControl1Item14: TdxLayoutItem

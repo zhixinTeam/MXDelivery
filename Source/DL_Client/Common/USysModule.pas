@@ -18,8 +18,10 @@ uses
   UFormTransfer, UFrameQueryTransferDetail, UFrameQueryOrderDetail,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
   UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
-  UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundQuery,
-  UFrameQuerySaleDetail, UFormWaiXie, UFrameWaiXie, UFrameZTDispatch;
+  UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundAuto,
+  UFramePoundQuery, UFrameQuerySaleDetail, UFormWaiXie,
+  UFrameWaiXie, UFrameZTDispatch, UFormGetPurchLine, UFramePoundErr,
+  UFormPoundErr;
 
 procedure InitSystemObject;
 procedure RunSystemObject;
@@ -75,8 +77,11 @@ begin
     FPoundDaiZ := 0;
     FPoundDaiF := 0;
     FPoundSanF := 0;
+    FPoundSanP := 0;
+    FPoundProM := 0;
     FDaiWCStop := False;
     FDaiPercent := False;
+    FSanVerifyStock:='';
   end;
 
   nStr := 'Select D_Value,D_Memo From %s Where D_Name=''%s''';
@@ -108,6 +113,12 @@ begin
 
       if nStr = sFlag_PSanWuChaF then
         gSysParam.FPoundSanF := Fields[0].AsFloat;
+
+      if nStr = sFlag_PSanWuChaP then
+        gSysParam.FPoundSanP := Fields[0].AsFloat;
+
+      if nStr = sFlag_PProWuChaM then
+        gSysParam.FPoundProM := Fields[0].AsFloat;
       Next;
     end;
 
@@ -116,6 +127,22 @@ begin
       FPoundDaiZ_1 := FPoundDaiZ;
       FPoundDaiF_1 := FPoundDaiF;
       //backup wucha value
+    end;
+  end;
+
+  //----------------------------------------------------------------------------
+  nStr := 'Select D_Value From %s Where D_Name=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_PSanVerifyStock]);
+
+  with FDM.QueryTemp(nStr), gSysParam do
+  if RecordCount > 0 then
+  begin
+    First;
+
+    while not Eof do
+    begin
+      FSanVerifyStock := FSanVerifyStock + Fields[0].AsString;
+      Next;
     end;
   end;
 

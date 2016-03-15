@@ -39,12 +39,22 @@ type
     EditEnd: TcxTextEdit;
     dxLayout1Item10: TdxLayoutItem;
     dxLayout1Group4: TdxLayoutGroup;
+    EditCYS: TcxComboBox;
+    dxLayout1Item11: TdxLayoutItem;
+    EditCYName: TcxTextEdit;
+    dxLayout1Item12: TdxLayoutItem;
+    EditLineID: TcxComboBox;
+    dxLayout1Item13: TdxLayoutItem;
+    EditLine: TcxTextEdit;
+    dxLayout1Item14: TdxLayoutItem;
+    dxLayout1Group5: TdxLayoutGroup;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
+    procedure EditCYSPropertiesChange(Sender: TObject);
   protected
     { Protected declarations }
     FCardData, FListA: TStrings;
@@ -179,6 +189,7 @@ end;
 
 //------------------------------------------------------------------------------
 procedure TfFormOrder.InitFormData;
+var nStr: string;
 begin
   with FCardData do
   begin
@@ -194,6 +205,20 @@ begin
     EditEnd.Text      := FloatToStr(Float2Float(StrToFloat(Values['SQ_RestValue']) -
                          StrToFloat(Values['SQ_Freeze']), cPrecision, False));
   end;
+
+  nStr := 'P_ID=Select P_ID,P_Name From %s Where P_Type=''%s'' Order By P_Name DESC';
+  nStr := Format(nStr, [sTable_Provider, sFlag_ProvideC]);
+
+  FDM.FillStringsData(EditCYS.Properties.Items, nStr, 1, '.');
+  AdjustCXComboBoxItem(EditCYS, False);
+  if EditCYS.Properties.Items.Count>0 then EditCYS.ItemIndex := 0;
+
+  nStr := 'D_Value=Select D_Value,D_Memo From %s Where D_Name=''%s'' Order By D_Value';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_PurchLineItem]);
+
+  FDM.FillStringsData(EditLineID.Properties.Items, nStr, 1, '.');
+  AdjustCXComboBoxItem(EditLineID, False);
+  EditLineID.ItemIndex := -1;
 end;
 
 function TfFormOrder.OnVerifyCtrl(Sender: TObject; var nHint: string): Boolean;
@@ -235,6 +260,12 @@ begin
     Values['ProviderID']    := FCardData.Values['SQ_ProID'];
     Values['ProviderName']  := FCardData.Values['SQ_ProName'];
 
+    Values['ChengYunID']    := GetCtrlData(EditCYS);
+    Values['ChengYunName']  := EditCYName.Text;
+
+    Values['LineID']        := GetCtrlData(EditLineID);
+    Values['LineName']      := EditLine.Text;
+
     Values['StockNO']       := FCardData.Values['SQ_StockNo'];
     Values['StockName']     := FCardData.Values['SQ_StockName'];
     Values['Value']         := Trim(EditValue.Text);
@@ -246,6 +277,21 @@ begin
 
   ModalResult := mrOK;
   ShowMsg('采购入厂单保存成功', sHint);
+end;
+
+procedure TfFormOrder.EditCYSPropertiesChange(Sender: TObject);
+var nStr: string;
+    nCom: TcxComboBox;
+begin
+  nCom := Sender as TcxComboBox;
+  nStr := nCom.Text;
+  System.Delete(nStr, 1, Length(GetCtrlData(nCom)) + 1);
+
+  if Sender = EditCYS then
+    EditCYName.Text := nStr
+  else if Sender = EditLineID then
+    EditLine.Text := nStr; 
+  //xxxxx  
 end;
 
 initialization
