@@ -77,7 +77,7 @@ type
     FUIData,FInnerData: TLadingBillItem;
     //称重数据
     FLastCardDone: Int64;
-    FLastCard: string;
+    FLastCard, FLastCardTmp: string;
     //上次卡号
     FListA, FListB: TStrings;
     FSampleIndex: Integer;
@@ -490,7 +490,7 @@ begin
       Exit;
     end;
 
-    FLastCard := nCard;
+    FLastCardTmp := nCard;
     EditBill.Text := nCard;
     LoadBillItems(EditBill.Text);
   except
@@ -936,12 +936,13 @@ procedure TfFrameAutoPoundItem.TimerDelayTimer(Sender: TObject);
 begin
   try
     TimerDelay.Enabled := False;
-    FLastCardDone := GetTickCount;
     WriteSysLog(Format('对车辆[ %s ]称重完毕.', [FUIData.FTruck]));
 
+    FLastCard := FLastCardTmp;
+    FLastCardDone := GetTickCount;
     if not FHasErr then PlayVoice(#9 + FUIData.FTruck);
     //播放语音
-      
+
     Timer2.Enabled := True;
     {$IFDEF HR1847}
     gKRMgrProber.TunnelOC(FPoundTunnel.FID, True);

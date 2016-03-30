@@ -726,7 +726,9 @@ begin
   WriteHardHelperLog(Format('»ªÒæ±êÇ© %s:%s', [nReader.FTunnel, nReader.FCard]));
   {$ENDIF}
 
+  {$IFDEF RemoteReader}
   gHardwareHelper.SetReaderCard(nReader.FID, 'H' + nReader.FCard, False);
+  {$ENDIF}
   g02NReader.ActiveELabel(nReader.FID, nReader.FCard);
 end;
 

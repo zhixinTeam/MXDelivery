@@ -18,12 +18,12 @@ uses
 
 const
   { Library ID }
-  LibraryUID = '{00E8A6F8-9FF7-470D-9790-651DE0738279}';
+  LibraryUID = '{EE235129-F5E3-4F96-A90C-675D216438D5}';
   WSDLLocation = 'http://10.9.1.97/CardTransToERP/webService.asmx?WSDL';
   TargetNamespace = 'http://tempuri.org/';
 
   { Service Interface ID's }
-  IWebService_IID : TGUID = '{D83E801E-FD56-461B-A537-79CF88AFC5B1}';
+  IWebService_IID : TGUID = '{F90862D4-B77B-4CAD-B32E-CDB6918241FB}';
   WebService_EndPointURI = 'http://10.9.1.97/CardTransToERP/webService.asmx';
 
   { Event ID's }
@@ -35,7 +35,7 @@ type
 
   { IWebService }
   IWebService = interface
-    ['{D83E801E-FD56-461B-A537-79CF88AFC5B1}']
+    ['{F90862D4-B77B-4CAD-B32E-CDB6918241FB}']
     function HelloWorld: WideString;
     function test: WideString;
     function GetSalesInfoByCustCard(const _xml: WideString): WideString;
@@ -45,6 +45,9 @@ type
     function SetPurchPackingSlip(const _xml: WideString): WideString;
     function SetOutSourceWeight(const _xml: WideString): WideString;
     function SetItemTransfer(const _xml: WideString): WideString;
+    function GetProportionInfoByItemID(const _xml: WideString): WideString;
+    function SetSalseReturn(const _xml: WideString): WideString;
+    function SetPurchCorrection(const _xml: WideString): WideString;
   end;
 
   { CoWebService }
@@ -66,6 +69,9 @@ type
     function SetPurchPackingSlip(const _xml: WideString): WideString;
     function SetOutSourceWeight(const _xml: WideString): WideString;
     function SetItemTransfer(const _xml: WideString): WideString;
+    function GetProportionInfoByItemID(const _xml: WideString): WideString;
+    function SetSalseReturn(const _xml: WideString): WideString;
+    function SetPurchCorrection(const _xml: WideString): WideString;
   end;
 
 implementation
@@ -90,12 +96,12 @@ end;
 
 function TWebService_Proxy.HelloWorld: WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/HelloWorld', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'HelloWorld', 'HelloWorldResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/HelloWorld', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'HelloWorld'
+      , 'HelloWorldResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'HelloWorld');
     __Message.Finalize;
@@ -111,12 +117,12 @@ end;
 
 function TWebService_Proxy.test: WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/test', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'test', 'testResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/test', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'test'
+      , 'testResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'test');
     __Message.Finalize;
@@ -132,12 +138,12 @@ end;
 
 function TWebService_Proxy.GetSalesInfoByCustCard(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/GetSalesInfoByCustCard', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'GetSalesInfoByCustCard', 'GetSalesInfoByCustCardResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/GetSalesInfoByCustCard', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'GetSalesInfoByCustCard'
+      , 'GetSalesInfoByCustCardResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'GetSalesInfoByCustCard');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -154,12 +160,12 @@ end;
 
 function TWebService_Proxy.GetPurchInfoByVendAccount(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/GetPurchInfoByVendAccount', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'GetPurchInfoByVendAccount', 'GetPurchInfoByVendAccountResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/GetPurchInfoByVendAccount', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'GetPurchInfoByVendAccount'
+      , 'GetPurchInfoByVendAccountResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'GetPurchInfoByVendAccount');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -176,12 +182,12 @@ end;
 
 function TWebService_Proxy.CheckPassByQtyAmount(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/CheckPassByQtyAmount', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'CheckPassByQtyAmount', 'CheckPassByQtyAmountResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/CheckPassByQtyAmount', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'CheckPassByQtyAmount'
+      , 'CheckPassByQtyAmountResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'CheckPassByQtyAmount');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -198,12 +204,12 @@ end;
 
 function TWebService_Proxy.SetSalesPackingSlip(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/SetSalesPackingSlip', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'SetSalesPackingSlip', 'SetSalesPackingSlipResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetSalesPackingSlip', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetSalesPackingSlip'
+      , 'SetSalesPackingSlipResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetSalesPackingSlip');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -220,12 +226,12 @@ end;
 
 function TWebService_Proxy.SetPurchPackingSlip(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/SetPurchPackingSlip', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'SetPurchPackingSlip', 'SetPurchPackingSlipResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetPurchPackingSlip', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetPurchPackingSlip'
+      , 'SetPurchPackingSlipResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetPurchPackingSlip');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -242,12 +248,12 @@ end;
 
 function TWebService_Proxy.SetOutSourceWeight(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/SetOutSourceWeight', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'SetOutSourceWeight', 'SetOutSourceWeightResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetOutSourceWeight', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetOutSourceWeight'
+      , 'SetOutSourceWeightResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetOutSourceWeight');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -264,12 +270,12 @@ end;
 
 function TWebService_Proxy.SetItemTransfer(const _xml: WideString): WideString;
 begin
-    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld', 'remap_SetItemTransfer'
-      , 'remap_SetOutSourceWeight', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_test', 'SOAPInputNameOverride', 'SOAPOutputNameOverride', 'Style', 'TargetNamespace'
-      , 'Type', 'Use', 'Wsdl'], 
-      ['http://tempuri.org/SetItemTransfer', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld', 'http://tempuri.org/SetItemTransfer'
-      , 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/test', 'SetItemTransfer', 'SetItemTransferResponse', 'document', TargetNamespace
-      , 'SOAP', 'literal', WSDLLocation]);
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetItemTransfer', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetItemTransfer'
+      , 'SetItemTransferResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
   try
     __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetItemTransfer');
     __Message.Write('_xml', TypeInfo(WideString), _xml, []);
@@ -278,6 +284,72 @@ begin
     __TransportChannel.Dispatch(__Message);
 
     __Message.Read('SetItemTransferResult', TypeInfo(WideString), result, []);
+  finally
+    __Message.UnsetAttributes(__TransportChannel);
+    __Message.FreeStream;
+  end
+end;
+
+function TWebService_Proxy.GetProportionInfoByItemID(const _xml: WideString): WideString;
+begin
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/GetProportionInfoByItemID', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'GetProportionInfoByItemID'
+      , 'GetProportionInfoByItemIDResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
+  try
+    __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'GetProportionInfoByItemID');
+    __Message.Write('_xml', TypeInfo(WideString), _xml, []);
+    __Message.Finalize;
+
+    __TransportChannel.Dispatch(__Message);
+
+    __Message.Read('GetProportionInfoByItemIDResult', TypeInfo(WideString), result, []);
+  finally
+    __Message.UnsetAttributes(__TransportChannel);
+    __Message.FreeStream;
+  end
+end;
+
+function TWebService_Proxy.SetSalseReturn(const _xml: WideString): WideString;
+begin
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetSalseReturn', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetSalseReturn'
+      , 'SetSalseReturnResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
+  try
+    __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetSalseReturn');
+    __Message.Write('_xml', TypeInfo(WideString), _xml, []);
+    __Message.Finalize;
+
+    __TransportChannel.Dispatch(__Message);
+
+    __Message.Read('SetSalseReturnResult', TypeInfo(WideString), result, []);
+  finally
+    __Message.UnsetAttributes(__TransportChannel);
+    __Message.FreeStream;
+  end
+end;
+
+function TWebService_Proxy.SetPurchCorrection(const _xml: WideString): WideString;
+begin
+    __Message.SetAttributes(__TransportChannel, ['Action', 'Location', 'remap_CheckPassByQtyAmount', 'remap_GetProportionInfoByItemID', 'remap_GetPurchInfoByVendAccount', 'remap_GetSalesInfoByCustCard', 'remap_HelloWorld'
+      , 'remap_SetItemTransfer', 'remap_SetOutSourceWeight', 'remap_SetPurchCorrection', 'remap_SetPurchPackingSlip', 'remap_SetSalesPackingSlip', 'remap_SetSalseReturn', 'remap_test', 'SOAPInputNameOverride'
+      , 'SOAPOutputNameOverride', 'Style', 'TargetNamespace', 'Type', 'Use', 'Wsdl'], 
+      ['http://tempuri.org/SetPurchCorrection', 'http://10.9.1.97/CardTransToERP/webService.asmx', 'http://tempuri.org/CheckPassByQtyAmount', 'http://tempuri.org/GetProportionInfoByItemID', 'http://tempuri.org/GetPurchInfoByVendAccount', 'http://tempuri.org/GetSalesInfoByCustCard', 'http://tempuri.org/HelloWorld'
+      , 'http://tempuri.org/SetItemTransfer', 'http://tempuri.org/SetOutSourceWeight', 'http://tempuri.org/SetPurchCorrection', 'http://tempuri.org/SetPurchPackingSlip', 'http://tempuri.org/SetSalesPackingSlip', 'http://tempuri.org/SetSalseReturn', 'http://tempuri.org/test', 'SetPurchCorrection'
+      , 'SetPurchCorrectionResponse', 'document', TargetNamespace, 'SOAP', 'literal', WSDLLocation]);
+  try
+    __Message.InitializeRequestMessage(__TransportChannel, 'NewLibrary', __InterfaceName, 'SetPurchCorrection');
+    __Message.Write('_xml', TypeInfo(WideString), _xml, []);
+    __Message.Finalize;
+
+    __TransportChannel.Dispatch(__Message);
+
+    __Message.Read('SetPurchCorrectionResult', TypeInfo(WideString), result, []);
   finally
     __Message.UnsetAttributes(__TransportChannel);
     __Message.FreeStream;

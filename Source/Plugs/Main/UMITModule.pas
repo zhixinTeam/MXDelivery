@@ -15,7 +15,7 @@ uses
   UWorkerBusinessCommand, UWorkerBusinessBill, UWorkerBusinessRemote,
   UWorkerBusinessOrders, UWorkerBusinessDuanDao, UWorkerBusinessWaiXie,
   {$IFDEF HardMon}UEventHardware, UWorkerHardware,{$ENDIF}
-  {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF}
+  {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF} UWorkerBusinessRefund,
   UMgrDBConn, UMgrParam, UMgrPlug, UMgrChannel, UChannelChooser, USAPConnection,
   UBaseObject, UMemDataPool, UAXUploader;
 

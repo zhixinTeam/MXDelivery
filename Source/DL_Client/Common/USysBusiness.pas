@@ -1119,7 +1119,7 @@ begin
     begin
       if (not Result) And
         ((nPost = sFlag_TruckBFP) or (nPost = sFlag_TruckBFM)) then
-        Result := SavePostError(nPost, nData, nTunnel, nOut.FData);
+        Result := SavePostError(nPost, nData, nTunnel, nOut.FBase.FErrDesc);
       Exit;
     end;
   end else

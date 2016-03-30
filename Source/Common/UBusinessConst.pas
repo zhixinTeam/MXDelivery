@@ -94,6 +94,12 @@ const
   cBC_AXSyncDuanDao           = $0101;   //同步短倒
   cBC_AXSyncOrder             = $0102;   //同步采购
   cBC_AXSyncWaiXie            = $0103;   //同步外协
+  cBC_AXSyncRefund            = $0104;   //同步退货
+
+  cBC_SaveRefund              = $0111;   //保存退货
+  cBC_DeleteRefund            = $0112;   //删除退货单
+  cBC_SaveRefundCard          = $0113;   //退货磁卡
+  cBC_ModifyRefundTruck       = $0114;   //修改退货车牌号
 
 
 type
@@ -184,6 +190,7 @@ resourcestring
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
   sBus_BusinessDuanDao        = 'Bus_BusinessDuanDao';  //短倒业务相关
   sBus_BusinessWaiXie         = 'Bus_BusinessWaiXie';   //外协业务相关
+  sBus_BusinessRefund         = 'Bus_BusinessRefund';   //退货业务相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
   sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
@@ -194,6 +201,8 @@ resourcestring
   sAX_SyncOrder               = 'AX_SyncOrder';         //同步入厂单
   sAX_SyncDuanDao             = 'AX_SyncDuanDao';       //同步短倒单
   sAX_SyncWaiXie              = 'AX_SyncWaiXie';        //同步外协单
+  sAX_SyncRefund              = 'AX_SyncRefund';        //同步外协单
+  sAX_SyncOrderCorrection     = 'AX_SyncOrderCorrection';//同步原料勘误单
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
@@ -208,6 +217,7 @@ resourcestring
   sCLI_BusinessPurchaseOrder  = 'CLI_BusinessPurchaseOrder'; //采购单相关
   sCLI_BusinessDuanDao        = 'CLI_BusinessDuanDao';  //短倒业务相关
   sCLI_BusinessWaiXie         = 'CLI_BusinessWaiXie';   //外协业务相关
+  sCLI_BusinessRefund         = 'CLI_BusinessRefund';   //退货业务相关
 
 implementation
 

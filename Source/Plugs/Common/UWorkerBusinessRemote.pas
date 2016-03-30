@@ -135,6 +135,32 @@ type
     function DoAfterDBWork(var nData: string; nResult: Boolean): Boolean; override;
   end;
 
+  TAXWorkerSyncOrderCorrection = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override;
+    function BuildBusinessXMLPack(var nData: string): Boolean;
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+    function DoAfterDBWork(var nData: string; nResult: Boolean): Boolean; override;
+  end;
+
+  TAXWorkerSyncRefund = class(TAXWorkerBase)
+  protected
+    FIn: TWorkerBusinessCommand;
+    FOut: TWorkerBusinessCommand;
+    procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
+    function DoAXWork(var nData: string): Boolean; override;
+    function BuildBusinessXMLPack(var nData: string): Boolean;
+  public
+    function GetFlagStr(const nFlag: Integer): string; override;
+    class function FunctionName: string; override;
+    function DoAfterDBWork(var nData: string; nResult: Boolean): Boolean; override;
+  end;
+
 function CallRemoteWorker(const nWorkerName: string; const nData,nExt,nMsgNo: string;
  const nOut: PWorkerBusinessCommand; const nCmd: Integer = 0): Boolean;
 //入口函数
@@ -551,7 +577,7 @@ end;
 function TAXWorkerReadSalesInfo.DoAXWork(var nData: string): Boolean;
 var nStr: string;
     nIdx: Integer;
-    nVal: Double;
+    nVal, nAVal: Double;
     nNode: TXmlNode;
 begin
   Result := False;
@@ -564,10 +590,10 @@ begin
   nData := IWebService(FChannel.FChannel).GetSalesInfoByCustCard(FXML.WriteToString);
   //remote call
 
-  {$IFDEF DEBUG}
+  {.$IFDEF DEBUG}
   WriteLog('TAXWorkerReadSalesInfo --> AX ::: ' + FXML.WriteToString);
   WriteLog('TAXWorkerReadSalesInfo <-- AX ::: ' + nData);
-  {$ENDIF}
+  {.$ENDIF}
 
   FXML.ReadFromString(nData);
   if DefaultParseError(nData) then
@@ -616,6 +642,17 @@ begin
       nVal := StrToFloat(Values['Qty']) - StrToFloat(nStr);
       //订单量 - 冻结量
       nVal := Float2Float(nVal, cPrecision, False);
+      //订单量可用
+
+      nAVal:= StrToFloat(Values['Amount']) / StrToFloat(Values['Price'])
+              - StrToFloat(nStr);
+      nAVal:= Float2Float(nAVal, cPrecision, False);
+      //价格与金额量可用
+
+      if FloatRelation(nVal, nAVal, rtGreater, cPrecision) then
+        nVal := nAVal;
+      //取最小值  
+
       Values['Qty'] := FloatToStr(nVal);
     end;
 
@@ -1315,6 +1352,226 @@ begin
   //write sync status
 end;
 
+//------------------------------------------------------------------------------
+class function TAXWorkerSyncOrderCorrection.FunctionName: string;
+begin
+  Result := sAX_SyncOrderCorrection;
+end;
+
+function TAXWorkerSyncOrderCorrection.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerSyncOrderCorrection.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerSyncOrderCorrection.BuildBusinessXMLPack(var nData: string): Boolean;
+var nSQL, nID: string;
+begin
+  Result := False;
+  nID := UpperCase(FIn.FData);
+
+  nSQL := 'Select * From %s Where W_ID=''%s''';
+  nSQL := Format(nSQL, [sTable_PurchCorrect, nID]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nSQL),FXML.Root.NodeByName('HEAD') do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '原料勘误单[ %s ]数据已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    NodeNew('BizID').ValueAsString := FieldByName('W_ID').AsString;
+    NodeNew('ItemName').ValueAsString := FieldByName('W_StockName').AsString;
+    NodeNew('VehicleNum').ValueAsString  := FieldByName('W_Truck').AsString;
+    NodeNew('OutSourceUnit').ValueAsString := FieldByName('W_ProName').AsString;
+    NodeNew('CarSenderUnit').ValueAsString := FieldByName('W_TransName').AsString;
+    NodeNew('ProductionLine').ValueAsString := FieldByName('W_ProductLine').AsString;
+
+    NodeNew('TareDateTime').ValueAsString := FieldByName('W_PDate').AsString;
+    NodeNew('GrossDateTime').ValueAsString := FieldByName('W_MDate').AsString;
+    NodeNew('TareVolume').ValueAsString := FieldByName('W_PValue').AsString;
+    NodeNew('GrossVolume').ValueAsString := FieldByName('W_MValue').AsString;
+  end;
+
+  Result := True;
+end;
+
+function TAXWorkerSyncOrderCorrection.DoAXWork(var nData: string): Boolean;
+var nNode, nTmp: TXmlNode;
+begin
+  Result := False;
+  BuildDefaultXMLPack;    
+  if not BuildBusinessXMLPack(nData) then Exit;
+
+  nData := IWebService(FChannel.FChannel).SetPurchCorrection(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerSyncOrderCorrection --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerSyncOrderCorrection <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  nNode := FXML.Root.FindNode('EXMG');
+  if not (Assigned(nNode) and Assigned(nNode.FindNode('Item'))) then
+  begin
+    nData := 'AX返回无效节点(EXMG.Item Null).';
+    Exit;
+  end;
+
+  nNode := nNode.NodeByName('Item');
+  Result := nNode.NodeByName('MsgType').ValueAsString = '1';
+  nTmp := nNode.FindNode('MsgTxt');
+
+  if Assigned(nTmp) then
+       nData := nTmp.ValueAsString
+  else nData := 'AX未描述的错误.';
+end;
+
+function TAXWorkerSyncOrderCorrection.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
+var nStr: string;
+begin
+  Result := inherited DoAfterDBWork(nData, nResult);
+  //parent default
+
+  if nResult then //同步成功
+  begin
+    nStr := 'Update %s Set W_SyncNum=W_SyncNum+1,W_SyncDate=%s,W_SyncMemo=Null ' +
+            'Where W_ID=''%s''';
+    nStr := Format(nStr, [sTable_WaiXieInfo, sField_SQLServer_Now, FIn.FData]);
+  end else
+  begin
+    nStr := 'Update %s Set W_SyncNum=W_SyncNum+1,W_SyncMemo=''%s'' ' +
+            'Where W_ID=''%s''';
+    nStr := Format(nStr, [sTable_WaiXieInfo, nData, FIn.FData]);
+  end;
+
+  gDBConnManager.WorkerExec(FDBConn, nStr);
+  //write sync status
+end;
+
+//------------------------------------------------------------------------------
+class function TAXWorkerSyncRefund.FunctionName: string;
+begin
+  Result := sAX_SyncRefund;
+end;
+
+function TAXWorkerSyncRefund.GetFlagStr(const nFlag: Integer): string;
+begin
+  inherited GetFlagStr(nFlag);
+
+  case nFlag of
+   cWorker_GetPackerName : Result := sBus_BusinessCommand;
+  end;
+end;
+
+procedure TAXWorkerSyncRefund.GetInOutData(var nIn, nOut: PBWDataBase);
+begin
+  nIn := @FIn;
+  nOut := @FOut;
+  FDataOutNeedUnPack := False;
+end;
+
+function TAXWorkerSyncRefund.BuildBusinessXMLPack(var nData: string): Boolean;
+var nSQL, nID: string;
+begin
+  Result := False;
+  nID := UpperCase(FIn.FData);
+
+  nSQL := 'Select * From %s Where F_ID=''%s''';
+  nSQL := Format(nSQL, [sTable_Refund, nID]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nSQL),FXML.Root.NodeByName('HEAD') do
+  begin
+    if RecordCount < 1 then
+    begin
+      nData := '退货单[ %s ]数据已丢失.';
+      nData := Format(nData, [FIn.FData]);
+      Exit;
+    end;
+
+    NodeNew('BizID').ValueAsString := FieldByName('F_ID').AsString;
+    NodeNew('ItemName').ValueAsString := FieldByName('F_StockName').AsString;
+    NodeNew('VehicleNum').ValueAsString  := FieldByName('F_Truck').AsString;
+    NodeNew('OutSourceUnit').ValueAsString := FieldByName('F_ProName').AsString;
+    NodeNew('CarSenderUnit').ValueAsString := FieldByName('F_TransName').AsString;
+    NodeNew('ProductionLine').ValueAsString := FieldByName('F_ProductLine').AsString;
+
+    NodeNew('TareDateTime').ValueAsString := FieldByName('F_PDate').AsString;
+    NodeNew('GrossDateTime').ValueAsString := FieldByName('F_MDate').AsString;
+    NodeNew('TareVolume').ValueAsString := FieldByName('F_PValue').AsString;
+    NodeNew('GrossVolume').ValueAsString := FieldByName('F_MValue').AsString;
+  end;
+
+  Result := True;
+end;
+
+function TAXWorkerSyncRefund.DoAXWork(var nData: string): Boolean;
+var nNode, nTmp: TXmlNode;
+begin
+  Result := False;
+  BuildDefaultXMLPack;    
+  if not BuildBusinessXMLPack(nData) then Exit;
+
+  nData := IWebService(FChannel.FChannel).SetSalseReturn(FXML.WriteToString);
+  //remote call
+
+  {$IFDEF DEBUG}
+  WriteLog('TAXWorkerSyncRefund --> AX ::: ' + FXML.WriteToString);
+  WriteLog('TAXWorkerSyncRefund <-- AX ::: ' + nData);
+  {$ENDIF}
+
+  FXML.ReadFromString(nData);
+  nNode := FXML.Root.FindNode('EXMG');
+  if not (Assigned(nNode) and Assigned(nNode.FindNode('Item'))) then
+  begin
+    nData := 'AX返回无效节点(EXMG.Item Null).';
+    Exit;
+  end;
+
+  nNode := nNode.NodeByName('Item');
+  Result := nNode.NodeByName('MsgType').ValueAsString = '1';
+  nTmp := nNode.FindNode('MsgTxt');
+
+  if Assigned(nTmp) then
+       nData := nTmp.ValueAsString
+  else nData := 'AX未描述的错误.';
+end;
+
+function TAXWorkerSyncRefund.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
+var nStr: string;
+begin
+  Result := inherited DoAfterDBWork(nData, nResult);
+  //parent default
+
+  if nResult then //同步成功
+  begin
+    nStr := 'Update %s Set F_SyncNum=F_SyncNum+1,F_SyncDate=%s,F_SyncMemo=Null ' +
+            'Where W_ID=''%s''';
+    nStr := Format(nStr, [sTable_Refund, sField_SQLServer_Now, FIn.FData]);
+  end else
+  begin
+    nStr := 'Update %s Set F_SyncNum=F_SyncNum+1,F_SyncMemo=''%s'' ' +
+            'Where W_ID=''%s''';
+    nStr := Format(nStr, [sTable_Refund, nData, FIn.FData]);
+  end;
+
+  gDBConnManager.WorkerExec(FDBConn, nStr);
+  //write sync status
+end;
+
 initialization
   gBusinessWorkerManager.RegisteWorker(TAXWorkerReadSalesInfo);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerPickBill);
@@ -1323,4 +1580,6 @@ initialization
   gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncOrder);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncWaiXie);
   gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncDuanDao);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncRefund);
+  gBusinessWorkerManager.RegisteWorker(TAXWorkerSyncOrderCorrection);
 end.

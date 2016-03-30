@@ -318,6 +318,15 @@ begin
   inherited;
   if cxView1.DataController.GetSelectedCount > 0 then
   begin
+    nStr := SQLQuery.FieldByName('L_OutFact').AsString;
+    if Length(nStr)<1 then
+    begin
+      nStr := '车辆 [ %s ] 未出厂, 禁止打印合格证';
+      nStr := Format(nStr, [SQLQuery.FieldByName('L_Truck').AsString]);
+      ShowMsg(nStr, sHint);
+      Exit;
+    end;  
+
     nStr := SQLQuery.FieldByName('L_ID').AsString;
     PrintHeGeReport(nStr, False);
   end;

@@ -95,6 +95,7 @@ ResourceString
   sFlag_Other         = 'O';                         //其它
   sFlag_DuanDao       = 'D';                         //短倒(预制皮重,单次称重)
   sFlag_WaiXie        = 'W';                         //外协(进-重-出-进-皮-出)
+  sFlag_Refund        = 'F';                         //退货(进-重-皮-出)(袋装不过磅)
   
   sFlag_TiHuo         = 'T';                         //自提
   sFlag_SongH         = 'S';                         //送货
@@ -165,6 +166,7 @@ ResourceString
   sFlag_StockIfYS     = 'StockIfYS';                 //现场是否验收
   sFlag_DispatchPound = 'PoundDispatch';             //磅站调度
   sFlag_PSanVerifyStock='PSanVerifyStock';           //散装校验
+  sFlag_OutOfRefund   = 'OutOfRefund';               //退货时限
 
   sFlag_CommonItem    = 'CommonItem';                //公共信息
   sFlag_CardItem      = 'CardItem';                  //磁卡信息项
@@ -216,6 +218,7 @@ ResourceString
   sFlag_PurchInfo     = 'Bus_PurchID';               //采购单号
   sFlag_Transfer      = 'Bus_Transfer';              //短倒单号
   sFlag_PoundErr      = 'Bus_PoundErr';              //称重记录
+  sFlag_RefundNo      = 'Bus_RefundNo';              //退货单号
 
   sFlag_SerialAX      = 'AXFunction';                //AX编码组
   sFlag_AXMsgNo       = 'AX_MsgNo';                  //AX消息号
@@ -240,6 +243,8 @@ ResourceString
   sTable_Card         = 'S_Card';                    //销售磁卡
   sTable_Bill         = 'S_Bill';                    //提货单
   sTable_BillBak      = 'S_BillBak';                 //已删交货单
+  sTable_Refund       = 'S_Refund';                  //退货单
+  sTable_RefundBak    = 'S_RefundBak';               //已删除退货单
 
   sTable_StockMatch   = 'S_StockMatch';              //品种映射
   sTable_StockParam   = 'S_StockParam';              //品种参数
@@ -256,6 +261,7 @@ ResourceString
   sTable_PurchInfoBak = 'P_PurchInfoBak';            //采购单
   sTable_WaiXieInfo   = 'P_WaiXieInfo';
   sTable_WaiXieBak    = 'P_WaiXieBak';               //外协单
+  sTable_PurchCorrect = 'P_PurchCorrect';            //采购勘误单
 
   sTable_Transfer     = 'P_Transfer';                //短倒明细单
   sTable_TransferBak  = 'P_TransferBak';             //短倒明细单
@@ -457,6 +463,54 @@ ResourceString
    *.L_SyncNum: 提交次数
    *.L_SyncDate: 提交成功时间
    *.L_SyncMemo: 提交错误描述
+  -----------------------------------------------------------------------------}
+
+    sSQL_NewRefund = 'Create Table $Table(R_ID $Inc, F_ID varChar(20),' +
+       'F_Card varChar(16),F_LID varChar(20),F_LOutFact DateTime,' +
+       'F_CusID varChar(15),F_CusName varChar(80),F_CusPY varChar(80),' +
+       'F_SaleID varChar(15),F_SaleMan varChar(32),' +
+       'F_Type Char(1),F_StockNo varChar(20),F_StockName varChar(80),' +
+       'F_LimValue $Float,F_Value $Float,F_Price $Float,' +
+       'F_Truck varChar(15),F_Status Char(1),F_NextStatus Char(1),' +
+       'F_InTime DateTime,F_InMan varChar(32),' +
+       'F_PValue $Float,F_PDate DateTime,F_PMan varChar(32),' +
+       'F_MValue $Float,F_MDate DateTime,F_MMan varChar(32),' +
+       'F_LadeTime DateTime,F_LadeMan varChar(32), ' +
+       'F_LadeLine varChar(15),F_LineName varChar(32),' +
+       'F_OutFact DateTime,F_OutMan varChar(32),' +
+       'F_Man varChar(32),F_Date DateTime,' +
+       'F_DelMan varChar(32),F_DelDate DateTime, ' +
+       'F_SyncNum Integer Default 0,F_SyncDate DateTime,F_SyncMemo varChar(500))';
+  {-----------------------------------------------------------------------------
+   退货单表: Refund
+   *.R_ID: 编号
+   *.F_ID: 退货单号
+   *.F_Card: 磁卡号
+   *.F_LID: 退货单对应提货单号
+   *.F_LOutFact: 提货出厂时间
+   *.F_CusID,F_CusName,F_CusPY:客户
+   *.F_SaleID,F_SaleMan:业务员
+   *.F_Type: 类型(袋,散)
+   *.F_StockNo: 物料编号
+   *.F_StockName: 物料描述
+   *.F_LimValue: 提货单原始提货量
+   *.F_Value: 退货量
+   *.F_Price: 退货单价
+   *.F_Truck: 车船号
+   *.F_Status,F_NextStatus:状态控制
+   *.F_InTime,F_InMan: 进厂放行
+   *.F_PValue,F_PDate,F_PMan: 称皮重
+   *.F_MValue,F_MDate,F_MMan: 称毛重
+   *.F_LadeTime,F_LadeMan: 卸货时间,卸货人
+   *.F_LadeLine,F_LineName: 卸货通道
+   *.F_OutFact,F_OutMan: 出厂放行
+   *.F_Man:操作人
+   *.F_Date:创建时间
+   *.F_DelMan: 退货单删除人员
+   *.F_DelDate: 退货单删除时间
+   *.F_SyncNum: 提交次数
+   *.F_SyncDate: 提交成功时间
+   *.F_SyncMemo: 提交错误描述
   -----------------------------------------------------------------------------}
 
   sSQL_NewCard = 'Create Table $Table(R_ID $Inc, C_Card varChar(16),' +
@@ -1015,6 +1069,8 @@ begin
   //AddSysTableItem(sTable_CardExt, sSQL_NewCard);
   AddSysTableItem(sTable_Bill, sSQL_NewBill);
   AddSysTableItem(sTable_BillBak, sSQL_NewBill);
+  AddSysTableItem(sTable_Refund, sSQL_NewRefund);
+  AddSysTableItem(sTable_RefundBak, sSQL_NewRefund);
 
   AddSysTableItem(sTable_Truck, sSQL_NewTruck);
   AddSysTableItem(sTable_ZTLines, sSQL_NewZTLines);
