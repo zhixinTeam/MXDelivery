@@ -577,8 +577,8 @@ end;
 function TAXWorkerReadSalesInfo.DoAXWork(var nData: string): Boolean;
 var nStr: string;
     nIdx: Integer;
-    nVal, nAVal: Double;
     nNode: TXmlNode;
+    nVal, nAVal, nMon1, nMon2: Double;
 begin
   Result := False;
   BuildDefaultXMLPack;
@@ -609,8 +609,10 @@ begin
   with FListA,nNode do
   begin
     Values['Card'] := NodeByName('Card').ValueAsString;
-    Values['Amount'] := NodeByName('Amount').ValueAsString;
+    Values['Amount'] := StringReplace(NodeByName('Amount').ValueAsString,
+      ',' , '', [rfReplaceAll]);
   end;
+  //1,424,47
 
   nNode := FXML.Root.FindNode('Items');
   FListA.Values['DataNum'] := IntToStr(nNode.NodeCount);
@@ -629,7 +631,8 @@ begin
     Values['ItemID'] := NodeByName('ItemID').ValueAsString;
     Values['ItemName'] := NodeByName('ItemName').ValueAsString;
     Values['Qty'] := NodeByName('Qty').ValueAsString;
-    Values['Amount'] := NodeByName('Amount').ValueAsString;
+    Values['Amount'] := StringReplace(NodeByName('Amount').ValueAsString,
+      ',' , '', [rfReplaceAll]);
     Values['Price'] := NodeByName('Price').ValueAsString;
 
     nData := Values['ItemID'];
@@ -644,7 +647,12 @@ begin
       nVal := Float2Float(nVal, cPrecision, False);
       //订单量可用
 
-      nAVal:= StrToFloat(Values['Amount']) / StrToFloat(Values['Price'])
+      nMon1:= StrToFloat(FListA.Values['Amount']);
+      nMon2:= StrToFloat(Values['Amount']);
+      if FloatRelation(nMon1, nMon2, rtGreater) then
+        nMon1 := nMon2;
+
+      nAVal:= nMon1 / StrToFloat(Values['Price'])
               - StrToFloat(nStr);
       nAVal:= Float2Float(nAVal, cPrecision, False);
       //价格与金额量可用

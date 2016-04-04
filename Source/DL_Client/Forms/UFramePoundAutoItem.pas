@@ -128,7 +128,7 @@ implementation
 uses
   ULibFun, UFormBase, {$IFDEF HR1847}UKRTruckProber,{$ELSE}UMgrTruckProbe,{$ENDIF}
   UMgrRemoteVoice, UMgrVoiceNet, UDataModule, USysBusiness,UBusinessPacker,
-  USysLoger, USysConst, USysDB, UFormInputbox;
+  USysLoger, USysConst, USysDB, UFormInputbox, DateUtils;
 
 const
   cFlag_ON    = 10;
@@ -437,7 +437,23 @@ begin
 
   FInnerData.FPModel := sFlag_PoundPD;
   FUIData := FInnerData;
-  SetUIData(False);
+  SetUIData(False); 
+
+  nInt := SecondsBetween(Now, FUIData.FPData.FDate);
+  if (nInt > 0) and (nInt < FPoundTunnel.FCardInterval) then
+  begin
+    nStr := '磁卡[ %s ]需等待 %d 秒后才能过磅';
+    nStr := Format(nStr, [nCard, FPoundTunnel.FCardInterval - nInt]);
+
+    WriteLog(nStr);
+    //PlayVoice(nStr);
+
+    nStr := Format('磅站[ %s.%s ]: ',[FPoundTunnel.FID,
+            FPoundTunnel.FName]) + nStr;
+    WriteSysLog(nStr);
+    SetUIData(True);
+    Exit;
+  end;
 
   InitSamples;
   //初始化样本

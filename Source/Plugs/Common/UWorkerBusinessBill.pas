@@ -549,6 +549,10 @@ begin
         nTmp := Fields[0].AsString;
       end;
 
+      nInt := Float2PInt(StrToFloat(FListA.Values['L_Value']), 1000, False);
+      nInt := nInt div 50;
+      //吨转千克，50千克为1袋
+
       nStr := MakeSQLByStr([SF('L_Status', sFlag_TruckOut),
               SF('L_InTime', sField_SQLServer_Now, sfVal),
               SF('L_PValue', 1, sfVal),
@@ -557,6 +561,8 @@ begin
               SF('L_MValue', StrToFloat(FListA.Values['Value']) + 1, sfVal),
               SF('L_MDate', sField_SQLServer_Now, sfVal),
               SF('L_MMan', FIn.FBase.FFrom.FUser),
+              SF('L_DaiTotal', nInt, sfVal),
+              SF('L_DaiBuCha', 0, sfVal),
               SF('L_PackerNo', nTmp),
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser),
@@ -1152,7 +1158,7 @@ begin
   end;
 
   nStr := 'Select L_ID,L_ZhiKa,L_CusID,L_CusName,L_Type,L_StockNo,' +
-          'L_StockName,L_Truck,L_Value,L_Price,L_Status,' +
+          'L_StockName,L_Truck,L_Value,L_Price,L_Status,L_PDate,' +
           'L_NextStatus,L_Card,L_IsVIP,L_PValue,L_MValue,L_HYDan From $Bill b ';
   //xxxxx
 
@@ -1213,6 +1219,7 @@ begin
       end;
 
       FPData.FValue := FieldByName('L_PValue').AsFloat;
+      FPData.FDate  := FieldByName('L_PDate').AsDateTime;
       FMData.FValue := FieldByName('L_MValue').AsFloat;
       FSelected := True;
 
