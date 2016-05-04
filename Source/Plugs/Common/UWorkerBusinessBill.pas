@@ -549,7 +549,7 @@ begin
         nTmp := Fields[0].AsString;
       end;
 
-      nInt := Float2PInt(StrToFloat(FListA.Values['L_Value']), 1000, False);
+      nInt := Float2PInt(StrToFloat(FListA.Values['Value']), 1000, False);
       nInt := nInt div 50;
       //吨转千克，50千克为1袋
 
@@ -558,12 +558,16 @@ begin
               SF('L_PValue', 1, sfVal),
               SF('L_PDate', sField_SQLServer_Now, sfVal),
               SF('L_PMan', FIn.FBase.FFrom.FUser),
+              SF('L_PackerNo', nTmp),
               SF('L_MValue', StrToFloat(FListA.Values['Value']) + 1, sfVal),
               SF('L_MDate', sField_SQLServer_Now, sfVal),
               SF('L_MMan', FIn.FBase.FFrom.FUser),
               SF('L_DaiTotal', nInt, sfVal),
               SF('L_DaiBuCha', 0, sfVal),
               SF('L_PackerNo', nTmp),
+              SF('L_DaiNormal', nInt, sfVal),
+              SF('L_DaiTotal', nInt, sfVal),
+              SF('L_DaiBuCha', 0, sfVal),
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser),
               SF('L_OutFact', sField_SQLServer_Now, sfVal),

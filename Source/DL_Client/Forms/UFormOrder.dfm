@@ -1,30 +1,30 @@
 inherited fFormOrder: TfFormOrder
   Left = 451
   Top = 243
-  ClientHeight = 266
-  ClientWidth = 428
+  ClientHeight = 341
+  ClientWidth = 430
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 428
-    Height = 266
+    Width = 430
+    Height = 341
     AutoControlTabOrders = False
     inherited BtnOK: TButton
-      Left = 282
-      Top = 233
+      Left = 284
+      Top = 308
       Caption = #24320#21333
       TabOrder = 4
     end
     inherited BtnExit: TButton
-      Left = 352
-      Top = 233
+      Left = 354
+      Top = 308
       TabOrder = 6
     end
     object EditValue: TcxTextEdit [2]
       Left = 279
-      Top = 199
+      Top = 275
       ParentFont = False
       TabOrder = 3
       Text = '0.00'
@@ -33,7 +33,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditMate: TcxTextEdit [3]
       Left = 81
-      Top = 86
+      Top = 161
       ParentFont = False
       Properties.MaxLength = 15
       Properties.ReadOnly = True
@@ -52,7 +52,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditTruck: TcxButtonEdit [5]
       Left = 81
-      Top = 199
+      Top = 275
       ParentFont = False
       Properties.Buttons = <
         item
@@ -66,7 +66,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditMateID: TcxTextEdit [6]
       Left = 281
-      Top = 86
+      Top = 161
       ParentFont = False
       TabOrder = 9
       Width = 121
@@ -80,7 +80,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditFreeze: TcxTextEdit [8]
       Left = 81
-      Top = 111
+      Top = 186
       Enabled = False
       ParentFont = False
       TabOrder = 11
@@ -89,7 +89,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditRest: TcxTextEdit [9]
       Left = 81
-      Top = 136
+      Top = 211
       Enabled = False
       ParentFont = False
       TabOrder = 12
@@ -98,7 +98,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditFreeTruck: TcxTextEdit [10]
       Left = 281
-      Top = 111
+      Top = 186
       Enabled = False
       ParentFont = False
       TabOrder = 13
@@ -106,7 +106,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditEnd: TcxTextEdit [11]
       Left = 281
-      Top = 136
+      Top = 211
       Enabled = False
       ParentFont = False
       TabOrder = 14

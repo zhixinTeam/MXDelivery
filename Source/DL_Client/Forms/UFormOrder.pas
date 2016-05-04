@@ -223,6 +223,7 @@ end;
 
 function TfFormOrder.OnVerifyCtrl(Sender: TObject; var nHint: string): Boolean;
 var nVal: Double;
+    nStr: String;
 begin
   Result := True;
 
@@ -230,6 +231,18 @@ begin
   begin
     Result := Length(EditTruck.Text) > 2;
     nHint := '车牌号长度应大于2位';
+  end else
+
+  if Sender = EditCYName then
+  begin
+    Result := Length(EditCYName.Text) > 0;
+    nHint := '承运商不能为空';
+    if not Result then Exit;
+
+    nStr := EditCYS.Text;
+    System.Delete(nStr, 1, Length(GetCtrlData(EditCYS)) + 1);
+    Result := EditCYName.Text = nStr;
+    nHint := '承运商编号与名称不对应';
   end else
 
   if Sender = EditValue then

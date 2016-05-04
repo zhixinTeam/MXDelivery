@@ -640,29 +640,26 @@ begin
     Values['ItemType'] := nData;
 
     nStr := FListD.Values[Values['ItemID']];
-    if IsNumber(nStr, True) then
-    begin
-      nVal := StrToFloat(Values['Qty']) - StrToFloat(nStr);
-      //订单量 - 冻结量
-      nVal := Float2Float(nVal, cPrecision, False);
-      //订单量可用
+    nVal := StrToFloatDef(Values['Qty'], 0) - StrToFloatDef(nStr, 0);
+    //订单量 - 冻结量
+    nVal := Float2Float(nVal, cPrecision, False);
+    //订单量可用
 
-      nMon1:= StrToFloat(FListA.Values['Amount']);
-      nMon2:= StrToFloat(Values['Amount']);
-      if FloatRelation(nMon1, nMon2, rtGreater) then
-        nMon1 := nMon2;
+    nMon1:= StrToFloatDef(FListA.Values['Amount'], 0);
+    nMon2:= StrToFloatDef(Values['Amount'], 0);
+    if FloatRelation(nMon1, nMon2, rtGreater) then
+      nMon1 := nMon2;
 
-      nAVal:= nMon1 / StrToFloat(Values['Price'])
-              - StrToFloat(nStr);
-      nAVal:= Float2Float(nAVal, cPrecision, False);
-      //价格与金额量可用
+    nAVal:= nMon1 / StrToFloatDef(Values['Price'], 1)
+            - StrToFloatDef(nStr, 0);
+    nAVal:= Float2Float(nAVal, cPrecision, False);
+    //价格与金额量可用
 
-      if FloatRelation(nVal, nAVal, rtGreater, cPrecision) then
-        nVal := nAVal;
-      //取最小值  
+    if FloatRelation(nVal, nAVal, rtGreater, cPrecision) then
+      nVal := nAVal;
+    //取最小值  
 
-      Values['Qty'] := FloatToStr(nVal);
-    end;
+    Values['Qty'] := FloatToStr(nVal);
 
     FListA.Values['Data' + IntToStr(nIdx)] := PackerEncodeStr(FListB.Text);
     //大卡明细

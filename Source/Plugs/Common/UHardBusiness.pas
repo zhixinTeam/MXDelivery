@@ -955,9 +955,9 @@ var nStr: string;
       end;
     end;
 begin
-  {$IFDEF DEBUG}
+  {.$IFDEF DEBUG}
   WriteNearReaderLog('MakeTruckLadingDai½øÈë.');
-  {$ENDIF}
+  {.$ENDIF}
 
   if IsJSRun then Exit;
   //tunnel is busy
