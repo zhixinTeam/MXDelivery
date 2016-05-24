@@ -483,6 +483,7 @@ end;
 function TWorkerBusinessBills.SaveBills(var nData: string): Boolean;
 var nStr,nSQL,nTmp: string;
     nInt: Integer;
+    nVal: Double;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
@@ -634,13 +635,34 @@ begin
       gDBConnManager.WorkerExec(FDBConn, nSQL);
     end;
 
+    nVal := StrToFloat(FListA.Values['Value']) * StrToFloat(FListA.Values['Price']);
+    nVal := Float2Float(nVal, cPrecision, True);
+    nSQL := 'Update %s Set M_Freeze=M_Freeze+(%.2f), M_Count=M_Count+1 ' +
+            'Where M_ID=''%s''';
+    nSQL := Format(nSQL, [sTable_AX_MoneyInfo, nVal, FListA.Values['CusID']]);
+    nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
+    //同步完成后，更新冻结金额为已发金额
+
+    if nInt < 1 then
+    begin
+      nSQL := MakeSQLByStr([
+        SF('M_ID', FListA.Values['CusID']),
+        SF('M_CusID', FListA.Values['CusID']),
+        SF('M_CusName', FListA.Values['CusName']),
+        SF('M_Freeze', nVal, sfVal),
+        SF('M_Count', '0', sfVal),
+        SF('M_HasDone', '0', sfVal)
+        ], sTable_AX_MoneyInfo, '', True);
+      gDBConnManager.WorkerExec(FDBConn, nSQL);
+    end;
+
     nSQL := 'Update %s Set B_HasUse=B_HasUse+(%s),B_LastDate=%s ' +
             'Where B_Stock=''%s'' and B_Batcode=''%s''';
     nSQL := Format(nSQL, [sTable_Batcode, FListA.Values['Value'],
             sField_SQLServer_Now, FListA.Values['StockNO'],
             FListA.Values['HYDan']]);
     gDBConnManager.WorkerExec(FDBConn, nSQL); //更新批次号使用量
-    
+
     FDBConn.FConn.CommitTrans;
     Result := True;
   except
@@ -757,14 +779,14 @@ end;
 function TWorkerBusinessBills.DeleteBill(var nData: string): Boolean;
 var nIdx: Integer;
     nHasOut: Boolean;
-    nVal: Double;
-    nStr,nP,nRID,nBill,nZK,nSN,nHY: string;
+    nVal, nPrice, nMon: Double;
+    nStr,nP,nRID,nBill,nZK,nSN,nHY,nCID: string;
 begin
   Result := False;
   //init
 
-  nStr := 'Select L_ZhiKa,L_StockNo,L_Value,L_OutFact,L_HYDan From %s ' +
-          'Where L_ID=''%s''';
+  nStr := 'Select L_ZhiKa,L_StockNo,L_Value,L_Price,L_OutFact,L_HYDan,L_CusID '+
+          'From %s Where L_ID=''%s''';
   nStr := Format(nStr, [sTable_Bill, FIn.FData]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -790,9 +812,11 @@ begin
     nZK  := FieldByName('L_ZhiKa').AsString;
     nSN  := FieldByName('L_StockNo').AsString;
     nHY  := FieldByName('L_HYDan').AsString;
+    nCID := FieldByName('L_CusID').AsString;
     nVal := FieldByName('L_Value').AsFloat;
+    nPrice := FieldByName('L_Price').AsFloat;
   end;
-                   
+
   nStr := 'Select R_ID,T_HKBills,T_Bill From %s ' +
           'Where T_HKBills Like ''%%%s%%''';
   nStr := Format(nStr, [sTable_ZTTrucks, FIn.FData]);
@@ -854,6 +878,16 @@ begin
       nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nZK, nSN]);
       gDBConnManager.WorkerExec(FDBConn, nStr);
       //释放发货量
+
+      nMon := nPrice * nVal;
+      nMon := Float2Float(nMon, cPrecision, True);
+      //发货金额
+
+      nStr := 'Update %s Set M_HasDone=M_HasDone-(%.2f) ' +
+              'Where M_ID=''%s''';
+      nStr := Format(nStr, [sTable_AX_MoneyInfo, nMon, nCID]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+      //释放发货金额
     end else
     begin
       nStr := 'Update %s Set C_Freeze=C_Freeze-(%.2f) ' +
@@ -861,8 +895,18 @@ begin
       nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nZK, nSN]);
       gDBConnManager.WorkerExec(FDBConn, nStr);
       //释放冻结量
+
+      nMon := nPrice * nVal;
+      nMon := Float2Float(nMon, cPrecision, True);
+      //冻结金额
+
+      nStr := 'Update %s Set M_Freeze=M_Freeze-(%.2f),M_Count=M_Count-1 ' +
+              'Where M_ID=''%s''';
+      nStr := Format(nStr, [sTable_AX_MoneyInfo, nMon, nCID]);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+      //释放冻结金额
     end;
-    
+
     //--------------------------------------------------------------------------
     nStr := Format('Select * From %s Where 1<>1', [sTable_Bill]);
     //only for fields
@@ -1539,6 +1583,13 @@ begin
       nSQL := Format(nSQL, [sTable_AX_CardInfo, f, FZhiKa, FStockNo]);
       FListA.Add(nSQL); //更新大卡冻结量
 
+      f := f * FPrice;
+      f := Float2Float(f, cPrecision, True);
+      nSQL := 'Update %s Set M_Freeze=M_Freeze+(%.2f) ' +
+              'Where M_ID=''%s''';
+      nSQL := Format(nSQL, [sTable_AX_MoneyInfo, f, FCusID]);
+      FListA.Add(nSQL); //更新客户冻结资金
+
       nSQL := 'Update %s Set B_HasUse=B_HasUse+(%.2f),B_LastDate=%s ' +
               'Where B_Stock=''%s'' and B_Batcode=''%s''';
       nSQL := Format(nSQL, [sTable_Batcode, f,
@@ -1680,7 +1731,14 @@ begin
       {nSQL := 'Update %s Set C_HasDone=C_HasDone+(%.2f),C_Freeze=C_Freeze-(%.2f)' +
               'Where C_ID=''%s'' And C_Stock=''%s''';
       nSQL := Format(nSQL, [sTable_AX_CardInfo, FValue, FValue, FZhiKa, FStockNo]);
-      FListA.Add(nSQL); //更新订单}
+      FListA.Add(nSQL); //更新订单
+
+      nVal := FValue * FPrice;
+      nVal := Float2Float(nVal, cPrecision, True);
+      nSQL := 'Update %s Set M_HasDone=M_HasDone+(%.2f),M_Freeze=M_Freeze-(%.2f)' +
+              'Where M_ID=''%s''';
+      nSQL := Format(nSQL, [sTable_AX_MoneyInfo, nVal, nVal, FCusID]);
+      FListA.Add(nSQL); //更新资金}
     end;
 
     nSQL := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';

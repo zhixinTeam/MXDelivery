@@ -52,6 +52,8 @@ type
     //获取物料类型
     procedure LoadCardFreezeList(const nCard: string);
     //载入冻结项
+    function LoadMoneyFreeze(const nCusID: string): Double;
+    //获取客户冻结金额
     procedure GetInOutData(var nIn,nOut: PBWDataBase); override;
     function DoAXWork(var nData: string): Boolean; override;
   public
@@ -574,11 +576,23 @@ begin
   end;
 end;
 
+function TAXWorkerReadSalesInfo.LoadMoneyFreeze(const nCusID: string): Double;
+var nStr: string;
+begin
+  nStr := 'Select M_Freeze From %s Where M_ID=''%s''';
+  nStr := Format(nStr, [sTable_AX_MoneyInfo, nCusID]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+       Result := FieldByName('M_Freeze').AsFloat
+  else Result := 0;
+end;
+
 function TAXWorkerReadSalesInfo.DoAXWork(var nData: string): Boolean;
 var nStr: string;
     nIdx: Integer;
     nNode: TXmlNode;
-    nVal, nAVal, nMon1, nMon2: Double;
+    nVal, nAVal, nMon1, nMon2, nFreeze: Double;
 begin
   Result := False;
   BuildDefaultXMLPack;
@@ -645,8 +659,13 @@ begin
     nVal := Float2Float(nVal, cPrecision, False);
     //订单量可用
 
-    nMon1:= StrToFloatDef(FListA.Values['Amount'], 0);
+    nFreeze := LoadMoneyFreeze(FListB.Values['CustAccount']);
+    if nFreeze < 0 then nFreeze := 0;
+    nMon1:= StrToFloatDef(FListA.Values['Amount'], 0) - nFreeze;
+    //账户可用余额
+
     nMon2:= StrToFloatDef(Values['Amount'], 0);
+    //该品种可用金额
     if FloatRelation(nMon1, nMon2, rtGreater) then
       nMon1 := nMon2;
 
@@ -819,17 +838,17 @@ begin
 end;
 
 function TAXWorkerSyncBill.DoAfterDBWork(var nData: string; nResult: Boolean): Boolean;
-var nStr, nZID, nSID: string;
+var nStr, nZID, nSID, nCID: string;
+    nVal, nPrice, nMon: Double;
     nHasSync: Boolean;
-    nVal: Double;
 begin
   Result := inherited DoAfterDBWork(nData, nResult);
   //parent default
 
   if nResult then //同步成功
   begin
-    nStr := 'Select L_ZhiKa, L_StockNo, L_Value, L_SyncDate From %s ' +
-            'Where L_ID=''%s''';
+    nStr := 'Select L_ZhiKa, L_StockNo, L_Value, L_Price, L_CusID, L_SyncDate ' +
+            'From %s Where L_ID=''%s''';
     nStr := Format(nStr, [sTable_Bill, FIn.FData]);
 
     with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -843,7 +862,9 @@ begin
 
       nVal := FieldByName('L_Value').AsFloat;
       nZID := FieldByName('L_ZhiKa').AsString;
+      nCID := FieldByName('L_CusID').AsString;
       nSID := FieldByName('L_StockNo').AsString;
+      nPrice := FieldByName('L_Price').AsFloat;
       nHasSync := FieldByName('L_SyncDate').AsString <> '';
     end;
 
@@ -855,6 +876,19 @@ begin
                 'C_Freeze=C_Freeze-(%.2f) Where C_ID=''%s'' And C_Stock=''%s''';
         nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nVal, nZID, nSID]);
         gDBConnManager.WorkerExec(FDBConn, nStr); //更新订单
+
+        nMon := nPrice * nVal;
+        nMon := Float2Float(nMon, cPrecision, True);
+        nStr := 'Update %s Set M_HasDone=M_HasDone+(%.2f),M_Count=M_Count-1,' +
+                'M_Freeze=M_Freeze-(%.2f) Where M_ID=''%s''';
+        nStr := Format(nStr, [sTable_AX_MoneyInfo, nMon, nMon, nCID]);
+        gDBConnManager.WorkerExec(FDBConn, nStr);
+        //更新冻结
+
+        nStr := 'Update %s M_Freeze=0 Where M_ID=''%s'' And ' +
+                '(M_Count<=0 or M_Freeze<0)';
+        nStr := Format(nStr, [sTable_AX_MoneyInfo, nCID]);
+        //矫正冻结量:厂内无该客户的车辆，或者帐户冻结金额小于0
       end;
       //未同步成功的，需要更新冻结量
 

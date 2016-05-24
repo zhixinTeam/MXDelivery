@@ -274,9 +274,10 @@ ResourceString
   sTable_PoundBak     = 'Sys_PoundBak';              //过磅作废
   sTable_PoundErr     = 'Sys_PoundErr';              //过磅作废
   sTable_Picture      = 'Sys_Picture';               //存放图片
-  
+
   sTable_AX_CardInfo  = 'S_AXCardInfo';              //销售卡片
-  sTable_AX_OrderInfo = 'P_AXOrderInfo';             //供应订单
+  sTable_AX_MoneyInfo = 'S_AXMoneyInfo';             //销售资金
+  sTable_AX_OrderInfo = 'P_AXOrderInfo';             //供应订单 
 
   {*新建表*}
   sSQL_NewSysDict = 'Create Table $Table(D_ID $Inc, D_Name varChar(15),' +
@@ -948,6 +949,20 @@ ResourceString
    *.C_Freeze: 冻结量
    *.C_HasDone: 完成量
   -----------------------------------------------------------------------------}
+
+  sSQL_NewAXMoney = 'Create Table $Table(R_ID $Inc, M_ID varChar(20),' +
+       'M_CusID varChar(20), M_CusName varChar(150), M_Count Integer Default 0,' +
+       'M_Freeze $Float, M_HasDone $Float)';
+  {-----------------------------------------------------------------------------
+   AX金额表: Money
+   *.R_ID: 记录编号
+   *.M_ID: 记录编号
+   *.M_CusID: 客户编号
+   *.M_CusName: 客户名称
+   *.M_Count: 厂内车辆
+   *.M_Freeze: 冻结量
+   *.M_HasDone: 完成量
+  -----------------------------------------------------------------------------}
   
 //------------------------------------------------------------------------------
 // 数据查询
@@ -1083,6 +1098,7 @@ begin
 
   AddSysTableItem(sTable_AX_CardInfo, sSQL_NewAXCard);
   AddSysTableItem(sTable_AX_OrderInfo, sSQL_NewAXCard);
+  AddSysTableItem(sTable_AX_MoneyInfo, sSQL_NewAXMoney);
 
   AddSysTableItem(sTable_Provider, ssql_NewProvider);
   AddSysTableItem(sTable_Materails, sSQL_NewMaterails);

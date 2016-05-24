@@ -622,6 +622,17 @@ begin
     nNet := GetTruckEmptyValue(FUIData.FTruck);
     nVal := nNet * 1000 - FUIData.FPData.FValue * 1000;
 
+    if nNet <= 0 then
+    begin
+      nStr := '车辆[%s]首次入厂,请通知司磅员验收车厢';
+      nStr := Format(nStr, [FUIData.FTruck]);
+      PlayVoice(nStr);
+
+      nError := '车辆[%s]首次入厂,请通知司磅员验收车厢';
+      nError := Format(nError, [FUIData.FTruck]);
+      FHasErr := True;
+    end;
+
     if (nNet > 0) and (Abs(nVal) > gSysParam.FPoundSanP) then
     begin
       nStr := '车辆[%s]实时皮重误差较大,请通知司机检验车厢';
@@ -631,8 +642,7 @@ begin
       nError := '车辆[ %s ]实时皮重误差较大,详情如下:' + #13#10#13#10 +
                 '※.实时皮重: %.2f吨' + #13#10 +
                 '※.历史皮重: %.2f吨' + #13#10 +
-                '※.误差量: %.2f公斤' + #13#10#13#10 +
-                '是否继续保存?';
+                '※.误差量: %.2f公斤';
       nError := Format(nError, [FUIData.FTruck, FUIData.FPData.FValue,
                 nNet, nVal]);
       FHasErr := True;
