@@ -100,6 +100,8 @@ function SetTruckRFIDCard(nTruck: string; var nRFIDCard: string;
 //设置车辆磁卡
 function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
 //短倒磁卡办理
+function GetAXBillStatus(const nBill: string): Boolean;
+//获取AX系统交货单状态
 
 function GetLadingBills(const nCard,nPost: string;
  var nBills: TLadingBillItems): Boolean;
@@ -1053,6 +1055,15 @@ function LogoutBillCard(const nCard: string): Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
   Result := CallBusinessSaleBill(cBC_LogoffCard, nCard, '', @nOut);
+end;
+
+//Date: 2016/6/23
+//Parm: 交货单编号
+//Desc: 获取AX系统交货单状态
+function GetAXBillStatus(const nBill: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessSaleBill(cBC_AXGetBillStatus, nBill, '', @nOut);
 end;
 
 //Date: 2014-09-17

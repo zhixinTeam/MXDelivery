@@ -1,30 +1,30 @@
 inherited fFormOrder: TfFormOrder
   Left = 451
   Top = 243
-  ClientHeight = 341
-  ClientWidth = 430
+  ClientHeight = 380
+  ClientWidth = 425
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 430
-    Height = 341
+    Width = 425
+    Height = 380
     AutoControlTabOrders = False
     inherited BtnOK: TButton
-      Left = 284
-      Top = 308
+      Left = 279
+      Top = 347
       Caption = #24320#21333
       TabOrder = 4
     end
     inherited BtnExit: TButton
-      Left = 354
-      Top = 308
+      Left = 349
+      Top = 347
       TabOrder = 6
     end
     object EditValue: TcxTextEdit [2]
       Left = 279
-      Top = 275
+      Top = 311
       ParentFont = False
       TabOrder = 3
       Text = '0.00'
@@ -52,7 +52,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditTruck: TcxButtonEdit [5]
       Left = 81
-      Top = 275
+      Top = 311
       ParentFont = False
       Properties.Buttons = <
         item
@@ -143,6 +143,24 @@ inherited fFormOrder: TfFormOrder
       TabOrder = 18
       Width = 121
     end
+    object EditPValue: TcxTextEdit [16]
+      Left = 81
+      Top = 236
+      ParentFont = False
+      TabOrder = 19
+      Text = '0.00'
+      Width = 320
+    end
+    object CKBuDan: TcxCheckBox [17]
+      Left = 11
+      Top = 347
+      Caption = #34917#21333
+      ParentFont = False
+      TabOrder = 20
+      Transparent = True
+      OnClick = CKBuDanClick
+      Width = 121
+    end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxLayout1Item4: TdxLayoutItem
@@ -228,6 +246,11 @@ inherited fFormOrder: TfFormOrder
             end
           end
         end
+        object dxLayout1Item15: TdxLayoutItem
+          Caption = #36710#36742#30382#37325':'
+          Control = EditPValue
+          ControlOptions.ShowBorder = False
+        end
       end
       object dxGroup2: TdxLayoutGroup [1]
         AutoAligns = [aaHorizontal]
@@ -244,6 +267,14 @@ inherited fFormOrder: TfFormOrder
           AlignHorz = ahClient
           Caption = #21150#29702#21544#25968':'
           Control = EditValue
+          ControlOptions.ShowBorder = False
+        end
+      end
+      inherited dxLayout1Group1: TdxLayoutGroup
+        object dxLayout1Item16: TdxLayoutItem [0]
+          Caption = 'cxCheckBox1'
+          ShowCaption = False
+          Control = CKBuDan
           ControlOptions.ShowBorder = False
         end
       end

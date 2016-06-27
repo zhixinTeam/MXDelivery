@@ -237,7 +237,10 @@ var nStr: string;
     nOut: TWorkerBusinessCommand;
 begin
   nStr := 'Select L_ID From %s ' +
-          'Where L_SyncDate Is Null And L_SyncNum<3 And L_OutFact Is Not null';
+          'Where L_SyncDate Is Null And L_OutFact Is Not null ' +
+          ' And ((L_SyncNum<3) ' +
+          '       or (CONVERT(varchar(12),getdate(),105) <> ' +
+          '           CONVERT(varchar(12),L_OutFact,105)))';
   nStr := Format(nStr, [sTable_Bill]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do

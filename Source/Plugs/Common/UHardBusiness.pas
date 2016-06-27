@@ -24,6 +24,8 @@ procedure WhenBusinessMITSharedDataIn(const nData: string);
 //业务中间件共享数据
 procedure WhenSaveJS(const nTunnel: PMultiJSTunnel);
 //保存计数结果
+procedure AXVerifyBill(const nTruck: PTruckItem);
+//校验AX系统交货单有效性
 
 implementation
 
@@ -1324,5 +1326,31 @@ begin
     nList.Free;
   end;
 end;
+
+procedure AXVerifyBill(const nTruck: PTruckItem);
+var nOut: TWorkerBusinessCommand;
+    nList: TStrings;
+    nIdx: Integer;
+    nStr: string;
+begin
+  if not Assigned(nTruck) then Exit;
+
+  nList := TStringList.Create;
+  try
+    SplitStr(nTruck.FHKBills, nList, 0, '.');
+    //交货单解析
+
+    for nIdx := 0 to nList.Count - 1 do
+    if not CallBusinessSaleBill(cBC_AXGetBillStatus, nList[nIdx], '', @nOut) then
+    begin
+      nStr := '交货单[ %s ]在AX系统中异常[ %s ]';
+      nStr := Format(nStr, [nList[nIdx], nOut.FBase.FErrDesc]);
+      WriteHardHelperLog(nStr);
+    end;
+    
+  finally
+    FreeAndNil(nList);
+  end;
+end;  
 
 end.

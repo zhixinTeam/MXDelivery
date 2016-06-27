@@ -40,6 +40,12 @@ type
     EditLine: TcxComboBox;
     Check1: TcxCheckBox;
     dxLayout1Item13: TdxLayoutItem;
+    CKBuDan: TcxCheckBox;
+    dxLayout1Item14: TdxLayoutItem;
+    EditPValue: TcxTextEdit;
+    dxLayout1Item15: TdxLayoutItem;
+    EditValue: TcxTextEdit;
+    dxLayout1Item16: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -47,6 +53,7 @@ type
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditCusIDPropertiesEditValueChanged(Sender: TObject);
+    procedure CKBuDanClick(Sender: TObject);
   protected
     { Protected declarations }
     FListA: TStrings;
@@ -75,6 +82,12 @@ begin
   with TfFormWaiXie.Create(Application) do
   try
     Caption := '外协入厂单';
+
+    CKBuDan.Visible := gSysParam.FIsAdmin;
+    dxLayout1Item15.Visible := False;
+    dxLayout1Item16.Visible := False;
+    //管理员才允许补单
+
     InitFormData;
     ActiveControl := EditTruck;
     
@@ -284,6 +297,12 @@ begin
          nID := sFlag_Yes
     else nID := sFlag_No;
     Values['OutXH'] := nID;
+
+    if CKBuDan.Visible and CKBuDan.Checked then
+         Values['BuDan'] := sFlag_Yes
+    else Values['BuDan'] := sFlag_No;
+    Values['PValue'] := Trim(EditPValue.Text);
+    Values['Value']  := Trim(EditValue.Text);
   end;
 
   nID := SaveWaiXie(PackerEncodeStr(FListA.Text));
@@ -292,6 +311,13 @@ begin
 
   ModalResult := mrOK;
   ShowMsg('外协订单保存成功', sHint);
+end;
+
+procedure TfFormWaiXie.CKBuDanClick(Sender: TObject);
+begin
+  inherited;
+  dxLayout1Item15.Visible := CKBuDan.Checked;
+  dxLayout1Item16.Visible := CKBuDan.Checked;
 end;
 
 initialization

@@ -10,6 +10,7 @@ Drop Table dbo.P_WaiXieInfo
 Drop Table dbo.S_AXCardInfo
 Drop Table dbo.S_Batcode
 Drop Table dbo.S_Bill
+Drop Table dbo.S_Card
 Drop Table dbo.S_BillBak
 Drop Table dbo.S_StockMatch
 Drop Table dbo.S_Truck

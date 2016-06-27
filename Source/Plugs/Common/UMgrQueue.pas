@@ -74,6 +74,10 @@ type
     FName       : string;      //物料名
   end;
 
+  TVerifyBillProce = procedure (const nTruck: PTruckItem);
+  TVerifyBillEvent = procedure (const nTruck: PTruckItem) of Object;
+  //事件相关;验证交货单是否有效
+
   TTruckQueueManager = class;
   TTruckQueueDBReader = class(TThread)
   private
@@ -149,6 +153,9 @@ type
     //SQL语句
     FLastQueueVoice: string;
     //队列内容
+    FProce: TVerifyBillProce;
+    FEvent: TVerifyBillEvent;
+    //事件相关
   protected
     procedure FreeLine(nItem: PLineItem; nIdx: Integer = -1);
     procedure ClearLines(const nFree: Boolean);
@@ -194,8 +201,11 @@ type
     //品种分组映射
     property Lines: TList read FLines;
     property LineChanged: Int64 read FLineChanged;
-    property SyncLock: TCriticalSection read FSyncLock;
+    property SyncLock: TCriticalSection read FSyncLock;    
     //属性相关
+    property OnProce: TVerifyBillProce read FProce write FProce;
+    property OnEvent: TVerifyBillEvent read FEvent write FEvent;
+    //事件相关
   end;
 
 var
@@ -1283,6 +1293,14 @@ begin
     nStr := Format(nStr, [sTable_ZTTrucks, sField_SQLServer_Now, nTruck.FTruck]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
   end;
+
+  if Assigned(gTruckQueueManager.OnEvent) then
+    gTruckQueueManager.OnEvent(nTruck);
+  //xxxxx
+
+  if Assigned(gTruckQueueManager.OnProce) then
+    gTruckQueueManager.OnProce(nTruck);
+  //xxxxx
 
   {$IFDEF DEBUG}
   WriteLog(Format('车辆[ %s ]进[ %s ]队.', [nTruck.FTruck, nLine.FName]));

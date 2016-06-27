@@ -11,7 +11,8 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   UFormNormal, cxGraphics, cxControls, cxLookAndFeels,
   cxLookAndFeelPainters, cxContainer, cxEdit, cxMaskEdit, cxButtonEdit,
-  cxTextEdit, dxLayoutControl, StdCtrls, cxDropDownEdit, cxLabel;
+  cxTextEdit, dxLayoutControl, StdCtrls, cxDropDownEdit, cxLabel,
+  cxCheckBox;
 
 type
   TfFormOrder = class(TfFormNormal)
@@ -48,6 +49,10 @@ type
     EditLine: TcxTextEdit;
     dxLayout1Item14: TdxLayoutItem;
     dxLayout1Group5: TdxLayoutGroup;
+    EditPValue: TcxTextEdit;
+    dxLayout1Item15: TdxLayoutItem;
+    CKBuDan: TcxCheckBox;
+    dxLayout1Item16: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -55,6 +60,7 @@ type
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditCYSPropertiesChange(Sender: TObject);
+    procedure CKBuDanClick(Sender: TObject);
   protected
     { Protected declarations }
     FCardData, FListA: TStrings;
@@ -105,6 +111,8 @@ begin
     Caption := '开采购入厂单';
     ActiveControl := EditTruck;
 
+    CKBuDan.Visible:= gSysParam.FIsAdmin;
+    dxLayout1Item15.Visible := False;
     FCardData.Text := PackerDecodeStr(nStr);
 
     nFreeV := FCardData.Values['SQ_ProID'];
@@ -282,11 +290,20 @@ begin
     Values['StockNO']       := FCardData.Values['SQ_StockNo'];
     Values['StockName']     := FCardData.Values['SQ_StockName'];
     Values['Value']         := Trim(EditValue.Text);
+
+    if CKBuDan.Visible and CKBuDan.Checked then
+         Values['BuDan']    := sFlag_Yes
+    else Values['BuDan']    := sFlag_No;
+
+    Values['PValue']   := Trim(EditPValue.Text);
   end;
 
   nOrder := SaveOrder(PackerEncodeStr(FListA.Text));
   if nOrder='' then Exit;
-  SetOrderCard(nOrder, FListA.Values['Truck']);
+
+  if not CKBuDan.Checked then
+    SetOrderCard(nOrder, FListA.Values['Truck']);
+  //非补单则办卡  
 
   ModalResult := mrOK;
   ShowMsg('采购入厂单保存成功', sHint);
@@ -305,6 +322,12 @@ begin
   else if Sender = EditLineID then
     EditLine.Text := nStr; 
   //xxxxx  
+end;
+
+procedure TfFormOrder.CKBuDanClick(Sender: TObject);
+begin
+  inherited;
+  dxLayout1Item15.Visible := CKBuDan.Checked;
 end;
 
 initialization

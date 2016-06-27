@@ -49,6 +49,7 @@ type
     dxlytmLayout1Item11: TdxLayoutItem;
     EditYTCard: TcxButtonEdit;
     N3: TMenuItem;
+    AX1: TMenuItem;
     procedure EditIDPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure BtnDelClick(Sender: TObject);
@@ -61,6 +62,7 @@ type
     procedure N7Click(Sender: TObject);
     procedure CheckDeleteClick(Sender: TObject);
     procedure N3Click(Sender: TObject);
+    procedure AX1Click(Sender: TObject);
   protected
     FStart,FEnd: TDate;
     //时间区间
@@ -329,6 +331,18 @@ begin
 
     nStr := SQLQuery.FieldByName('L_ID').AsString;
     PrintHeGeReport(nStr, False);
+  end;
+end;
+
+procedure TfFrameBill.AX1Click(Sender: TObject);
+var nStr: string;
+begin
+  if cxView1.DataController.GetSelectedCount > 0 then
+  begin
+    nStr := SQLQuery.FieldByName('L_ID').AsString;
+    if GetAXBillStatus(nStr) then
+         ShowMsg('交货单当前可用', sHint)
+    else ShowMsg('交货单已失效', sHint);
   end;
 end;
 

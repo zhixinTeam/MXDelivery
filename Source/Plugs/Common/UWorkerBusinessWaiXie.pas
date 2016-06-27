@@ -172,6 +172,7 @@ end;
 //Desc: 生成外协单
 function TWorkerBusinessWaiXie.SaveWaiXie(var nData: string): Boolean;
 var nStr: string;
+    nPVal, nMVal, nNet: Double;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
@@ -205,29 +206,65 @@ begin
   FOut.FData := nOut.FData;
   //id
 
-  with FListA do
-  begin
-    nStr := MakeSQLByStr([SF('W_ID', nOut.FData),
-            SF('W_Truck', Values['Truck']),
-            SF('W_ProID', Values['CusID']),
-            SF('W_ProName', Values['CusName']),
-            SF('W_ProPY', GetPinYinOfStr(Values['CusName'])),
-            SF('W_TransID', Values['Sender']),
-            SF('W_TransName', Values['SenderName']),
-            SF('W_TransPY', GetPinYinOfStr(Values['SenderName'])),
-            SF('W_ProductLine', Values['ProductLine']),
-            SF('W_OutXH', Values['OutXH']),
-            SF('W_StockNo', Values['Stock']),
-            SF('W_StockName', Values['StockName']),
+  //----------------------------------------------------------------------------
+  FDBConn.FConn.BeginTrans;
+  try
+    with FListA do
+    begin
+      nStr := MakeSQLByStr([SF('W_ID', nOut.FData),
+              SF('W_Truck', Values['Truck']),
+              SF('W_ProID', Values['CusID']),
+              SF('W_ProName', Values['CusName']),
+              SF('W_ProPY', GetPinYinOfStr(Values['CusName'])),
+              SF('W_TransID', Values['Sender']),
+              SF('W_TransName', Values['SenderName']),
+              SF('W_TransPY', GetPinYinOfStr(Values['SenderName'])),
+              SF('W_ProductLine', Values['ProductLine']),
+              SF('W_OutXH', Values['OutXH']),
+              SF('W_StockNo', Values['Stock']),
+              SF('W_StockName', Values['StockName']),
 
-            SF('W_Status', sFlag_BillNew),
-            SF('W_Man', FIn.FBase.FFrom.FUser),
-            SF('W_Date', sField_SQLServer_Now, sfVal)
-            ], sTable_WaiXieInfo, '', True);
-    //xxxxx
+              SF('W_Status', sFlag_BillNew),
+              SF('W_Man', FIn.FBase.FFrom.FUser),
+              SF('W_Date', sField_SQLServer_Now, sfVal)
+              ], sTable_WaiXieInfo, '', True);
+      //xxxxx
 
-    gDBConnManager.WorkerExec(FDBConn, nStr);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+    end;
+
+    if FListA.Values['BuDan'] = sFlag_Yes then //补单
+    begin
+      nNet  := StrToFloatDef(FListA.Values['Value'], 0);
+      nPVal := StrToFloatDef(FListA.Values['PValue'], 0);
+      nMVal := nPVal + nNet;
+
+      nStr := MakeSQLByStr([SF('W_Status', sFlag_TruckOut),
+              SF('W_NextStatus', ''),
+              SF('W_InTime1', sField_SQLServer_Now, sfVal),
+              SF('W_InMan1', FIn.FBase.FFrom.FUser),
+              SF('W_InTime2', sField_SQLServer_Now, sfVal),
+              SF('W_InMan2', FIn.FBase.FFrom.FUser),
+              SF('W_PValue', nPVal, sfVal),
+              SF('W_PDate', sField_SQLServer_Now, sfVal),
+              SF('W_PMan', FIn.FBase.FFrom.FUser),
+              SF('W_MValue', nMVal, sfVal),
+              SF('W_MDate', sField_SQLServer_Now, sfVal),
+              SF('W_MMan', FIn.FBase.FFrom.FUser),
+              SF('W_OutFact1', sField_SQLServer_Now, sfVal),
+              SF('W_OutMan1', FIn.FBase.FFrom.FUser),
+              SF('W_OutFact2', sField_SQLServer_Now, sfVal),
+              SF('W_OutMan2', FIn.FBase.FFrom.FUser),
+              SF('W_Card', '')
+              ], sTable_WaiXieInfo, SF('W_ID', nOut.FData), False);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+    end;
+
+    FDBConn.FConn.CommitTrans;
     Result := True;
+  except
+    FDBConn.FConn.RollbackTrans;
+    raise;
   end;
 end;
 

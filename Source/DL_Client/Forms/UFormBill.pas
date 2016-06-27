@@ -208,8 +208,12 @@ begin
       Properties.Items.Add(FListA.Values['ItemID'] + FListA.Values['ItemName']);
     end;
 
+    {$IFDEF DEBUG}
     if nNum > 0 then
       ItemIndex := 0;
+    {$ELSE}
+    ItemIndex := -1;
+    {$ENDIF}
     ListStock.SelStart := 1;
   end;
 end;

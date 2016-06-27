@@ -693,7 +693,7 @@ begin
 
   if not gProberManager.IsTunnelOK(FPoundTunnel.FProber) then
   begin
-    ShowMsg('车辆未站稳,请稍后', sHint);
+    ShowMsg('后车压红外线', sHint);
     Exit;
   end;
 
@@ -1154,7 +1154,7 @@ var nBool: Boolean;
 begin
   if not gProberManager.IsTunnelOK(FPoundTunnel.FProber) then
   begin
-    ShowMsg('车辆未站稳,请稍后', sHint);
+    ShowMsg('后车压红外线', sHint);
     Exit;
   end;
 

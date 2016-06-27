@@ -78,6 +78,8 @@ type
     //拣配指定交货单
     function AXSyncBill(var nData: string): Boolean;
     //同步单据到AX
+    function AXGetBillStatus(var nData: string): Boolean;
+    //获取AX系统中交货单状态
   public
     constructor Create; override;
     destructor destroy; override;
@@ -150,6 +152,7 @@ begin
    cBC_GetPostBills        : Result := GetPostBillItems(nData);
    cBC_SavePostBills       : Result := SavePostBillItems(nData);
    cBC_AXSyncBill          : Result := AXSyncBill(nData);
+   cBC_AXGetBillStatus     : Result := AXGetBillStatus(nData);
    else
     begin
       Result := False;
@@ -358,6 +361,32 @@ begin
     end;
   end;
 
+  {$IFDEF BTMX}
+  if FListA.Values['Type'] = sFlag_San then
+  begin
+    nStr := 'Select T_Card, T_CardUse From %s Where T_Truck=''%s''';
+    nStr := Format(nStr, [sTable_Truck, nTruck]);
+
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+    begin
+      if FieldByName('T_Card').AsString = '' then
+      begin
+        nData := '散装车辆[ %s ]未办理电子标签,无法开单.';
+        nData := Format(nData, [nTruck]);
+        Exit;
+      end;
+
+      if FieldByName('T_CardUse').AsString = sFlag_No then
+      begin
+        nData := '散装车辆[ %s ]电子标签已停用,无法开单.';
+        nData := Format(nData, [nTruck]);
+        Exit;
+      end;
+    end;
+  end;
+  {$ENDIF}
+
   //----------------------------------------------------------------------------
   SetLength(FStockItems, 0);
   SetLength(FMatchItems, 0);
@@ -483,7 +512,6 @@ end;
 function TWorkerBusinessBills.SaveBills(var nData: string): Boolean;
 var nStr,nSQL,nTmp: string;
     nInt: Integer;
-    nVal: Double;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
@@ -528,6 +556,7 @@ begin
             SF('L_IsVIP', FListA.Values['IsVIP']),
             SF('L_Seal', FListA.Values['Seal']),
             SF('L_HYDan', FListA.Values['HYDan']),
+            SF('L_AXStatus', sFlag_Yes),
             SF('L_Man', FIn.FBase.FFrom.FUser),
             SF('L_Date', sField_SQLServer_Now, sfVal)
             ], sTable_Bill, '', True);
@@ -615,53 +644,19 @@ begin
       end;
     end;
 
-    nStr := 'Update %s Set C_Freeze=C_Freeze+%.2f ' +
-            'Where C_ID=''%s'' And C_Stock=''%s''';
-    nStr := Format(nStr, [sTable_AX_CardInfo,
-            StrToFloat(FListA.Values['Value']),
-            FListA.Values['Record'], FListA.Values['StockNO']]);
-    nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
-    //同步完成后，更新冻结量为已发量
-
-    if nInt < 1 then
-    begin
-      nSQL := MakeSQLByStr([
-        SF('C_ID', FListA.Values['Record']),
-        SF('C_Card', FListA.Values['ZhiKa']),
-        SF('C_Stock', FListA.Values['StockNO']),
-        SF('C_Freeze', FListA.Values['Value'], sfVal),
-        SF('C_HasDone', '0', sfVal)
-        ], sTable_AX_CardInfo, '', True);
-      gDBConnManager.WorkerExec(FDBConn, nSQL);
-    end;
-
-    nVal := StrToFloat(FListA.Values['Value']) * StrToFloat(FListA.Values['Price']);
-    nVal := Float2Float(nVal, cPrecision, True);
-    nSQL := 'Update %s Set M_Freeze=M_Freeze+(%.2f), M_Count=M_Count+1 ' +
-            'Where M_ID=''%s''';
-    nSQL := Format(nSQL, [sTable_AX_MoneyInfo, nVal, FListA.Values['CusID']]);
-    nInt := gDBConnManager.WorkerExec(FDBConn, nStr);
-    //同步完成后，更新冻结金额为已发金额
-
-    if nInt < 1 then
-    begin
-      nSQL := MakeSQLByStr([
-        SF('M_ID', FListA.Values['CusID']),
-        SF('M_CusID', FListA.Values['CusID']),
-        SF('M_CusName', FListA.Values['CusName']),
-        SF('M_Freeze', nVal, sfVal),
-        SF('M_Count', '0', sfVal),
-        SF('M_HasDone', '0', sfVal)
-        ], sTable_AX_MoneyInfo, '', True);
-      gDBConnManager.WorkerExec(FDBConn, nSQL);
-    end;
-
     nSQL := 'Update %s Set B_HasUse=B_HasUse+(%s),B_LastDate=%s ' +
             'Where B_Stock=''%s'' and B_Batcode=''%s''';
     nSQL := Format(nSQL, [sTable_Batcode, FListA.Values['Value'],
             sField_SQLServer_Now, FListA.Values['StockNO'],
             FListA.Values['HYDan']]);
     gDBConnManager.WorkerExec(FDBConn, nSQL); //更新批次号使用量
+
+    nTmp := sFlag_FixedNo + 'BN' + FOut.FData;
+    FListA.Values['ID'] := FOut.FData;
+    if not CallRemoteWorker(sAX_SyncBillNew, PackerEncodeStr(FListA.Text), '',
+      nTmp, @nOut) then
+      raise Exception.Create(nOut.FData);
+    //xxxxx
 
     FDBConn.FConn.CommitTrans;
     Result := True;
@@ -778,15 +773,16 @@ end;
 //Desc: 删除指定交货单
 function TWorkerBusinessBills.DeleteBill(var nData: string): Boolean;
 var nIdx: Integer;
-    nHasOut: Boolean;
-    nVal, nPrice, nMon: Double;
-    nStr,nP,nRID,nBill,nZK,nSN,nHY,nCID: string;
+    //nHasOut: Boolean;
+    nVal: Double;
+    nOut: TWorkerBusinessCommand;
+    nStr,nP,nRID,nBill,nZK,nSN,nHY: string;
 begin
   Result := False;
   //init
 
-  nStr := 'Select L_ZhiKa,L_StockNo,L_Value,L_Price,L_OutFact,L_HYDan,L_CusID '+
-          'From %s Where L_ID=''%s''';
+  nStr := 'Select L_ZhiKa,L_StockNo,L_Value,L_OutFact,L_HYDan From %s ' +
+          'Where L_ID=''%s''';
   nStr := Format(nStr, [sTable_Bill, FIn.FData]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -798,7 +794,7 @@ begin
       Exit;
     end;
 
-    nHasOut := FieldByName('L_OutFact').AsString <> '';
+    //nHasOut := FieldByName('L_OutFact').AsString <> '';
     //已出厂
     {
     if nHasOut then
@@ -812,11 +808,9 @@ begin
     nZK  := FieldByName('L_ZhiKa').AsString;
     nSN  := FieldByName('L_StockNo').AsString;
     nHY  := FieldByName('L_HYDan').AsString;
-    nCID := FieldByName('L_CusID').AsString;
     nVal := FieldByName('L_Value').AsFloat;
-    nPrice := FieldByName('L_Price').AsFloat;
   end;
-
+                   
   nStr := 'Select R_ID,T_HKBills,T_Bill From %s ' +
           'Where T_HKBills Like ''%%%s%%''';
   nStr := Format(nStr, [sTable_ZTTrucks, FIn.FData]);
@@ -838,6 +832,13 @@ begin
   begin
     nRID := '';
     FListA.Clear;
+  end;
+
+  nStr := sFlag_FixedNo + 'BD' + FIn.FData;
+  if not CallRemoteWorker(sAX_SyncBillDel, FIn.FData, '', nStr, @nOut) then
+  begin
+    nData := nOut.FData;
+    Exit;
   end;
 
   FDBConn.FConn.BeginTrans;
@@ -868,43 +869,6 @@ begin
 
       gDBConnManager.WorkerExec(FDBConn, nStr);
       //更新合单信息
-    end;
-
-    //--------------------------------------------------------------------------
-    if nHasOut then
-    begin
-      nStr := 'Update %s Set C_HasDone=C_HasDone-(%.2f) ' +
-              'Where C_ID=''%s'' and C_Stock=''%s''';
-      nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nZK, nSN]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //释放发货量
-
-      nMon := nPrice * nVal;
-      nMon := Float2Float(nMon, cPrecision, True);
-      //发货金额
-
-      nStr := 'Update %s Set M_HasDone=M_HasDone-(%.2f) ' +
-              'Where M_ID=''%s''';
-      nStr := Format(nStr, [sTable_AX_MoneyInfo, nMon, nCID]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //释放发货金额
-    end else
-    begin
-      nStr := 'Update %s Set C_Freeze=C_Freeze-(%.2f) ' +
-              'Where C_ID=''%s'' and C_Stock=''%s''';
-      nStr := Format(nStr, [sTable_AX_CardInfo, nVal, nZK, nSN]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //释放冻结量
-
-      nMon := nPrice * nVal;
-      nMon := Float2Float(nMon, cPrecision, True);
-      //冻结金额
-
-      nStr := 'Update %s Set M_Freeze=M_Freeze-(%.2f),M_Count=M_Count-1 ' +
-              'Where M_ID=''%s''';
-      nStr := Format(nStr, [sTable_AX_MoneyInfo, nMon, nCID]);
-      gDBConnManager.WorkerExec(FDBConn, nStr);
-      //释放冻结金额
     end;
 
     //--------------------------------------------------------------------------
@@ -1124,7 +1088,8 @@ begin
     nStr := Format(nStr, [sTable_Bill, FIn.FData]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
 
-    nStr := 'Update %s Set C_Status=''%s'', C_Used=Null Where C_Card=''%s''';
+    nStr := 'Update %s Set C_Status=''%s'', C_Used=Null, C_TruckNo=Null ' +
+            'Where C_Card=''%s''';
     nStr := Format(nStr, [sTable_Card, sFlag_CardInvalid, FIn.FData]);
     gDBConnManager.WorkerExec(FDBConn, nStr);
 
@@ -1145,6 +1110,19 @@ var nStr: string;
 begin
   nStr := sFlag_FixedNo + 'SL' + FIn.FData;
   Result := CallRemoteWorker(sAX_SyncBill, FIn.FData, '', nStr, @nOut);
+
+  if not Result then
+    nData := nOut.FData;
+  //xxxxx
+end;
+
+//Date: 2016/6/23
+//Parm: 交货单号[FIn.FData]
+//Desc: 获取AX系统交货单状态
+function TWorkerBusinessBills.AXGetBillStatus(var nData: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallRemoteWorker(sAX_ReadBillStatus, FIn.FData, '', sFlag_NotMatter, @nOut);
 
   if not Result then
     nData := nOut.FData;
@@ -1214,7 +1192,12 @@ begin
        nStr := nStr + 'Where L_ID=''$CD'''
   else nStr := nStr + 'Where L_Card=''$CD''';
 
-  nStr := MacroValue(nStr, [MI('$Bill', sTable_Bill), MI('$CD', FIn.FData)]);
+  {$IFDEF BTMX}
+  nStr := nStr + ' And IsNull(L_AXStatus, ''$Yes'') = ''$Yes''';
+  {$ENDIF}
+
+  nStr := MacroValue(nStr, [MI('$Bill', sTable_Bill), MI('$CD', FIn.FData),
+          MI('$Yes', sFlag_Yes)]);
   //xxxxx
 
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
@@ -1286,26 +1269,16 @@ end;
 function TWorkerBusinessBills.PickupBill(const nBill,nOrder,nStock: string;
   const nVal,nNet: Double; var nData: string): Boolean;
 var nStr,nMsg: string;
-    nV: Double;
     nOut: TWorkerBusinessCommand;
 begin
-  nStr := 'Select C_Freeze From %s Where C_Card=''%s'' And C_Stock=''%s''';
-  nStr := Format(nStr, [sTable_AX_CardInfo, nOrder, nStock]);
-
-  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
-  if RecordCount > 0 then
-       nV := Fields[0].AsFloat
-  else nV := 0;
-
-  nV := nV + (nNet - nVal);
-  //总量=冻结 + 新增
   FListC.Clear;
 
   with FListC do
   begin
+    Values['Bill']  := nBill;
     Values['Order'] := nOrder;
     Values['Stock'] := nStock;
-    Values['Value'] := FloatToStr(nV);
+    Values['Value'] := FloatToStr(nNet);
   end;
 
   nMsg := sFlag_ForceDone + 'P' + nBill;
@@ -1487,6 +1460,14 @@ begin
               SF('P_PrintNum', 1, sfVal)
               ], sTable_PoundLog, '', True);
       FListA.Add(nSQL);
+
+      FListC.Clear;
+      FListC.Values['ID'] := FID;
+      FListC.Values['PValue'] := FloatToStr(nBills[nInt].FPData.FValue);
+      nStr := sFlag_FixedNo + 'BE' + FID;
+      if not CallRemoteWorker(sAX_SyncBillEdit, PackerEncodeStr(FListC.Text), '',
+        nStr, @nOut) then
+      raise Exception.Create(nOut.FData);
     end;
   end else
 
@@ -1578,18 +1559,6 @@ begin
       FValue := nVal;
       //新净重
 
-      nSQL := 'Update %s Set C_Freeze=C_Freeze+(%.2f) ' +
-              'Where C_ID=''%s'' And C_Stock=''%s''';
-      nSQL := Format(nSQL, [sTable_AX_CardInfo, f, FZhiKa, FStockNo]);
-      FListA.Add(nSQL); //更新大卡冻结量
-
-      f := f * FPrice;
-      f := Float2Float(f, cPrecision, True);
-      nSQL := 'Update %s Set M_Freeze=M_Freeze+(%.2f) ' +
-              'Where M_ID=''%s''';
-      nSQL := Format(nSQL, [sTable_AX_MoneyInfo, f, FCusID]);
-      FListA.Add(nSQL); //更新客户冻结资金
-
       nSQL := 'Update %s Set B_HasUse=B_HasUse+(%.2f),B_LastDate=%s ' +
               'Where B_Stock=''%s'' and B_Batcode=''%s''';
       nSQL := Format(nSQL, [sTable_Batcode, f,
@@ -1664,6 +1633,10 @@ begin
         FListB.Delete(i);
       //排除本次称重
 
+      if FType = sFlag_Dai then
+      if not PickupBill(FID, FZhiKa, FStockNo, FValue, FValue, nData) then Exit;
+      //减配不通过
+
       nSQL := MakeSQLByStr([SF('L_Value', FValue, sfVal),
               SF('L_Status', sFlag_TruckBFM),
               SF('L_NextStatus', sFlag_TruckOut),
@@ -1727,18 +1700,6 @@ begin
               SF('L_OutMan', FIn.FBase.FFrom.FUser)
               ], sTable_Bill, SF('L_ID', FID), False);
       FListA.Add(nSQL); //更新交货单
-
-      {nSQL := 'Update %s Set C_HasDone=C_HasDone+(%.2f),C_Freeze=C_Freeze-(%.2f)' +
-              'Where C_ID=''%s'' And C_Stock=''%s''';
-      nSQL := Format(nSQL, [sTable_AX_CardInfo, FValue, FValue, FZhiKa, FStockNo]);
-      FListA.Add(nSQL); //更新订单
-
-      nVal := FValue * FPrice;
-      nVal := Float2Float(nVal, cPrecision, True);
-      nSQL := 'Update %s Set M_HasDone=M_HasDone+(%.2f),M_Freeze=M_Freeze-(%.2f)' +
-              'Where M_ID=''%s''';
-      nSQL := Format(nSQL, [sTable_AX_MoneyInfo, nVal, nVal, FCusID]);
-      FListA.Add(nSQL); //更新资金}
     end;
 
     nSQL := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';

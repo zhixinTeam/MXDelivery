@@ -95,6 +95,7 @@ const
   cBC_AXSyncOrder             = $0102;   //同步采购
   cBC_AXSyncWaiXie            = $0103;   //同步外协
   cBC_AXSyncRefund            = $0104;   //同步退货
+  cBC_AXGetBillStatus         = $0105;   //获取AX交货单状态
 
   cBC_SaveRefund              = $0111;   //保存退货
   cBC_DeleteRefund            = $0112;   //删除退货单
@@ -193,8 +194,9 @@ resourcestring
   sBus_BusinessRefund         = 'Bus_BusinessRefund';   //退货业务相关
 
   sAX_ReadSaleOrder           = 'AX_ReadSaleOrder';     //读取订单
+  sAX_ReadBillStatus          = 'AX_ReadBillStatus';    //读取发货单状态
   sAX_ReadPuchaseOrder        = 'AX_ReadPurchaseOrder'; //读取订单
-  sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder'; //读取订单
+  sAX_SavePuchaseOrder        = 'AX_SavePurchaseOrder'; //读取订单   
 
   sAX_PickBill                = 'AX_PickBill';          //提货减配
   sAX_SyncBill                = 'AX_SyncBill';          //同步发货单
@@ -203,6 +205,10 @@ resourcestring
   sAX_SyncWaiXie              = 'AX_SyncWaiXie';        //同步外协单
   sAX_SyncRefund              = 'AX_SyncRefund';        //同步外协单
   sAX_SyncOrderCorrection     = 'AX_SyncOrderCorrection';//同步原料勘误单
+  sAX_PickBillDai             = 'AX_PickBillDai';       //提货减配(袋装)
+  sAX_SyncBillNew             = 'AX_SyncBillNew';       //同步发货单(新增)
+  sAX_SyncBillDel             = 'AX_SyncBillDel';       //同步发货单(删除)
+  sAX_SyncBillEdit            = 'AX_SyncBillEdit';      //同步发货单(一次过磅)
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态

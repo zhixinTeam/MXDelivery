@@ -279,6 +279,8 @@ ResourceString
   sTable_AX_MoneyInfo = 'S_AXMoneyInfo';             //销售资金
   sTable_AX_OrderInfo = 'P_AXOrderInfo';             //供应订单 
 
+const
+
   {*新建表*}
   sSQL_NewSysDict = 'Create Table $Table(D_ID $Inc, D_Name varChar(15),' +
        'D_Desc varChar(30), D_Value varChar(50), D_Memo varChar(20),' +
@@ -425,7 +427,8 @@ ResourceString
        'L_Lading Char(1),L_IsVIP varChar(1),L_Seal varChar(100),' +
        'L_HYDan varChar(16),L_District varChar(16),L_PrintCode varChar(32),' +
        'L_Man varChar(32),L_Date DateTime,' +
-       'L_DelMan varChar(32),L_DelDate DateTime, ' +
+       'L_DelMan varChar(32),L_DelDate DateTime,' +
+       'L_AXStatus Char(1), L_AXMemo varChar(500),' +
        'L_SyncNum Integer Default 0,L_SyncDate DateTime,L_SyncMemo varChar(500))';
   {-----------------------------------------------------------------------------
    交货单表: Bill
@@ -461,6 +464,8 @@ ResourceString
    *.L_Date:创建时间
    *.L_DelMan: 交货单删除人员
    *.L_DelDate: 交货单删除时间
+   *.L_AXStatus: AX系统中状态
+   *.L_AXMemo: AX系统备注
    *.L_SyncNum: 提交次数
    *.L_SyncDate: 提交成功时间
    *.L_SyncMemo: 提交错误描述

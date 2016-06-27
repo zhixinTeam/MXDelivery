@@ -2,23 +2,23 @@ inherited fFormTransfer: TfFormTransfer
   Left = 438
   Top = 418
   Caption = #20498#26009#31649#29702
-  ClientHeight = 201
+  ClientHeight = 252
   ClientWidth = 385
   Position = poDesktopCenter
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
     Width = 385
-    Height = 201
+    Height = 252
     inherited BtnOK: TButton
       Left = 239
-      Top = 168
-      TabOrder = 5
+      Top = 219
+      TabOrder = 7
     end
     inherited BtnExit: TButton
       Left = 309
-      Top = 168
-      TabOrder = 6
+      Top = 219
+      TabOrder = 8
     end
     object EditTruck: TcxTextEdit [2]
       Left = 81
@@ -39,23 +39,24 @@ inherited fFormTransfer: TfFormTransfer
     end
     object EditSrcAddr: TcxTextEdit [4]
       Left = 81
-      Top = 111
-      ParentFont = False
-      Properties.MaxLength = 32
-      TabOrder = 3
-      Width = 96
-    end
-    object EditDstAddr: TcxTextEdit [5]
-      Left = 81
       Top = 136
       ParentFont = False
       Properties.MaxLength = 32
       TabOrder = 4
       Width = 96
     end
+    object EditDstAddr: TcxTextEdit [5]
+      Left = 81
+      Top = 186
+      ParentFont = False
+      Properties.MaxLength = 32
+      TabOrder = 6
+      Width = 96
+    end
     object EditMID: TcxComboBox [6]
       Left = 81
       Top = 61
+      ParentFont = False
       Properties.OnChange = EditMIDPropertiesChange
       TabOrder = 1
       Width = 121
@@ -63,6 +64,7 @@ inherited fFormTransfer: TfFormTransfer
     object EditDC: TcxComboBox [7]
       Left = 81
       Top = 111
+      ParentFont = False
       Properties.OnChange = EditDCPropertiesChange
       TabOrder = 3
       Width = 121
@@ -70,6 +72,7 @@ inherited fFormTransfer: TfFormTransfer
     object EditDR: TcxComboBox [8]
       Left = 81
       Top = 161
+      ParentFont = False
       Properties.OnChange = EditDCPropertiesChange
       TabOrder = 5
       Width = 121

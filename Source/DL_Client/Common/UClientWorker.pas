@@ -142,12 +142,13 @@ begin
 
   if not Result then
   begin
+    PBWDataBase(nOut)^.FErrDesc := nStr;
     if Pos(sParam_NoHintOnError, nParam) < 1 then
     begin
       CloseWaitForm;
       Application.ProcessMessages;
       ShowDlg(nStr, sHint, Screen.ActiveForm.Handle);
-    end else PBWDataBase(nOut)^.FErrDesc := nStr;
+    end;
     
     Exit;
   end;

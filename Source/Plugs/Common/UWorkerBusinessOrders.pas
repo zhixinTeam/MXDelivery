@@ -338,6 +338,7 @@ end;
 function TWorkerBusinessOrders.SaveOrder(var nData: string): Boolean;
 var nStr: string;
     nIdx: Integer;
+    nPVal, nMVal, nNet: Double;
     nOut: TWorkerBusinessCommand;
 begin
   Result := False;
@@ -387,6 +388,28 @@ begin
             SF('P_Date', sField_SQLServer_Now, sfVal)
             ], sTable_PurchInfo, '', True);
     gDBConnManager.WorkerExec(FDBConn, nStr);
+
+    if FListA.Values['BuDan'] = sFlag_Yes then //补单
+    begin
+      nNet  := StrToFloatDef(FListA.Values['Value'], 0);
+      nPVal := StrToFloatDef(FListA.Values['PValue'], 0);
+      nMVal := nPVal + nNet;
+
+      nStr := MakeSQLByStr([SF('P_Status', sFlag_TruckOut),
+              SF('P_NextStatus', ''),
+              SF('P_InTime', sField_SQLServer_Now, sfVal),
+              SF('P_PValue', nPVal, sfVal),
+              SF('P_PDate', sField_SQLServer_Now, sfVal),
+              SF('P_PMan', FIn.FBase.FFrom.FUser),
+              SF('P_MValue', nMVal, sfVal),
+              SF('P_MDate', sField_SQLServer_Now, sfVal),
+              SF('P_MMan', FIn.FBase.FFrom.FUser),
+              SF('P_OutFact', sField_SQLServer_Now, sfVal),
+              SF('P_OutMan', FIn.FBase.FFrom.FUser),
+              SF('P_Card', '')
+              ], sTable_PurchInfo, SF('P_ID', nOut.FData), False);
+      gDBConnManager.WorkerExec(FDBConn, nStr);
+    end;
 
     nStr := 'Update %s Set C_Freeze=C_Freeze+%s, C_Count=C_Count+1 ' +
             'Where C_ID=''%s'' And C_Stock=''%s''';
@@ -1106,12 +1129,6 @@ begin
               SF('P_OutMan', FIn.FBase.FFrom.FUser)
               ], sTable_PurchInfo, SF('P_ID', FID), False);
       FListA.Add(nSQL); //更新采购单
-
-      {nSQL := 'Update %s Set C_Freeze=C_Freeze-%s, C_HasDone=C_HasDone+%s, ' +
-              'C_Count=C_Count-1 Where C_ID=''%s'' And C_Stock=''%s''';
-      nSQL := Format(nSQL, [sTable_AX_OrderInfo, FloatToStr(FValue),
-              FloatToStr(FValue), FCusID, FStockNo]);
-      FListA.Add(nSQL);  }
     end;
   end;
 

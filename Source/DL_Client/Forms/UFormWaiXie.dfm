@@ -2,13 +2,13 @@ inherited fFormWaiXie: TfFormWaiXie
   Left = 451
   Top = 243
   ClientHeight = 412
-  ClientWidth = 411
+  ClientWidth = 444
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 411
+    Width = 444
     Height = 412
     AutoControlTabOrders = False
     object Bevel1: TBevel [0]
@@ -33,13 +33,13 @@ inherited fFormWaiXie: TfFormWaiXie
       Shape = bsRightLine
     end
     inherited BtnOK: TButton
-      Left = 265
+      Left = 298
       Top = 379
       Caption = #24320#21333
       TabOrder = 1
     end
     inherited BtnExit: TButton
-      Left = 335
+      Left = 368
       Top = 379
       TabOrder = 3
     end
@@ -139,6 +139,30 @@ inherited fFormWaiXie: TfFormWaiXie
       Transparent = True
       Width = 150
     end
+    object CKBuDan: TcxCheckBox [14]
+      Left = 166
+      Top = 379
+      Caption = #34917#21333
+      ParentFont = False
+      TabOrder = 14
+      Transparent = True
+      OnClick = CKBuDanClick
+      Width = 121
+    end
+    object EditPValue: TcxTextEdit [15]
+      Left = 81
+      Top = 266
+      TabOrder = 15
+      Text = '0.00'
+      Width = 121
+    end
+    object EditValue: TcxTextEdit [16]
+      Left = 81
+      Top = 291
+      TabOrder = 16
+      Text = '0.00'
+      Width = 121
+    end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxLayout1Item11: TdxLayoutItem
@@ -193,12 +217,28 @@ inherited fFormWaiXie: TfFormWaiXie
           Control = EditTruck
           ControlOptions.ShowBorder = False
         end
+        object dxLayout1Item15: TdxLayoutItem
+          Caption = #36710#36742#30382#37325':'
+          Control = EditPValue
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item16: TdxLayoutItem
+          Caption = #36135#29289#20928#37325':'
+          Control = EditValue
+          ControlOptions.ShowBorder = False
+        end
       end
       inherited dxLayout1Group1: TdxLayoutGroup
         object dxLayout1Item13: TdxLayoutItem [0]
           Caption = 'cxCheckBox1'
           ShowCaption = False
           Control = Check1
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item14: TdxLayoutItem [1]
+          Caption = 'cxCheckBox1'
+          ShowCaption = False
+          Control = CKBuDan
           ControlOptions.ShowBorder = False
         end
       end
