@@ -150,7 +150,7 @@ end;
 procedure THardwareWorker.BeforeStartServer;
 begin
   {$IFDEF BTMX}
-  gTruckQueueManager.OnProce := AXVerifyBill;
+  //gTruckQueueManager.OnProce := AXVerifyBill;
   {$ENDIF}
   gTruckQueueManager.StartQueue(gParamManager.ActiveParam.FDB.FID);
   //truck queue

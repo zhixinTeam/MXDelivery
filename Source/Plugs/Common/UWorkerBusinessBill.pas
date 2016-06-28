@@ -322,7 +322,7 @@ begin
   if FListA.Values['BuDan'] = sFlag_Yes then
        nInt := 0
   else nInt := GetInBillInterval;
-  
+
   if nInt > 0 then
   begin
     nStr := 'Select %s as T_Now,T_LastTime,T_NoVerify,T_Valid From %s ' +
@@ -362,7 +362,8 @@ begin
   end;
 
   {$IFDEF BTMX}
-  if FListA.Values['Type'] = sFlag_San then
+  if (FListA.Values['Type'] = sFlag_San) and
+     (Pos(' Ï¡œ', FListA.Values['StockName']) < 1) then
   begin
     nStr := 'Select T_Card, T_CardUse From %s Where T_Truck=''%s''';
     nStr := Format(nStr, [sTable_Truck, nTruck]);
