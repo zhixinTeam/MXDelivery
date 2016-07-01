@@ -589,16 +589,13 @@ begin
               SF('L_PValue', 1, sfVal),
               SF('L_PDate', sField_SQLServer_Now, sfVal),
               SF('L_PMan', FIn.FBase.FFrom.FUser),
-              SF('L_PackerNo', nTmp),
               SF('L_MValue', StrToFloat(FListA.Values['Value']) + 1, sfVal),
               SF('L_MDate', sField_SQLServer_Now, sfVal),
               SF('L_MMan', FIn.FBase.FFrom.FUser),
-              SF('L_DaiTotal', nInt, sfVal),
-              SF('L_DaiBuCha', 0, sfVal),
-              SF('L_PackerNo', nTmp),
               SF('L_DaiNormal', nInt, sfVal),
               SF('L_DaiTotal', nInt, sfVal),
               SF('L_DaiBuCha', 0, sfVal),
+              SF('L_PackerNo', nTmp),
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser),
               SF('L_OutFact', sField_SQLServer_Now, sfVal),
@@ -643,6 +640,13 @@ begin
           ], sTable_ZTTrucks, '', True);
         gDBConnManager.WorkerExec(FDBConn, nSQL);
       end;
+
+      nTmp := sFlag_FixedNo + 'BN' + FOut.FData;
+      FListA.Values['ID'] := FOut.FData;
+      if not CallRemoteWorker(sAX_SyncBillNew, PackerEncodeStr(FListA.Text), '',
+        nTmp, @nOut) then
+        raise Exception.Create(nOut.FData);
+      //xxxxx
     end;
 
     nSQL := 'Update %s Set B_HasUse=B_HasUse+(%s),B_LastDate=%s ' +
@@ -650,14 +654,7 @@ begin
     nSQL := Format(nSQL, [sTable_Batcode, FListA.Values['Value'],
             sField_SQLServer_Now, FListA.Values['StockNO'],
             FListA.Values['HYDan']]);
-    gDBConnManager.WorkerExec(FDBConn, nSQL); //更新批次号使用量
-
-    nTmp := sFlag_FixedNo + 'BN' + FOut.FData;
-    FListA.Values['ID'] := FOut.FData;
-    if not CallRemoteWorker(sAX_SyncBillNew, PackerEncodeStr(FListA.Text), '',
-      nTmp, @nOut) then
-      raise Exception.Create(nOut.FData);
-    //xxxxx
+    gDBConnManager.WorkerExec(FDBConn, nSQL); //更新批次号使用量    
 
     FDBConn.FConn.CommitTrans;
     Result := True;
@@ -1405,10 +1402,6 @@ begin
       raise Exception.Create(nOut.FData);
     //保存车辆有效皮重
 
-    FListC.Clear;
-    FListC.Values['Group'] := sFlag_BusGroup;
-    FListC.Values['Object'] := sFlag_PoundID;
-
     for nIdx:=Low(nBills) to High(nBills) do
     with nBills[nIdx] do
     begin
@@ -1429,6 +1422,10 @@ begin
               SF('L_PMan', FIn.FBase.FFrom.FUser)
               ], sTable_Bill, SF('L_ID', FID), False);
       FListA.Add(nSQL);
+
+      FListC.Clear;
+      FListC.Values['Group'] := sFlag_BusGroup;
+      FListC.Values['Object'] := sFlag_PoundID;
 
       if not TWorkerBusinessCommander.CallMe(cBC_GetSerialNO,
             FListC.Text, sFlag_Yes, @nOut) then

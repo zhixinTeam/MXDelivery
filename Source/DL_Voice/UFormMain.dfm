@@ -19,7 +19,7 @@ object fFormMain: TfFormMain
   object GroupBox1: TGroupBox
     Left = 0
     Top = 0
-    Width = 549
+    Width = 541
     Height = 70
     Align = alTop
     TabOrder = 0
@@ -63,27 +63,35 @@ object fFormMain: TfFormMain
     object BtnTest: TButton
       Left = 312
       Top = 37
-      Width = 75
+      Width = 225
       Height = 25
       Caption = #27979#35797#35821#38899
       Enabled = False
       TabOrder = 4
       OnClick = BtnTestClick
     end
+    object Edit1: TEdit
+      Left = 312
+      Top = 16
+      Width = 225
+      Height = 20
+      TabOrder = 5
+      Text = #24744#28857#20987#20102#35821#38899#21512#25104#31995#32479#27979#35797#25353#38062
+    end
   end
   object MemoLog: TMemo
     Left = 0
     Top = 70
-    Width = 549
-    Height = 278
+    Width = 541
+    Height = 267
     Align = alClient
     ScrollBars = ssBoth
     TabOrder = 1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 348
-    Width = 549
+    Top = 337
+    Width = 541
     Height = 19
     Panels = <>
   end

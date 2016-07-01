@@ -24,6 +24,7 @@ type
     CheckLoged: TCheckBox;
     Timer1: TTimer;
     BtnTest: TButton;
+    Edit1: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure Timer1Timer(Sender: TObject);
@@ -266,9 +267,9 @@ end;
 procedure TfFormMain.BtnTestClick(Sender: TObject);
 var nStr: string;
 begin
-  nStr := '您点击了语音合成系统测试按钮';
+  nStr := Trim(Edit1.Text);
   //test
-  
+
   if FNetVoice then
        gNetVoiceHelper.PlayVoice(nStr)
   else gVoiceManager.PlayVoice(nStr);
