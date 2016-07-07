@@ -24,7 +24,7 @@ procedure WhenBusinessMITSharedDataIn(const nData: string);
 //业务中间件共享数据
 procedure WhenSaveJS(const nTunnel: PMultiJSTunnel);
 //保存计数结果
-procedure AXVerifyBill(const nTruck: PTruckItem);
+function AXVerifyBill(const nTruck: PTruckItem): Boolean;
 //校验AX系统交货单有效性
 
 implementation
@@ -724,14 +724,18 @@ end;
 //Desc: 华益读头磁卡动作
 procedure WhenHYReaderCardArrived(const nReader: PHYReaderItem);
 begin
-  {$IFDEF DEBUG}
+  {.$IFDEF DEBUG}
   WriteHardHelperLog(Format('华益标签 %s:%s', [nReader.FTunnel, nReader.FCard]));
-  {$ENDIF}
+  {.$ENDIF}
 
-  {$IFDEF RemoteReader}
-  gHardwareHelper.SetReaderCard(nReader.FID, 'H' + nReader.FCard, False);
-  {$ENDIF}
-  g02NReader.ActiveELabel(nReader.FID, nReader.FCard);
+  if nReader.FVirtual then
+  begin
+    case nReader.FVType of
+    rt900 : gHardwareHelper.SetReaderCard(nReader.FVReader, 'H' + nReader.FCard, False);
+    rt02n : g02NReader.SetReaderCard(nReader.FVReader, nReader.FCard);
+    end;
+  end
+  else g02NReader.ActiveELabel(nReader.FTunnel, nReader.FCard);
 end;
 
 //------------------------------------------------------------------------------
@@ -1327,12 +1331,13 @@ begin
   end;
 end;
 
-procedure AXVerifyBill(const nTruck: PTruckItem);
+function AXVerifyBill(const nTruck: PTruckItem): Boolean;
 var nOut: TWorkerBusinessCommand;
     nList: TStrings;
     nIdx: Integer;
     nStr: string;
 begin
+  Result := False;
   if not Assigned(nTruck) then Exit;
 
   nList := TStringList.Create;
@@ -1346,8 +1351,10 @@ begin
       nStr := '交货单[ %s ]在AX系统中异常[ %s ]';
       nStr := Format(nStr, [nList[nIdx], nOut.FBase.FErrDesc]);
       WriteHardHelperLog(nStr);
+      Exit;
     end;
-    
+
+    Result := True;    
   finally
     FreeAndNil(nList);
   end;

@@ -47,6 +47,7 @@ type
     FIsVIP      : string;      //特权车
     FIndex      : Integer;     //队列索引
     FIsReal     : Boolean;     //非虚位
+    FDelete     : Boolean;     //订单已删除
 
     FValue      : Double;      //提货量
     FDai        : Integer;     //袋数
@@ -74,8 +75,8 @@ type
     FName       : string;      //物料名
   end;
 
-  TVerifyBillProce = procedure (const nTruck: PTruckItem);
-  TVerifyBillEvent = procedure (const nTruck: PTruckItem) of Object;
+  TVerifyBillFunc = function (const nTruck: PTruckItem): Boolean;
+  TVerifyBillEvent = function (const nTruck: PTruckItem): Boolean of Object;
   //事件相关;验证交货单是否有效
 
   TTruckQueueManager = class;
@@ -153,7 +154,7 @@ type
     //SQL语句
     FLastQueueVoice: string;
     //队列内容
-    FProce: TVerifyBillProce;
+    FFunc: TVerifyBillFunc;
     FEvent: TVerifyBillEvent;
     //事件相关
   protected
@@ -189,7 +190,7 @@ type
     procedure SendTruckQueueVoice(const nLocked: Boolean);
     //语音播发
     function GetVoiceTruck(const nSeparator: string;
-     const nLocked: Boolean): string;
+     const nLocked: Boolean; const nDelete: Boolean = False): string;
     //语音车辆
     function GetTruckTunnel(const nTruck: string): string;
     //车辆通道
@@ -203,7 +204,7 @@ type
     property LineChanged: Int64 read FLineChanged;
     property SyncLock: TCriticalSection read FSyncLock;    
     //属性相关
-    property OnProce: TVerifyBillProce read FProce write FProce;
+    property OnFunc: TVerifyBillFunc read FFunc write FFunc;
     property OnEvent: TVerifyBillEvent read FEvent write FEvent;
     //事件相关
   end;
@@ -479,14 +480,21 @@ end;
 
 //Desc: 语音播发未进厂车辆
 procedure TTruckQueueManager.SendTruckQueueVoice(const nLocked: Boolean);
-var nStr, n: string;
+var nStr, nErr: string;
 begin
   if nLocked then SyncLock.Enter;
   try
     nStr := GetVoiceTruck(#9, False);
-    if Length(nStr) < 1 then Exit;
-    nStr := #9 + nStr + #9;
+    if Length(nStr) > 0 then
+      nStr := #9 + nStr + #9;
     //truck flag
+
+    nErr := GetVoiceTruck('ERR', False, True);
+    if Length(nErr) > 0 then
+      nStr := nStr + 'ERR' + nErr;
+    //Error flag
+
+    if Length(nStr) < 1 then Exit;
 
     if nStr <> FLastQueueVoice then
     begin
@@ -504,7 +512,7 @@ end;
 //Parm: 分隔符;是否锁定
 //Desc: 获取语音播发的车辆列表
 function TTruckQueueManager.GetVoiceTruck(const nSeparator: string;
-  const nLocked: Boolean): string;
+  const nLocked: Boolean; const nDelete: Boolean): string;
 var i,nIdx: Integer;
     nList: TStrings;
     nLine: PLineItem;
@@ -522,7 +530,8 @@ begin
       for i:=0 to nLine.FTrucks.Count - 1 do
       begin
         nTruck := nLine.FTrucks[i];
-        if (not nTruck.FInFact) or (IsDelayQueue and (not nTruck.FInLade)) then
+        if ((not nTruck.FInFact) or (IsDelayQueue and (not nTruck.FInLade))) and
+           (nTruck.FDelete = nDelete) then
         begin
           if nList.IndexOf(nTruck.FTruck) < 0 then //一车多单时避免重复
           begin
@@ -1295,11 +1304,11 @@ begin
   end;
 
   if Assigned(gTruckQueueManager.OnEvent) then
-    gTruckQueueManager.OnEvent(nTruck);
+    nTruck.FDelete := not gTruckQueueManager.OnEvent(nTruck);
   //xxxxx
 
-  if Assigned(gTruckQueueManager.OnProce) then
-    gTruckQueueManager.OnProce(nTruck);
+  if Assigned(gTruckQueueManager.OnFunc) then
+    nTruck.FDelete := not gTruckQueueManager.OnFunc(nTruck);
   //xxxxx
 
   {$IFDEF DEBUG}

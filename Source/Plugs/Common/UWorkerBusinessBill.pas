@@ -89,6 +89,9 @@ type
     //base function
     class function VerifyTruckNO(nTruck: string; var nData: string): Boolean;
     //验证车牌是否有效
+    class function CallMe(const nCmd: Integer; const nData,nExt: string;
+      const nOut: PWorkerBusinessCommand): Boolean;
+    //local call
   end;
 
 implementation
@@ -158,6 +161,41 @@ begin
       Result := False;
       nData := '无效的业务代码(Invalid Command).';
     end;
+  end;
+end;
+
+//Date: 2014-09-15
+//Parm: 命令;数据;参数;输出
+//Desc: 本地调用业务对象
+class function TWorkerBusinessBills.CallMe(const nCmd: Integer;
+  const nData, nExt: string; const nOut: PWorkerBusinessCommand): Boolean;
+var nStr: string;
+    nIn: TWorkerBusinessCommand;
+    nPacker: TBusinessPackerBase;
+    nWorker: TBusinessWorkerBase;
+begin
+  nPacker := nil;
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    nPacker := gBusinessPackerManager.LockPacker(sBus_BusinessCommand);
+    nPacker.InitData(@nIn, True, False);
+    //init
+    
+    nStr := nPacker.PackIn(@nIn);
+    nWorker := gBusinessWorkerManager.LockWorker(FunctionName);
+    //get worker
+
+    Result := nWorker.WorkActive(nStr);
+    if Result then
+         nPacker.UnPackOut(nStr, nOut)
+    else nOut.FData := nStr;
+  finally
+    gBusinessPackerManager.RelasePacker(nPacker);
+    gBusinessWorkerManager.RelaseWorker(nWorker);
   end;
 end;
 
@@ -1341,6 +1379,14 @@ begin
 
     for nIdx:=Low(nBills) to High(nBills) do
     begin
+      {if not CallMe(cBC_AXGetBillStatus, nBills[nIdx].FID, '', @nOut) then
+      begin
+        nData := 'AX系统已将[ %s ]交货单删除，交货单无效;AX返回信息[ %s ].';
+        nData := Format(nData, [nBills[nIdx].FID, nOut.FData]);
+        Exit;
+      end;
+      //如果校验订单失败 }
+
       nStr := SF('L_ID', nBills[nIdx].FID);
       nSQL := MakeSQLByStr([
               SF('L_Status', nBills[0].FStatus),

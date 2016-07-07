@@ -267,7 +267,7 @@ end;
 procedure TfFormMain.BtnTestClick(Sender: TObject);
 var nStr: string;
 begin
-  nStr := Trim(Edit1.Text);
+  nStr := Edit1.Text;
   //test
 
   if FNetVoice then

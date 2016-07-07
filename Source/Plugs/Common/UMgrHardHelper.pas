@@ -579,7 +579,9 @@ begin
       end;
 
       FCard := nCard;
+      {$IFDEF DEBUG}
       WriteLog(Format('Ω” ’µΩø®∫≈: %s,%s', [nReader, nCard]));
+      {$ENDIF}
       Break;
     end;
   end;
