@@ -625,10 +625,10 @@ end;
 //Parm: 物料编号[FIn.FData];预扣减量[FIn.ExtParam];
 //Desc: 按规则生成指定品种的批次编号
 function TWorkerBusinessCommander.GetStockBatcode(var nData: string): Boolean;
-var nStr,nP: string;
+var nStr,nP,nUBatchAuto,nUBatcode,nSelect: string;
     nNew: Boolean;
     nInt,nInc: Integer;
-    nVal,nPer: Double;
+    nVal,nPer,nKDValue: Double;
 
     //生成新批次号
     function NewBatCode: string;
@@ -657,93 +657,182 @@ var nStr,nP: string;
     end;
 begin
   Result := False;
-  nStr := 'Select *,%s as ServerNow From %s Where B_Stock=''%s''';
-  nStr := Format(nStr, [sField_SQLServer_Now, sTable_Batcode, FIn.FData]);
 
+  nStr := 'Select D_Memo, D_Value from %s Where D_Name=''%s'' and ' +
+          '(D_Memo=''%s'' or D_Memo=''%s'')';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam,
+                        sFlag_BatchAuto, sFlag_BatchValid]);
+  //xxxxxx
+
+  nUBatchAuto := sFlag_Yes;
+  nUBatcode := sFlag_No;
   with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
   begin
-    if RecordCount < 1 then
+    First;
+
+    while not Eof do
     begin
-      nData := '物料[ %s ]未配置批次号规则.';
-      nData := Format(nData, [FIn.FData]);
-      Exit;
+      if Fields[0].AsString = sFlag_BatchAuto then
+        nUBatchAuto := Fields[1].AsString;
+
+      if Fields[0].AsString = sFlag_BatchValid then
+        nUBatcode  := Fields[1].AsString;
+
+      Next;
     end;
+  end;
 
-    FOut.FData := FieldByName('B_Batcode').AsString;
-    nInc := FieldByName('B_Incement').AsInteger;
-    nNew := False;
-
-    if FieldByName('B_AutoNew').AsString = sFlag_Yes then //元旦重置
+  if nUBatcode = sFlag_Yes then
+  begin
+    if nUBatchAuto = sFlag_Yes then
     begin
-      nStr := Date2Str(FieldByName('ServerNow').AsDateTime);
-      nStr := Copy(nStr, 1, 4);
-      nP := Date2Str(FieldByName('B_LastDate').AsDateTime);
-      nP := Copy(nP, 1, 4);
+      nStr := 'Select *,%s as ServerNow From %s Where B_Stock=''%s''';
+      nStr := Format(nStr, [sField_SQLServer_Now, sTable_Batcode, FIn.FData]);
 
-      if nStr <> nP then
+      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
       begin
-        nStr := 'Update %s Set B_Base=1 Where B_Stock=''%s''';
-        nStr := Format(nStr, [sTable_Batcode, FIn.FData]);
-        
-        gDBConnManager.WorkerExec(FDBConn, nStr);
-        FOut.FData := NewBatCode;
-        nNew := True;
-      end;
-    end;
-
-    if not nNew then //编号超期
-    begin
-      nStr := Date2Str(FieldByName('ServerNow').AsDateTime);
-      nP := Date2Str(FieldByName('B_FirstDate').AsDateTime);
-
-      if (Str2Date(nP) > Str2Date('2000-01-01')) and
-         (Str2Date(nStr) - Str2Date(nP) > FieldByName('B_Week').AsInteger) then
-      begin
-        nStr := 'Update %s Set B_Base=B_Base+%d Where B_Stock=''%s''';
-        nStr := Format(nStr, [sTable_Batcode, nInc, FIn.FData]);
-
-        gDBConnManager.WorkerExec(FDBConn, nStr);
-        FOut.FData := NewBatCode;
-        nNew := True;
-      end;
-    end;
-
-    if not nNew then //编号超发
-    begin
-      nVal := FieldByName('B_HasUse').AsFloat + StrToFloat(FIn.FExtParam);
-      //已使用+预使用
-      nPer := FieldByName('B_Value').AsFloat * FieldByName('B_High').AsFloat / 100;
-      //可用上限
-
-      if nVal >= nPer then //超发
-      begin
-        nStr := 'Update %s Set B_Base=B_Base+%d Where B_Stock=''%s''';
-        nStr := Format(nStr, [sTable_Batcode, nInc, FIn.FData]);
-
-        gDBConnManager.WorkerExec(FDBConn, nStr);
-        FOut.FData := NewBatCode;
-      end else
-      begin
-        nPer := FieldByName('B_Value').AsFloat * FieldByName('B_Low').AsFloat / 100;
-        //提醒
-      
-        if nVal >= nPer then //超发提醒
+        if RecordCount < 1 then
         begin
-          nStr := '物料[ %s.%s ]即将更换批次号,请通知化验室准备取样.';
-          nStr := Format(nStr, [FieldByName('B_Stock').AsString,
-                                FieldByName('B_Name').AsString]);
-          //xxxxx
+          nData := '物料[ %s ]未配置批次号规则.';
+          nData := Format(nData, [FIn.FData]);
+          Exit;
+        end;
 
-          FOut.FBase.FErrCode := sFlag_ForceHint;
-          FOut.FBase.FErrDesc := nStr;
+        FOut.FData := FieldByName('B_Batcode').AsString;
+        nInc := FieldByName('B_Incement').AsInteger;
+        nNew := False;
+
+        if FieldByName('B_AutoNew').AsString = sFlag_Yes then //元旦重置
+        begin
+          nStr := Date2Str(FieldByName('ServerNow').AsDateTime);
+          nStr := Copy(nStr, 1, 4);
+          nP := Date2Str(FieldByName('B_LastDate').AsDateTime);
+          nP := Copy(nP, 1, 4);
+
+          if nStr <> nP then
+          begin
+            nStr := 'Update %s Set B_Base=1 Where B_Stock=''%s''';
+            nStr := Format(nStr, [sTable_Batcode, FIn.FData]);
+        
+            gDBConnManager.WorkerExec(FDBConn, nStr);
+            FOut.FData := NewBatCode;
+            nNew := True;
+          end;
+        end;
+
+        if not nNew then //编号超期
+        begin
+          nStr := Date2Str(FieldByName('ServerNow').AsDateTime);
+          nP := Date2Str(FieldByName('B_FirstDate').AsDateTime);
+
+          if (Str2Date(nP) > Str2Date('2000-01-01')) and
+             (Str2Date(nStr) - Str2Date(nP) > FieldByName('B_Week').AsInteger) then
+          begin
+            nStr := 'Update %s Set B_Base=B_Base+%d Where B_Stock=''%s''';
+            nStr := Format(nStr, [sTable_Batcode, nInc, FIn.FData]);
+
+            gDBConnManager.WorkerExec(FDBConn, nStr);
+            FOut.FData := NewBatCode;
+            nNew := True;
+          end;
+        end;
+
+        if not nNew then //编号超发
+        begin
+          nVal := FieldByName('B_HasUse').AsFloat + StrToFloat(FIn.FExtParam);
+          //已使用+预使用
+          nPer := FieldByName('B_Value').AsFloat * FieldByName('B_High').AsFloat / 100;
+          //可用上限
+
+          if nVal >= nPer then //超发
+          begin
+            nStr := 'Update %s Set B_Base=B_Base+%d Where B_Stock=''%s''';
+            nStr := Format(nStr, [sTable_Batcode, nInc, FIn.FData]);
+
+            gDBConnManager.WorkerExec(FDBConn, nStr);
+            FOut.FData := NewBatCode;
+          end else
+          begin
+            nPer := FieldByName('B_Value').AsFloat * FieldByName('B_Low').AsFloat / 100;
+            //提醒
+      
+            if nVal >= nPer then //超发提醒
+            begin
+              nStr := '物料[ %s.%s ]即将更换批次号,请通知化验室准备取样.';
+              nStr := Format(nStr, [FieldByName('B_Stock').AsString,
+                                    FieldByName('B_Name').AsString]);
+              //xxxxx
+
+              FOut.FBase.FErrCode := sFlag_ForceHint;
+              FOut.FBase.FErrDesc := nStr;
+            end;
+          end;
+        end;
+      end;
+
+      if FOut.FData = '' then
+        FOut.FData := NewBatCode;
+      //xxxxx
+    end else
+
+    begin
+      nStr := 'Select * from %s Where D_Stock=''%s'' and D_Valid=''%s'' '+
+              'Order By D_UseDate';
+      nStr := Format(nStr, [sTable_BatcodeDoc, FIn.FData, sFlag_BatchInUse]);
+      //xxxxxx
+
+      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+      begin
+        if RecordCount < 1 then
+        begin
+          nData := '物料[ %s ]批次不存在.';
+          nData := Format(nData, [FIn.FData]);
+          Exit;
+        end;
+
+        First;
+        nSelect := sFlag_No;
+        nKDValue:= StrToFloatDef(FIn.FExtParam, 0);
+        //本次欲使用的批次量
+
+        while not Eof do
+        begin
+          nVal := FieldByName('D_Plan').AsFloat - FieldByName('D_Sent').AsFloat +
+                  FieldByName('D_Rund').AsFloat - FieldByName('D_Init').AsFloat;
+          nPer := FieldByName('D_Warn').AsFloat;
+
+          if nVal > nKDValue then
+          begin
+            nSelect := sFlag_Yes;
+            FOut.FData := FieldByName('D_ID').AsString;
+
+            if (nVal-nKDValue) <= nPer then //超发提醒
+            begin
+              nStr := '物料[ %s.%s ]批次号即将用完,请通知化验室准备取样.';
+              nStr := Format(nStr, [FieldByName('D_Stock').AsString,
+                                    FieldByName('D_Name').AsString]);
+              //xxxxx
+
+              FOut.FBase.FErrCode := sFlag_ForceHint;
+              FOut.FBase.FErrDesc := nStr;
+            end;
+
+            Break;
+          end;
+
+          Next;
+        end;
+
+        if nSelect <> sFlag_Yes then
+        begin
+          nData := '满足条件的物料[ %s ]批次不存在.';
+          nData := Format(nData, [FIn.FData]);
+          Exit;
         end;
       end;
     end;
   end;
-
-  if FOut.FData = '' then
-    FOut.FData := NewBatCode;
-  //xxxxx
   
   Result := True;
   FOut.FBase.FResult := True;

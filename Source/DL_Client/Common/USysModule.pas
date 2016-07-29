@@ -17,11 +17,12 @@ uses
   UFrameTrucks, UFormTruck, UFormRFIDCard, UFrameBill, UFormBill, UFormBillNew,
   UFormTransfer, UFrameQueryTransferDetail, UFrameQueryOrderDetail,
   UFormGetTruck, UFormCard, UFrameBillCard, UFrameQueryDiapatch,
-  UFrameTruckQuery, UFormBatcode, UFrameBatcode, UFormTruckIn, UFormTruckOut,
+  UFrameTruckQuery, UFormTruckIn, UFormTruckOut,
   UFormLadingDai, UFormLadingSan, UFramePoundManual, UFramePoundAuto,
   UFramePoundQuery, UFrameQuerySaleDetail, UFormWaiXie,
   UFrameWaiXie, UFrameZTDispatch, UFormGetPurchLine, UFramePoundErr,
-  UFormPoundErr;
+  UFormPoundErr, UFormBatcode, UFrameBatcode,
+  UFormBatcodeEdit, UFrameBatcodeQuery, UFrameSysErrLog;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

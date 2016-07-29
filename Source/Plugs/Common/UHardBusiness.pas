@@ -724,9 +724,9 @@ end;
 //Desc: 华益读头磁卡动作
 procedure WhenHYReaderCardArrived(const nReader: PHYReaderItem);
 begin
-  {.$IFDEF DEBUG}
+  {$IFDEF DEBUG}
   WriteHardHelperLog(Format('华益标签 %s:%s', [nReader.FTunnel, nReader.FCard]));
-  {.$ENDIF}
+  {$ENDIF}
 
   if nReader.FVirtual then
   begin

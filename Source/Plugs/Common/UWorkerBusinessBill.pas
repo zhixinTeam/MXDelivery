@@ -55,6 +55,7 @@ type
     //物料分组
     function GetInBillInterval: Integer;
     function AllowedSanMultiBill: Boolean;
+    function VerifyBatchBeforeSave: Boolean;
     function VerifyBeforSave(var nData: string): Boolean;
     function VeryCardBillValue(const nCard: string; var nData: string): Boolean;
     function SaveBills(var nData: string): Boolean;
@@ -315,6 +316,20 @@ begin
   end;
 end;
 
+//Date: 2016-07-27
+//Desc: 开单时验证批次
+function TWorkerBusinessBills.VerifyBatchBeforeSave: Boolean;
+var nStr: string;
+begin
+  nStr := 'Select D_Value From %s Where D_Name=''%s'' And D_Memo=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_ViaBillBatch]);
+
+  with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+  if RecordCount > 0 then
+       Result := Fields[0].AsString = sFlag_Yes
+  else Result := False;
+end;
+
 //Date: 2016-02-24
 //Parm: 大卡号;输出信息
 //Desc: 重新读取大卡信息,并验证开单量是否有效
@@ -506,15 +521,18 @@ begin
   TWorkerBusinessCommander.CallMe(cBC_SaveTruckInfo, nTruck, '', @nOut);
   //保存车牌号
 
-  if not TWorkerBusinessCommander.CallMe(cBC_GetBatcode,
-          FListA.Values['StockNO'], FListA.Values['Value'], @nOut) then
+  if VerifyBatchBeforeSave then
   begin
-    nData := nOut.FData;
-    Exit;
-  end;
+    if not TWorkerBusinessCommander.CallMe(cBC_GetBatcode,
+            FListA.Values['StockNO'], FListA.Values['Value'], @nOut) then
+    begin
+      nData := nOut.FData;
+      Exit;
+    end;
 
-  FListA.Values['HYDan'] := nOut.FData;
-  //更新批次编号
+    FListA.Values['HYDan'] := nOut.FData;
+    //更新批次编号
+  end;
 
   //----------------------------------------------------------------------------
   FListC.Text := PackerDecodeStr(FListA.Values['ZhiKa']);
@@ -934,6 +952,12 @@ begin
     nStr := 'Update %s Set B_HasUse=B_HasUse-(%.2f),B_LastDate=%s ' +
             'Where B_Stock=''%s'' and B_Batcode=''%s''';
     nStr := Format(nStr, [sTable_Batcode, nVal,
+            sField_SQLServer_Now, nSN, nHY]);
+    gDBConnManager.WorkerExec(FDBConn, nStr); //更新批次号使用量
+
+    nStr := 'Update %s Set D_Sent=D_Sent-(%.2f),D_LastDate=%s ' +
+            'Where D_Stock=''%s'' and D_ID=''%s''';
+    nStr := Format(nStr, [sTable_BatcodeDoc, nVal,
             sField_SQLServer_Now, nSN, nHY]);
     gDBConnManager.WorkerExec(FDBConn, nStr); //更新批次号使用量
 
@@ -1536,15 +1560,81 @@ begin
 
       nSQL := MakeSQLByStr([SF('L_Status', FStatus),
               SF('L_NextStatus', FNextStatus),
+              SF('L_HYDan', nOut.FData),
+
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser)
               ], sTable_Bill, SF('L_ID', FID), False);
       FListA.Add(nSQL);
+      //更新状态
 
       nSQL := 'Update %s Set T_InLade=%s Where T_HKBills Like ''%%%s%%''';
       nSQL := Format(nSQL, [sTable_ZTTrucks, sField_SQLServer_Now, FID]);
       FListA.Add(nSQL);
       //更新队列车辆提货状态
+
+      if not VerifyBatchBeforeSave then
+      begin
+        if not TWorkerBusinessCommander.CallMe(cBC_GetBatcode,
+                FStockNo, FloatToStr(FValue), @nOut) then
+        begin
+          nStr := '业务执行失败,提示信息如下: ' + nOut.FData;
+          //获取批次失败，记录原因
+
+          nSQL := MakeSQLByStr([SF('E_Group', sFlag_Sale),
+                  SF('E_Date', sField_SQLServer_Now, sfVal),
+                  SF('E_Result', sFlag_No),
+                  SF('E_ItemID', FTruck),
+
+                  SF('E_Event', nStr),
+                  SF('E_KeyID', FID)
+                  ], sTable_SysErrLog, '', True);
+          gDBConnManager.WorkerExec(FDBConn, nSQL);
+          //直接保存错误
+
+          nData := nOut.FData;
+          Exit;
+        end;
+        //获取批次编号
+
+        with PBWDataBase(@nOut)^ do
+        begin
+          if FResult and (FErrCode = sFlag_ForceHint) then
+          begin
+            nStr := '业务执行成功,提示信息如下: ' + FErrDesc;
+            //xxxx
+
+            nSQL := MakeSQLByStr([SF('E_Group', sFlag_Sale),
+                    SF('E_Date', sField_SQLServer_Now, sfVal),
+                    SF('E_Result', sFlag_Yes),
+                    SF('E_ItemID', FTruck),
+
+                    SF('E_Event', nStr),
+                    SF('E_KeyID', FID)
+                    ], sTable_SysErrLog, '', True);
+             FListA.Add(nSQL);
+             //系统超发预警
+          end;
+        end;
+
+        nSQL := MakeSQLByStr([
+                SF('L_HYDan', nOut.FData)
+                ], sTable_Bill, SF('L_ID', FID), False);
+        FListA.Add(nSQL);
+        //更新状态及批次
+
+        nSQL := 'Update %s Set B_HasUse=B_HasUse+(%.2f),B_LastDate=%s ' +
+                'Where B_Stock=''%s'' and B_Batcode=''%s''';
+        nSQL := Format(nSQL, [sTable_Batcode, FValue,
+                sField_SQLServer_Now, FStockNo, nOut.FData]);
+        FListA.Add(nSQL); //更新批次号使用量
+
+        nSQL := 'Update %s Set D_Sent=D_Sent+(%.2f),D_LastDate=%s ' +
+                'Where D_Stock=''%s'' and D_ID=''%s''';
+        nSQL := Format(nSQL, [sTable_BatcodeDoc, FValue,
+                sField_SQLServer_Now, FStockNo, nOut.FData]);
+        FListA.Add(nSQL); //更新批次号使用量(手工录入)
+      end;
     end;
   end else
 
@@ -1564,6 +1654,65 @@ begin
       nSQL := Format(nSQL, [sTable_ZTTrucks, sField_SQLServer_Now, FID]);
       FListA.Add(nSQL);
       //更新队列车辆提货状态
+
+      if not VerifyBatchBeforeSave then
+      begin
+        if not TWorkerBusinessCommander.CallMe(cBC_GetBatcode,
+                FStockNo, FloatToStr(FValue), @nOut) then
+        begin
+          nStr := '业务执行失败,提示信息如下: ' + nOut.FData;
+          //获取批次失败，记录原因
+
+          nSQL := MakeSQLByStr([SF('E_Group', sFlag_Sale),
+                  SF('E_Date', sField_SQLServer_Now, sfVal),
+                  SF('E_ItemID', FTruck),
+                  SF('E_KeyID', FID),
+                  SF('E_Event', nStr)
+                  ], sTable_SysErrLog, '', True);
+          gDBConnManager.WorkerExec(FDBConn, nSQL);
+          //直接保存错误
+
+          nData := nOut.FData;
+          Exit;
+        end;
+        //获取批次编号
+
+        with PBWDataBase(@nOut)^ do
+        begin
+          if FResult and (FErrCode = sFlag_ForceHint) then
+          begin
+            nStr := '业务执行成功,提示信息如下: ' + FErrDesc;
+            //xxxx
+
+            nSQL := MakeSQLByStr([SF('E_Group', sFlag_Sale),
+                    SF('E_Date', sField_SQLServer_Now, sfVal),
+                    SF('E_ItemID', FTruck),
+                    SF('E_KeyID', FID),
+                    SF('E_Event', nStr)
+                    ], sTable_SysErrLog, '', True);
+             FListA.Add(nSQL);
+             //系统超发预警
+          end;
+        end;
+
+        nSQL := MakeSQLByStr([
+                SF('L_HYDan', nOut.FData)
+                ], sTable_Bill, SF('L_ID', FID), False);
+        FListA.Add(nSQL);
+        //更新批次
+
+        nSQL := 'Update %s Set B_HasUse=B_HasUse+(%.2f),B_LastDate=%s ' +
+                'Where B_Stock=''%s'' and B_Batcode=''%s''';
+        nSQL := Format(nSQL, [sTable_Batcode, FValue,
+                sField_SQLServer_Now, FStockNo, nOut.FData]);
+        FListA.Add(nSQL); //更新批次号使用量
+
+        nSQL := 'Update %s Set D_Sent=D_Sent+(%.2f),D_LastDate=%s ' +
+                'Where D_Stock=''%s'' and D_ID=''%s''';
+        nSQL := Format(nSQL, [sTable_BatcodeDoc, FValue,
+                sField_SQLServer_Now, FStockNo, nOut.FData]);
+        FListA.Add(nSQL); //更新批次号使用量(手工录入)
+      end;
     end;
   end else
 
@@ -1608,6 +1757,12 @@ begin
       nSQL := Format(nSQL, [sTable_Batcode, f,
               sField_SQLServer_Now, FStockNo, FHYDan]);
       FListA.Add(nSQL); //更新批次号使用量
+
+      nSQL := 'Update %s Set D_Sent=D_Sent+(%.2f),D_LastDate=%s ' +
+              'Where D_Stock=''%s'' and D_ID=''%s''';
+      nSQL := Format(nSQL, [sTable_BatcodeDoc, f,
+              sField_SQLServer_Now, FStockNo, FHYDan]);
+      FListA.Add(nSQL); //更新批次号使用量(手工录入)
 
       nSQL := MakeSQLByStr([SF('L_Value', FValue, sfVal)
               ], sTable_Bill, SF('L_ID', FID), False);

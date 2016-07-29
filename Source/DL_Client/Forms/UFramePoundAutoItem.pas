@@ -58,11 +58,13 @@ type
     TimerDelay: TTimer;
     MemoLog: TZnTransMemo;
     Timer_SaveFail: TTimer;
+    Timer3: TTimer;
     procedure Timer1Timer(Sender: TObject);
     procedure Timer2Timer(Sender: TObject);
     procedure Timer_ReadCardTimer(Sender: TObject);
     procedure TimerDelayTimer(Sender: TObject);
     procedure Timer_SaveFailTimer(Sender: TObject);
+    procedure Timer3Timer(Sender: TObject);
   private
     { Private declarations }
     FIsWeighting, FIsSaving, FHasReaded: Boolean;
@@ -79,6 +81,8 @@ type
     FLastCardDone: Int64;
     FLastCard, FLastCardTmp: string;
     //上次卡号
+    FLastPlayVoice: string;
+    //上次播放的语音
     FListA, FListB: TStrings;
     FSampleIndex: Integer;
     FValueSamples: array of Double;
@@ -266,6 +270,7 @@ begin
     FHasReaded   := False;
     FIsWeighting := False;
     FEmptyPoundInit := 0;
+    FLastPlayVoice := '';
     
     gPoundTunnelManager.ClosePort(FPoundTunnel.FID);
     //关闭表头端口
@@ -1042,6 +1047,12 @@ end;
 
 procedure TfFrameAutoPoundItem.PlayVoice(const nStrtext: string);
 begin
+  if FLastPlayVoice <> nStrtext then
+       FLastPlayVoice := nStrtext
+  else Exit;
+  //相同语音不予播放
+
+  Timer3.Enabled := True;
   if UpperCase(Additional.Values['Voice'])='NET' then
        gNetVoiceHelper.PlayVoice(nStrtext, FPoundTunnel.FID, 'pound')
   else gVoiceHelper.PlayVoice(nStrtext);
@@ -1065,6 +1076,18 @@ begin
       //loged
     end;
   end;
+end;
+
+procedure TfFrameAutoPoundItem.Timer3Timer(Sender: TObject);
+begin
+  inherited;
+  Timer3.Tag := Timer3.Tag + 1;
+  if Timer3.Tag < 15 then Exit;
+  //同一语音保存15s
+
+  Timer3.Tag     := 0;
+  FLastPlayVoice := '';
+  Timer3.Enabled := False;
 end;
 
 end.

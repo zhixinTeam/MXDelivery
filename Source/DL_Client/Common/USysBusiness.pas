@@ -83,6 +83,8 @@ function AXSyncDuanDao(var nData: string): Boolean;
 function GetStockBatcode(const nStock: string; const nVal: Double): string;
 //获取指定品种的批次编号
 
+function IfGetBatchcode: Boolean;
+//开单时是否需要批次
 function SaveBill(const nBillData: string): string;
 //保存交货单
 function DeleteBill(const nBill: string): Boolean;
@@ -229,6 +231,20 @@ begin
   if RecordCount > 0 then
        Result := Fields[0].AsFloat
   else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+//Desc: 开票室是否确认批次
+function IfGetBatchcode: Boolean;
+var nStr: string;
+begin
+  nStr := 'Select D_Value From %s Where D_Name=''%s'' And D_Memo=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam, sFlag_ViaBillBatch]);
+
+  with FDM.QueryTemp(nStr) do
+  if RecordCount > 0 then
+       Result := Fields[0].AsString = sFlag_Yes
+  else Result := False;
 end;
 
 //------------------------------------------------------------------------------

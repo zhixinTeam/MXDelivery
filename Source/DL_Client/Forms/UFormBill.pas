@@ -64,6 +64,8 @@ type
     //新提单号
     FBuDanFlag: string;
     //补单标记
+    FViaBillBatch: Boolean;
+    //获取批次号
     procedure InitFormData;
     //初始化界面
     procedure LoadCardInfo(const nIdx: Integer);
@@ -216,6 +218,8 @@ begin
     {$ENDIF}
     ListStock.SelStart := 1;
   end;
+
+  FViaBillBatch := IfGetBatchcode;
 end;
 
 //Date: 2016-01-30
@@ -239,7 +243,11 @@ begin
     EditStock.Text  := Values['ItemID'];
     EditSName.Text  := Values['ItemName'];
     EditMax.Text    := Values['Qty'];
-    EditFQ.Text     := GetStockBatcode(EditStock.Text, 0);
+
+    if FViaBillBatch then
+         EditFQ.Text    := GetStockBatcode(EditStock.Text, 0)
+    else EditFQ.Enabled := False;
+    //批次号  
   end;
 end;
 
@@ -267,7 +275,7 @@ begin
 
   if Sender = EditFQ then
   begin
-    Result := Trim(EditFQ.Text) <> '';
+    Result := (Trim(EditFQ.Text) <> '') or (not FViaBillBatch);
     nHint := '批次号无效,无法开单';
   end;
 end;

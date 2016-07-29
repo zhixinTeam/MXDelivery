@@ -147,6 +147,10 @@ ResourceString
   sFlag_ProvideL      = 'L';                         //产品线
   sFlag_ProvideG      = 'G';                         //供应商
 
+  sFlag_BatchInUse    = 'Y';                         //批次号有效
+  sFlag_BatchOutUse   = 'N';                         //批次号已封存
+  sFlag_BatchDel      = 'D';                         //批次号已删除
+
   sFlag_SysParam      = 'SysParam';                  //系统参数
   sFlag_EnableBakdb   = 'Uses_BackDB';               //备用库
   sFlag_ValidDate     = 'SysValidDate';              //有效期
@@ -167,6 +171,10 @@ ResourceString
   sFlag_DispatchPound = 'PoundDispatch';             //磅站调度
   sFlag_PSanVerifyStock='PSanVerifyStock';           //散装校验
   sFlag_OutOfRefund   = 'OutOfRefund';               //退货时限
+  sFlag_ViaBillBatch  = 'ViaBillBatch';              //开单时获取批次
+  sFlag_BatchAuto     = 'Batch_Auto';                //自动生成批次号
+  sFlag_BatchBrand    = 'Batch_Brand';               //批次区分品牌
+  sFlag_BatchValid    = 'Batch_Valid';               //启用批次管理
 
   sFlag_CommonItem    = 'CommonItem';                //公共信息
   sFlag_CardItem      = 'CardItem';                  //磁卡信息项
@@ -235,6 +243,7 @@ ResourceString
   sTable_SysDict      = 'Sys_Dict';                  //系统字典
   sTable_ExtInfo      = 'Sys_ExtInfo';               //附加信息
   sTable_SysLog       = 'Sys_EventLog';              //系统日志
+  sTable_SysErrLog    = 'Sys_EventErrLog';           //错误日志
   sTable_BaseInfo     = 'Sys_BaseInfo';              //基础信息
   sTable_SerialBase   = 'Sys_SerialBase';            //编码种子
   sTable_SerialStatus = 'Sys_SerialStatus';          //编号状态
@@ -253,7 +262,9 @@ ResourceString
   sTable_Truck        = 'S_Truck';                   //车辆表
   sTable_ZTLines      = 'S_ZTLines';                 //装车道
   sTable_ZTTrucks     = 'S_ZTTrucks';                //车辆队列
-  sTable_Batcode      = 'S_Batcode';                 //批次编号
+  sTable_Batcode      = 'S_Batcode';                 //批次编号(自动生成)
+  sTable_BatcodeDoc   = 'S_BatcodeDoc';              //批次编号(手工录入)
+  sTable_BatcodeDocBak= 'S_BatcodeDocBak';           //批次编号(手工录入,已删除)
 
   sTable_Provider     = 'P_Provider';                //客户表
   sTable_Materails    = 'P_Materails';               //物料表
@@ -407,6 +418,21 @@ const
    *.M_ID: 物料号
    *.M_Name: 物料名称
    *.M_Status: 状态
+  -----------------------------------------------------------------------------}
+
+  sSQL_NewSysErrLog = 'Create Table $Table(R_ID $Inc, E_Date DateTime,' +
+       'E_Man varChar(32),E_Group varChar(20), E_ItemID varChar(20),' +
+       'E_KeyID varChar(20), E_Result Char(1), E_Event varChar(220))';
+  {-----------------------------------------------------------------------------
+   系统错误日志: SysErrLog
+   *.R_ID: 编号
+   *.E_Date: 操作日期
+   *.E_Man: 操作人
+   *.E_Group: 信息分组
+   *.E_ItemID: 信息标识
+   *.E_KeyID: 辅助标识
+   *.E_Event: 事件
+   *.E_Result: 业务执行结果(Y、作为预警;N、执行失败)
   -----------------------------------------------------------------------------}
 
   sSQL_NewBill = 'Create Table $Table(R_ID $Inc, L_ID varChar(20),' +
@@ -941,6 +967,33 @@ const
    *.B_Batcode: 当前批次号
   -----------------------------------------------------------------------------}
 
+  sSQL_NewBatcodeDoc = 'Create Table $Table(R_ID $Inc, D_ID varChar(32),' +
+       'D_Stock varChar(32),D_Name varChar(80), D_Brand varChar(32), ' +
+       'D_Plan $Float Default 0, D_Sent $Float  Default 0, ' +
+       'D_Rund $Float Default 0, D_Init $Float  Default 0, D_Warn $Float  Default 0, ' +
+       'D_Man varChar(32), D_Date DateTime, D_DelMan varChar(32), D_DelDate DateTime, ' +
+       'D_UseDate DateTime, D_LastDate DateTime, D_Valid char(1))';
+  {-----------------------------------------------------------------------------
+   批次编码表: Batcode
+   *.R_ID: 编号
+   *.D_ID: 批次号
+   *.D_Stock: 物料号
+   *.D_Name: 物料名
+   *.D_Brand: 水泥品牌
+   *.D_Plan: 计划总量
+   *.D_Sent: 已发量
+   *.D_Rund: 退货量
+   *.D_Init: 初始量
+   *.D_Warn: 预警量
+   *.D_Man:  操作人
+   *.D_Date: 生成时间
+   *.D_DelMan: 删除人
+   *.D_DelDate: 删除时间
+   *.D_UseDate: 启用时间
+   *.D_LastDate: 终止时间
+   *.D_Valid: 是否启用(N、封存;Y、启用；D、删除)
+  -----------------------------------------------------------------------------}
+
   sSQL_NewAXCard = 'Create Table $Table(R_ID $Inc, C_ID varChar(20),' +
        'C_Card varChar(50), C_Stock varChar(32), C_Count Integer Default 0,' +
        'C_Freeze $Float, C_HasDone $Float)';
@@ -1074,6 +1127,7 @@ begin
   AddSysTableItem(sTable_SysDict, sSQL_NewSysDict);
   AddSysTableItem(sTable_ExtInfo, sSQL_NewExtInfo);
   AddSysTableItem(sTable_SysLog, sSQL_NewSysLog);
+  AddSysTableItem(sTable_SysErrLog, sSQL_NewSysErrLog);
 
   AddSysTableItem(sTable_BaseInfo, sSQL_NewBaseInfo);
   AddSysTableItem(sTable_SerialBase, sSQL_NewSerialBase);
@@ -1100,6 +1154,8 @@ begin
   AddSysTableItem(sTable_PoundErr, sSQL_NewPoundError);
   AddSysTableItem(sTable_Picture, sSQL_NewPicture);
   AddSysTableItem(sTable_Batcode, sSQL_NewBatcode);
+  AddSysTableItem(sTable_BatcodeDoc, sSQL_NewBatcodeDoc);
+  AddSysTableItem(sTable_BatcodeDocBak, sSQL_NewBatcodeDoc);
 
   AddSysTableItem(sTable_AX_CardInfo, sSQL_NewAXCard);
   AddSysTableItem(sTable_AX_OrderInfo, sSQL_NewAXCard);

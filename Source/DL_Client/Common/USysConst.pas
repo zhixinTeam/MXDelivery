@@ -80,6 +80,7 @@ const
 
   cFI_FrameWXAccount    = $0110;                     //微信账户
   cFI_FrameWXSendLog    = $0111;                     //发送日志
+  cFI_FrameSysErrLog    = $0112;                     //错误日志
 
   cFI_FormMemo          = $1000;                     //备注窗口
   cFI_FormBackup        = $1001;                     //数据备份
@@ -152,6 +153,7 @@ const
 
   cFI_FormTrucks        = $1071;                     //车辆档案
   cFI_FormBatch         = $1072;                     //批次编号
+  cFI_FormBatchEdit     = $1073;                     //批次管理
 
   cFI_FormInvoiceWeek   = $1075;                     //结算周期
   cFI_FormSaleInvoice   = $1076;                     //发票管理
@@ -353,6 +355,7 @@ begin
   AddMenuModuleItem('MAIN_K06', cFI_FrameStockHY_Each);
   AddMenuModuleItem('MAIN_K07', cFI_FrameBatch);
   AddMenuModuleItem('MAIN_K08', cFI_FrameBatchQuery);
+  AddMenuModuleItem('MAIN_K09', cFI_FrameSysErrLog);
 
   AddMenuModuleItem('MAIN_L01', cFI_FrameTruckQuery);
   AddMenuModuleItem('MAIN_L02', cFI_FrameCusAccountQuery);

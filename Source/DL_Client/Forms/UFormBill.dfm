@@ -1,6 +1,6 @@
 inherited fFormBill: TfFormBill
-  Left = 380
-  Top = 408
+  Left = 367
+  Top = 246
   ClientHeight = 480
   ClientWidth = 458
   OnClose = FormClose
