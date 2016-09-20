@@ -599,7 +599,7 @@ begin
   nSQL := Format(nSQL, [sTable_PurchInfo, nStr]);
 
   with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
-  if RecordCount > 0 then
+  if (RecordCount > 0) and (FieldByName('P_Truck').AsString <> nTruck) then
   begin
     nData := '车辆[ %s ]正在使用该卡,无法并单.';
     nData := Format(nData, [FieldByName('P_Truck').AsString]);

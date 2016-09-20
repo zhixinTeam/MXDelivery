@@ -811,8 +811,9 @@ begin
 end;
 
 function TAXWorkerSyncBill.DoAXWork(var nData: string): Boolean;
-var nStr: string;
+var nStr, nTime, nSeal: string;
     nNode,nTmp: TXmlNode;
+const cDefault_Seal = '123456';
 begin
   Result := False;
   BuildDefaultXMLPack;
@@ -839,14 +840,24 @@ begin
       NodeNew('CarSenderUnit').ValueAsString := FieldByName('L_SaleMan').AsString;
       NodeNew('IssueCardDateTime').ValueAsString := FieldByName('L_Date').AsString;
       NodeNew('TareDateTime').ValueAsString := FieldByName('L_PDate').AsString;
-      NodeNew('PacklistDateTime').ValueAsString := FieldByName('L_LadeTime').AsString;
+
+      if Trim(FieldByName('L_LadeTime').AsString) = '' then
+           nTime := FieldByName('L_PDate').AsString
+      else nTime := FieldByName('L_LadeTime').AsString;
+      NodeNew('PacklistDateTime').ValueAsString := nTime;
+
       NodeNew('GrossDateTime').ValueAsString := FieldByName('L_MDate').AsString;
       NodeNew('PackSlipDateTime').ValueAsString := FieldByName('L_OutFact').AsString;
       NodeNew('TareVolume').ValueAsString := FieldByName('L_PValue').AsString;
       NodeNew('GrossVolume').ValueAsString := FieldByName('L_MValue').AsString;
       NodeNew('BagQty').ValueAsString := FieldByName('L_DaiTotal').AsString;
       NodeNew('BadBagQty').ValueAsString := FieldByName('L_DaiBuCha').AsString;
-      NodeNew('CheckBatchID').ValueAsString := FieldByName('L_HYDan').AsString;
+
+      if Trim(FieldByName('L_HYDan').AsString) = '' then
+           nSeal := cDefault_Seal
+      else nSeal := FieldByName('L_HYDan').AsString;
+      NodeNew('CheckBatchID').ValueAsString := nSeal;
+
       NodeNew('ProportionID').ValueAsString := '';
       NodeNew('WrkCtrId').ValueAsString := FieldByName('L_PackerNo').AsString;
       NodeNew('BatchID').ValueAsString := FieldByName('L_PrintCode').AsString;
