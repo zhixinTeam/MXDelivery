@@ -642,10 +642,10 @@ begin
   nData := IWebService(FChannel.FChannel).GetSalesInfoByCustCard(FXML.WriteToString);
   //remote call
 
-  {.$IFDEF DEBUG}
+  {$IFDEF DEBUG}
   WriteLog('TAXWorkerReadSalesInfo --> AX ::: ' + FXML.WriteToString);
   WriteLog('TAXWorkerReadSalesInfo <-- AX ::: ' + nData);
-  {.$ENDIF}
+  {$ENDIF}
 
   FXML.ReadFromString(nData);
   if DefaultParseError(nData) then
@@ -1069,6 +1069,10 @@ begin
     NodeNew('TareVolume').ValueAsString := FieldByName('P_PValue').AsString;
     NodeNew('PresetVolume').ValueAsString := FieldByName('P_Value').AsString;
     NodeNew('GrossVolume').ValueAsString := FieldByName('P_MValue').AsString;
+
+    NodeNew('SrcBizID').ValueAsString := FieldByName('P_SrcID').AsString;
+    NodeNew('SrcTareVolume').ValueAsString := FieldByName('P_SrcPValue').AsString;
+    NodeNew('SrcGrossVolume').ValueAsString := FieldByName('P_SrcMValue').AsString;
   end;
 
   Result := True;

@@ -837,6 +837,7 @@ const
        'P_InTime DateTime, P_InMan varChar(32),' +
        'P_PValue $Float, P_PDate DateTime, P_PMan varChar(32),' +
        'P_MValue $Float, P_MDate DateTime, P_MMan varChar(32),' +
+       'P_SrcPValue $Float, P_SrcMValue $Float, P_SrcID varChar(32),' +
        'P_YTime DateTime, P_YMan varChar(32), ' +
        'P_OutFact DateTime, P_OutMan varChar(32), ' +
        'P_Value $Float,P_KZValue $Float, P_AKValue $Float,' +

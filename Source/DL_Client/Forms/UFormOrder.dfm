@@ -1,7 +1,7 @@
 inherited fFormOrder: TfFormOrder
-  Left = 451
-  Top = 243
-  ClientHeight = 380
+  Left = 452
+  Top = 185
+  ClientHeight = 442
   ClientWidth = 425
   OnClose = FormClose
   OnCreate = FormCreate
@@ -9,22 +9,22 @@ inherited fFormOrder: TfFormOrder
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
     Width = 425
-    Height = 380
+    Height = 442
     AutoControlTabOrders = False
     inherited BtnOK: TButton
       Left = 279
-      Top = 347
+      Top = 409
       Caption = #24320#21333
       TabOrder = 4
     end
     inherited BtnExit: TButton
       Left = 349
-      Top = 347
+      Top = 409
       TabOrder = 6
     end
     object EditValue: TcxTextEdit [2]
       Left = 279
-      Top = 311
+      Top = 367
       ParentFont = False
       TabOrder = 3
       Text = '0.00'
@@ -52,7 +52,7 @@ inherited fFormOrder: TfFormOrder
     end
     object EditTruck: TcxButtonEdit [5]
       Left = 81
-      Top = 311
+      Top = 367
       ParentFont = False
       Properties.Buttons = <
         item
@@ -153,12 +153,32 @@ inherited fFormOrder: TfFormOrder
     end
     object CKBuDan: TcxCheckBox [17]
       Left = 11
-      Top = 347
+      Top = 409
       Caption = #34917#21333
       ParentFont = False
       TabOrder = 20
       Transparent = True
       OnClick = CKBuDanClick
+      Width = 121
+    end
+    object EditSrcId: TcxTextEdit [18]
+      Left = 81
+      Top = 317
+      TabOrder = 21
+      Width = 121
+    end
+    object EditSrcP: TcxTextEdit [19]
+      Left = 81
+      Top = 342
+      TabOrder = 22
+      Text = '0.00'
+      Width = 136
+    end
+    object EditSrcM: TcxTextEdit [20]
+      Left = 280
+      Top = 342
+      TabOrder = 23
+      Text = '0.00'
       Width = 121
     end
     inherited dxLayout1Group_Root: TdxLayoutGroup
@@ -256,18 +276,44 @@ inherited fFormOrder: TfFormOrder
         AutoAligns = [aaHorizontal]
         AlignVert = avClient
         Caption = #25552#21333#20449#24687
-        LayoutDirection = ldHorizontal
-        object dxlytmLayout1Item12: TdxLayoutItem
-          Caption = #25552#36135#36710#36742':'
-          Control = EditTruck
+        object dxLayout1Item17: TdxLayoutItem
+          Caption = #21407#30917#21333#21495':'
+          Control = EditSrcId
           ControlOptions.ShowBorder = False
         end
-        object dxLayout1Item8: TdxLayoutItem
-          AutoAligns = [aaVertical]
-          AlignHorz = ahClient
-          Caption = #21150#29702#21544#25968':'
-          Control = EditValue
-          ControlOptions.ShowBorder = False
+        object dxLayout1Group6: TdxLayoutGroup
+          ShowCaption = False
+          Hidden = True
+          LayoutDirection = ldHorizontal
+          ShowBorder = False
+          object dxLayout1Item18: TdxLayoutItem
+            Caption = #21407#36710#30382#37325':'
+            Control = EditSrcP
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayout1Item19: TdxLayoutItem
+            Caption = #21407#36710#27611#37325':'
+            Control = EditSrcM
+            ControlOptions.ShowBorder = False
+          end
+        end
+        object dxLayout1Group7: TdxLayoutGroup
+          ShowCaption = False
+          Hidden = True
+          LayoutDirection = ldHorizontal
+          ShowBorder = False
+          object dxlytmLayout1Item12: TdxLayoutItem
+            Caption = #25552#36135#36710#36742':'
+            Control = EditTruck
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayout1Item8: TdxLayoutItem
+            AutoAligns = [aaVertical]
+            AlignHorz = ahClient
+            Caption = #21150#29702#21544#25968':'
+            Control = EditValue
+            ControlOptions.ShowBorder = False
+          end
         end
       end
       inherited dxLayout1Group1: TdxLayoutGroup

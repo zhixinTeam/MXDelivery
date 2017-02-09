@@ -8,3 +8,6 @@ del /s /a *.~*;*.dcu;*.ddp
 
 cd ..\Bin
 del /s /a *.~*;*.dcu;*.ddp
+
+cd ..\DCU
+del /s /a *.~*;*.dcu;*.ddp

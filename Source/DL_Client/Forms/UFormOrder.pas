@@ -53,6 +53,14 @@ type
     dxLayout1Item15: TdxLayoutItem;
     CKBuDan: TcxCheckBox;
     dxLayout1Item16: TdxLayoutItem;
+    EditSrcId: TcxTextEdit;
+    dxLayout1Item17: TdxLayoutItem;
+    dxLayout1Group7: TdxLayoutGroup;
+    EditSrcP: TcxTextEdit;
+    dxLayout1Item18: TdxLayoutItem;
+    EditSrcM: TcxTextEdit;
+    dxLayout1Item19: TdxLayoutItem;
+    dxLayout1Group6: TdxLayoutGroup;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -263,6 +271,18 @@ begin
     Result := FloatRelation(nVal, StrToFloat(EditEnd.Text),
               rtLE);
     nHint := '已超出可提货量';
+  end else
+
+  if Sender = EditSrcP then
+  begin
+    Result := IsNumber(EditSrcP.Text, True);
+    nHint := '请填写有效的车辆皮重';
+  end else
+
+  if Sender = EditSrcM then
+  begin
+    Result := IsNumber(EditSrcM.Text, True);
+    nHint := '请填写有效的车辆毛重';
   end;
 end;
 
@@ -272,6 +292,14 @@ var nOrder: string;
 begin
   if not IsDataValid then Exit;
   //check valid
+
+  if FloatRelation(StrToFloat(EditSrcP.Text), StrToFloat(EditSrcM.Text),
+     rtGreater) then
+  begin
+    nOrder := '皮重应小于毛重';
+    ShowMsg(nOrder, sHint);
+    Exit;
+  end;  
 
   with FListA do
   begin
@@ -290,6 +318,10 @@ begin
     Values['StockNO']       := FCardData.Values['SQ_StockNo'];
     Values['StockName']     := FCardData.Values['SQ_StockName'];
     Values['Value']         := Trim(EditValue.Text);
+
+    Values['SrcID']         := Trim(EditSrcId.Text);
+    Values['SrcPValue']     := Trim(EditSrcP.Text);
+    Values['SrcMValue']     := Trim(EditSrcM.Text);
 
     if CKBuDan.Visible and CKBuDan.Checked then
          Values['BuDan']    := sFlag_Yes

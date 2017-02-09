@@ -382,6 +382,10 @@ begin
             SF('P_StockName', FListA.Values['StockName']),
             SF('P_Value', FListA.Values['Value'], sfVal),
 
+            SF('P_SrcID', FListA.Values['SrcID']),
+            SF('P_SrcPValue', StrToFloatDef(FListA.Values['SrcPValue'], 0), sfVal),
+            SF('P_SrcMValue', StrToFloatDef(FListA.Values['SrcMValue'], 0), sfVal),
+
             SF('P_Truck', FListA.Values['Truck']),
             SF('P_Status', sFlag_TruckNone),
             SF('P_Man', FIn.FBase.FFrom.FUser),
