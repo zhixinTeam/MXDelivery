@@ -44,6 +44,7 @@ type
     dxLayout1Item9: TdxLayoutItem;
     N7: TMenuItem;
     N8: TMenuItem;
+    N6: TMenuItem;
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
@@ -54,6 +55,7 @@ type
     procedure Check1Click(Sender: TObject);
     procedure BtnDelClick(Sender: TObject);
     procedure N4Click(Sender: TObject);
+    procedure N6Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -76,8 +78,8 @@ implementation
 
 {$R *.dfm}
 uses
-  ShellAPI, ULibFun, UMgrControl, UDataModule, USysBusiness, UFormDateFilter,
-  UFormWait, USysConst, USysDB;
+  ShellAPI, ULibFun, UMgrControl, UDataModule, USysBusiness, UFormBase,
+  UFormDateFilter, UFormWait, USysConst, USysDB;
 
 class function TfFramePoundQuery.FrameID: integer;
 begin
@@ -198,6 +200,7 @@ end;
 procedure TfFramePoundQuery.PMenu1Popup(Sender: TObject);
 begin
   N3.Enabled := BtnPrint.Enabled and (not Check1.Checked);
+  N6.Enabled := BtnEdit.Enabled and (not Check1.Checked);
 end;
 
 //Desc: 打印磅单
@@ -345,6 +348,25 @@ begin
     CloseWaitForm;
     FDM.SqlTemp.Close;
   end;
+end;
+
+//Desc: 磅单勘误
+procedure TfFramePoundQuery.N6Click(Sender: TObject);
+var nP: TFormCommandParam;
+begin
+  if cxView1.DataController.GetSelectedCount < 1 then
+  begin
+    ShowMsg('请选择要勘误的记录', sHint);
+    Exit;
+  end;
+
+  nP.FCommand := cCmd_EditData;
+  nP.FParamA := SQLQuery.FieldByName('P_ID').AsString;
+  CreateBaseFormItem(cFI_FormPoundAjdust, PopedomItem, @nP);
+
+  if (nP.FCommand = cCmd_ModalResult) and (nP.FParamA = mrOk) then
+    InitFormData(FWhere);
+  //xxxxx
 end;
 
 initialization

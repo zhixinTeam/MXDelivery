@@ -22,7 +22,7 @@ uses
   UFramePoundQuery, UFrameQuerySaleDetail, UFormWaiXie,
   UFrameWaiXie, UFrameZTDispatch, UFormGetPurchLine, UFramePoundErr,
   UFormPoundErr, UFormBatcode, UFrameBatcode,
-  UFormBatcodeEdit, UFrameBatcodeQuery, UFrameSysErrLog;
+  UFormBatcodeEdit, UFrameBatcodeQuery, UFrameSysErrLog, UFormPoundAdjust;
 
 procedure InitSystemObject;
 procedure RunSystemObject;

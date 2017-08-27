@@ -127,6 +127,7 @@ const
 
   cFI_FormGetProvider   = $1041;                     //选择供应商
   cFI_FormGetMeterail   = $1042;                     //选择原材料
+  cFI_FormPoundAjdust   = $1043;                     //磅单勘误
 
   cFI_FormGetTruck      = $1047;                     //选择车辆
   cFI_FormGetContract   = $1048;                     //选择合同
