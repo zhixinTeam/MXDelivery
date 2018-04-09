@@ -415,9 +415,46 @@ begin
   //loged
 end;
 
+//------------------------------------------------------------------------------
+//Desc: 打印标识为nID的合格证
+function PrintHeGeReport(const nBill: string; var nHint: string;
+ const nPrinter: string = ''): Boolean;
+var nStr: string;
+begin
+  nHint := '';
+  Result := False;
+
+  nStr := 'Select * from %s b Where b.L_ID=''%s''';
+  nStr := Format(nStr, [sTable_Bill, nBill]);
+
+  if FDM.SQLQuery(nStr, FDM.SqlTemp).RecordCount < 1 then
+  begin
+    nHint := '提货单[ %s ]没有对应的合格证';
+    nHint := Format(nHint, [nBill]);
+    Exit;
+  end;
+
+  nStr := gPath + 'Report\HeGeZheng.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nHint := '无法正确加载报表文件: ' + nStr;
+    Exit;
+  end;
+
+  if nPrinter = '' then
+       FDR.Report1.PrintOptions.Printer := 'My_Default_HYPrinter'
+  else FDR.Report1.PrintOptions.Printer := nPrinter;
+  
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.PrintReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TfFormMain.Timer2Timer(Sender: TObject);
 var nPos: Integer;
-    nBill,nHint,nPrinter,nMoney, nType: string;
+    nBill,nHint,nPrinter,nMoney,nType,nHYPrinter: string;
 begin
   while True do
   begin
@@ -430,7 +467,15 @@ begin
       FSyncLock.Leave;
     end;
 
-    //bill #9 printer #8 money #7 CardType
+    //bill #9 printer #8 money #7 CardType #6 HYPrinter
+    nPos := Pos(#6, nBill);
+    if nPos > 1 then
+    begin
+      nHYPrinter := nBill;
+      nBill := Copy(nBill, 1, nPos - 1);
+      System.Delete(nHYPrinter, 1, nPos);
+    end else nHYPrinter := '';
+    
     nPos := Pos(#7, nBill);
     if nPos > 1 then
     begin
@@ -469,6 +514,13 @@ begin
       PrintWaiXieReport(nBill, nHint, nPrinter)
     else if nType = sFlag_DuanDao then
       PrintDuanDaoReport(nBill, nHint, nPrinter);
+    //xxxxx
+
+    if nType = sFlag_Sale then
+    begin
+      PrintHeGeReport(nBill, nHint, nHYPrinter);
+      if nHint <> '' then WriteLog(nHint);
+    end;
 
     WriteLog('打印结束.' + nHint);
   end;

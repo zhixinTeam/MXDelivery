@@ -59,4 +59,6 @@
   //状态栏显示
   {$DEFINE HYRFID201}
   //电子标签
+  {$DEFINE TTCEM100}
+  //自动收卡票箱
 {$ENDIF}

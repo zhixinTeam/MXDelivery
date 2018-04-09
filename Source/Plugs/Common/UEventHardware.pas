@@ -36,7 +36,7 @@ uses
   SysUtils, USysLoger, UHardBusiness, UMgrTruckProbe, UMgrParam,
   UMgrQueue, UMgrLEDCard, UMgrHardHelper, UMgrRemotePrint, U02NReader,
   UMgrERelay, UMultiJS, UMgrRemoteVoice, UMgrCodePrinter, UMgrLEDDisp,
-  UMgrRFID102, UMgrVoiceNet;
+  UMgrRFID102, UMgrVoiceNet, UMgrTTCEM100;
 
 class function THardwareWorker.ModuleInfo: TPlugModuleInfo;
 begin
@@ -106,6 +106,15 @@ begin
     end;
     {$ENDIF}
 
+    {$IFDEF TTCEM100}
+    nStr := '三合一读卡器';
+    if not Assigned(gM100ReaderManager) then
+    begin
+      gM100ReaderManager := TM100ReaderManager.Create;
+      gM100ReaderManager.LoadConfig(nCfg + cTTCE_M100_Config);
+    end;
+    {$ENDIF}
+
     nStr := '车辆检测器';
     nCfg := nCfg + 'TruckProber.xml';
     
@@ -142,6 +151,14 @@ procedure THardwareWorker.InitSystemObject;
 begin
   gHardwareHelper := THardwareHelper.Create;
   //远距读头
+
+  if not Assigned(g02NReader) then
+    g02NReader := T02NReader.Create;
+  //近距读头
+
+  if not Assigned(gMultiJSManager) then
+    gMultiJSManager := TMultiJSManager.Create;
+  //计数器
 
   gHardShareData := WhenBusinessMITSharedDataIn;
   //hard monitor share
@@ -191,6 +208,14 @@ begin
   //led display
   gDisplayManager.StartDisplay;
   //small led
+
+  {$IFDEF TTCEM100}
+  if Assigned(gM100ReaderManager) then
+  begin
+    gM100ReaderManager.OnCardProc := WhenTTCE_M100_ReadCard;
+    gM100ReaderManager.StartReader;
+  end; //三合一读卡器
+  {$ENDIF}
 end;
 
 procedure THardwareWorker.AfterStopServer;
@@ -222,6 +247,14 @@ begin
     gHYReaderManager.StopReader;
     gHYReaderManager.OnCardProc := nil;
   end;
+  {$ENDIF}
+
+  {$IFDEF TTCEM100}
+  if Assigned(gM100ReaderManager) then
+  begin
+    gM100ReaderManager.StopReader;
+    gM100ReaderManager.OnCardProc := nil;
+  end; //三合一读卡器
   {$ENDIF}
 
   gDisplayManager.StopDisplay;
