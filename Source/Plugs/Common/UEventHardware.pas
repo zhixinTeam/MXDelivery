@@ -97,12 +97,10 @@ begin
 
     {$IFDEF HYRFID201}
     nStr := '»ªÒæRFID102';
-    nCfg := nCfg + 'RFID102.xml';
-
     if not Assigned(gHYReaderManager) then
     begin
       gHYReaderManager := THYReaderManager.Create;
-      gHYReaderManager.LoadConfig(nCfg);
+      gHYReaderManager.LoadConfig(nCfg + 'RFID102.xml');
     end;
     {$ENDIF}
 
@@ -116,12 +114,10 @@ begin
     {$ENDIF}
 
     nStr := '³µÁ¾¼ì²âÆ÷';
-    nCfg := nCfg + 'TruckProber.xml';
-    
-    if FileExists(nCfg) then
+    if FileExists(nStr + 'TruckProber.xml') then
     begin
       gProberManager := TProberManager.Create;
-      gProberManager.LoadConfig(nCfg);
+      gProberManager.LoadConfig(nStr + 'TruckProber.xml');
     end;
   except
     on E:Exception do

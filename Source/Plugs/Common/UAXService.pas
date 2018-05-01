@@ -9,12 +9,14 @@ unit UAXService;
 {----------------------------------------------------------------------------}
 
 {$I RemObjects.inc}
+{$I LibFun.inc}
 
 interface
 
 uses
   {vcl:} Classes, TypInfo,
-  {RemObjects:} uROXMLIntf, uROClasses, uROClient, uROTypes, uROClientIntf;
+  {RemObjects:} uROXMLIntf, uROClasses, uROClient, uROTypes, uROClientIntf
+  {$IFDEF RO_v90}, uROProxy{$ENDIF};
 
 const
   { Library ID }
